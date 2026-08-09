@@ -98,27 +98,32 @@ def skeletons():
              ("c", (262, 42), (308, 58), (330, 96))]),
     ]
 
-    # --- g : DOUBLE-STOREY per reference. Small top bowl on the x-height,
-    #         ear flicking off its shoulder, and the lower loop separated
-    #         by a crack where the link used to be (the liquid move:
-    #         "link eliminated, loop emerges via baseline offset")
+    # --- g : DOUBLE-STOREY per reference. Reads CRISP FIRST: a closed eye,
+    #         an ear tucked into the shoulder (attached, no floater), and an
+    #         open-tail lower loop sitting directly beneath the eye. The one
+    #         liquid accent is the LINK, rendered as a clean hairline crack
+    #         (the loop drops just clear of the eye) plus a soft droplet on
+    #         the tail terminal. A crack, not a disconnection.
     g["g"] = [
-        sub([("m", (200, XH - H)),
-             ("c", (272, XH - H), (325, 438), (325, 367)),
-             ("c", (325, 296), (272, 242), (200, 242)),
-             ("c", (128, 242), (75, 296), (75, 367)),
-             ("c", (75, 438), (128, XH - H), (200, XH - H)),
+        # eye — closed upper bowl, centre (185, 372) r128
+        sub([("m", (185, 500)),
+             ("c", (255.7, 500), (313, 442.7), (313, 372)),
+             ("c", (313, 301.3), (255.7, 244), (185, 244)),
+             ("c", (114.3, 244), (57, 301.3), (57, 372)),
+             ("c", (57, 442.7), (114.3, 500), (185, 500)),
              ("z",)]),
-        # ear — small flick off the top-right shoulder, cracked free
-        sub([("m", (412, 490)),
-             ("c", (452, 478), (466, 446), (458, 408))],
+        # ear — small soft flick tucked at the top-right shoulder
+        sub([("m", (298, 448)),
+             ("c", (338, 456), (350, 438), (344, 414))],
             cap="round"),
-        # lower loop — open sweep where the link was, droplet terminal
-        sub([("m", (332, 138)),
-             ("c", (348, -20), (300, -150), (190, -155)),
-             ("c", (95, -158), (40, -108), (40, -30)),
-             ("c", (40, 30), (90, 64), (158, 56))],
-            drops=[(158, 56, H + 6)]),
+        # lower loop — open tail beneath the eye; link is a hairline crack,
+        # droplet pools at the tail terminal
+        sub([("m", (185, 120)),
+             ("c", (110, 114), (42, 46), (48, -40)),
+             ("c", (56, -114), (122, -154), (200, -152)),
+             ("c", (282, -150), (332, -92), (330, -4)),
+             ("c", (328, 52), (316, 84), (292, 98))],
+            drops=[(292, 98, H + 4)]),
     ]
 
     g["space"] = []

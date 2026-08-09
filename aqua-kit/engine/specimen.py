@@ -42,7 +42,7 @@ d.text(((W - (bbox2[2] - bbox2[0])) / 2 - bbox2[0], 490 - bbox2[1]),
 
 # quiet studio caption
 d.text((60, 40), "AQUA — AquaScript Regular v1.1", font=label, fill=INK)
-d.text((60, 70), "Stage 0 survival proof · crisp substance · compiled TTF",
+d.text((60, 70), "g repair · double-storey, crisp first · compiled TTF",
        font=label_i, fill=FAINT)
 d.text((W - 240, 40), "specimen: the logotype", font=label_i, fill=FAINT)
 
