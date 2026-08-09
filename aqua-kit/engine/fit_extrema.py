@@ -2,8 +2,40 @@
 joined by cubic beziers with axis-aligned, kappa-scaled symmetric handles.
 Few points, on-curve at the extremes: clean type-design curves."""
 import numpy as np
-from scipy.interpolate import splprep, splev, CubicSpline
+from scipy.interpolate import splprep, splev, CubicSpline, PPoly
 K = 0.5523
+
+
+def fit_smooth(contour, s):
+    """Smooth the contour then convert the smoothing spline DIRECTLY to beziers
+    (one per knot interval) via PPoly. Preserves the spline's own gentle shape
+    and C2 continuity exactly — no re-interpolation overshoot at tight turns."""
+    P = flatten(contour)
+    if np.allclose(P[0], P[-1]):
+        P = P[:-1]
+    tck, _ = splprep([P[:, 0], P[:, 1]], s=s, per=1)
+    t, c, k = tck
+    ppx = PPoly.from_spline((t, c[0], k))
+    ppy = PPoly.from_spline((t, c[1], k))
+    bps = ppx.x
+    lo, hi = t[k], t[-k - 1]
+    xs = np.unique(bps[(bps >= lo - 1e-9) & (bps <= hi + 1e-9)])
+    p0 = np.array([float(ppx(xs[0])), float(ppy(xs[0]))])
+    out = [["m", round(p0[0], 2), round(p0[1], 2)]]
+    for a, b in zip(xs[:-1], xs[1:]):
+        du = b - a
+        if du <= 1e-9:
+            continue
+        pa = np.array([float(ppx(a)), float(ppy(a))])
+        pb = np.array([float(ppx(b)), float(ppy(b))])
+        da = np.array([float(ppx(a, 1)), float(ppy(a, 1))])
+        db = np.array([float(ppx(b, 1)), float(ppy(b, 1))])
+        c1 = pa + da * du / 3.0
+        c2 = pb - db * du / 3.0
+        out.append(["c", round(float(c1[0]), 2), round(float(c1[1]), 2),
+                    round(float(c2[0]), 2), round(float(c2[1]), 2),
+                    round(float(pb[0]), 2), round(float(pb[1]), 2)])
+    return out, len(out) - 1
 
 def flatten(contour, per=28):
     pts, cur = [], None

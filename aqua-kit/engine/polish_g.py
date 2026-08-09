@@ -15,7 +15,7 @@ Writes g_polished_outline.json, which aquascript.py embeds as the g.
 """
 import json
 import numpy as np
-from fit_extrema import fit
+from fit_extrema import fit, fit_smooth
 
 K = 0.5523
 
@@ -45,7 +45,7 @@ def signed_area(A):
 contours = json.load(open("g_real_outline.json"))
 outer = max(contours, key=len)
 
-outer_c, n_anchors = fit(outer, s=900.0)
+outer_c, n_anchors = fit_smooth(outer, s=900.0)
 A = np.array([[s[-2], s[-1]] for s in outer_c])
 cc = not (signed_area(A) > 0)                  # counters wind opposite outer
 
