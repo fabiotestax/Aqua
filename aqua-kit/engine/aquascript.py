@@ -8,6 +8,7 @@ x-height, tight fit. Liquidity is now an ACCENT, not the substance:
   * disconnections remain, but tightened to read as cracks, not floaters
 """
 
+import os
 import pathops
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
@@ -170,6 +171,29 @@ def skeleton_to_outline(subpaths):
     return out
 
 
+def draw_real_g(pen):
+    """The g is Fabio's own the source logotype drawing, its outline lifted straight
+    from the source EPS (see g_real_outline.json — contours in font units).
+    Drawn directly rather than stroked from a skeleton, so it matches the
+    designed letter exactly. Returns (xmin, xmax) for metrics."""
+    import json
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "g_real_outline.json")
+    contours = json.load(open(path))
+    xs = []
+    for c in contours:
+        for seg in c:
+            if seg[0] == "m":
+                pen.moveTo((seg[1], seg[2]))
+            elif seg[0] == "l":
+                pen.lineTo((seg[1], seg[2]))
+            elif seg[0] == "c":
+                pen.curveTo((seg[1], seg[2]), (seg[3], seg[4]), (seg[5], seg[6]))
+            xs.append(seg[-2])
+        pen.closePath()
+    return min(xs), max(xs)
+
+
 def build(path_out="AquaScript-Regular.ttf"):
     skels = skeletons()
     glyph_order = [".notdef", "space"] + list("Belphag")
@@ -182,7 +206,11 @@ def build(path_out="AquaScript-Regular.ttf"):
 
     for name in glyph_order[1:]:
         pen = TTGlyphPen(None)
-        if skels[name]:
+        if name == "g":
+            xmin, xmax = draw_real_g(Cu2QuPen(pen, max_err=1.0))
+            adv = int(xmax + PARAMS["side"])
+            lsb = int(xmin)
+        elif skels[name]:
             outline = skeleton_to_outline(skels[name])
             outline.draw(Cu2QuPen(pen, max_err=1.0))
             xmin, _, xmax, _ = outline.bounds
