@@ -98,32 +98,31 @@ def skeletons():
              ("c", (262, 42), (308, 58), (330, 96))]),
     ]
 
-    # --- g : DOUBLE-STOREY per reference. Reads CRISP FIRST: a closed eye,
-    #         an ear tucked into the shoulder (attached, no floater), and an
-    #         open-tail lower loop sitting directly beneath the eye. The one
-    #         liquid accent is the LINK, rendered as a clean hairline crack
-    #         (the loop drops just clear of the eye) plus a soft droplet on
-    #         the tail terminal. A crack, not a disconnection.
+    # --- g : DOUBLE-STOREY, matched to the reference anatomy. Two CLOSED
+    #         bowls — a smaller eye above a larger lower loop — joined into a
+    #         continuous contour on the right and pinched to a narrow waist on
+    #         the left, with a small spur flicking off the left of the waist.
+    #         No open tail, no droplet: reads crisp, exactly like the logotype.
     g["g"] = [
-        # eye — closed upper bowl, centre (185, 372) r128
-        sub([("m", (185, 500)),
-             ("c", (255.7, 500), (313, 442.7), (313, 372)),
-             ("c", (313, 301.3), (255.7, 244), (185, 244)),
-             ("c", (114.3, 244), (57, 301.3), (57, 372)),
-             ("c", (57, 442.7), (114.3, 500), (185, 500)),
+        # eye — upper bowl, centre (185, 388), rounder & a touch larger
+        sub([("m", (185, 502)),
+             ("c", (245.77, 502), (294, 451.42), (294, 388)),
+             ("c", (294, 324.58), (245.77, 274), (185, 274)),
+             ("c", (124.23, 274), (76, 324.58), (76, 388)),
+             ("c", (76, 451.42), (124.23, 502), (185, 502)),
              ("z",)]),
-        # ear — small soft flick tucked at the top-right shoulder
-        sub([("m", (298, 448)),
-             ("c", (338, 456), (350, 438), (344, 414))],
+        # lower loop — larger bowl, centre (180, 55), overlaps the eye's
+        # lower edge to form the connected waist
+        sub([("m", (180, 200)),
+             ("c", (247.38, 200), (302, 135.08), (302, 55)),
+             ("c", (302, -25.08), (247.38, -90), (180, -90)),
+             ("c", (112.62, -90), (58, -25.08), (58, 55)),
+             ("c", (58, 135.08), (112.62, 200), (180, 200)),
+             ("z",)]),
+        # spur — small beak off the left of the waist, pointing down-left
+        sub([("m", (104, 250)),
+             ("c", (70, 244), (54, 224), (58, 200))],
             cap="round"),
-        # lower loop — open tail beneath the eye; link is a hairline crack,
-        # droplet pools at the tail terminal
-        sub([("m", (185, 120)),
-             ("c", (110, 114), (42, 46), (48, -40)),
-             ("c", (56, -114), (122, -154), (200, -152)),
-             ("c", (282, -150), (332, -92), (330, -4)),
-             ("c", (328, 52), (316, 84), (292, 98))],
-            drops=[(292, 98, H + 4)]),
     ]
 
     g["space"] = []
