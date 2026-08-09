@@ -172,13 +172,14 @@ def skeleton_to_outline(subpaths):
 
 
 def draw_real_g(pen):
-    """The g is Fabio's own the source logotype drawing, its outline lifted straight
-    from the source EPS (see g_real_outline.json — contours in font units).
-    Drawn directly rather than stroked from a skeleton, so it matches the
-    designed letter exactly. Returns (xmin, xmax) for metrics."""
+    """The g is Fabio's own the source logotype drawing. Its outline was lifted from
+    the source EPS (g_real_outline.json) then POLISHED with type-design
+    principles (polish_g.py -> g_polished_outline.json): trace wobble removed,
+    counters redrawn as clean ovals, curves re-laid at the extremes, spur kept.
+    Drawn directly rather than stroked from a skeleton. Returns (xmin, xmax)."""
     import json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "g_real_outline.json")
+                        "g_polished_outline.json")
     contours = json.load(open(path))
     xs = []
     for c in contours:
