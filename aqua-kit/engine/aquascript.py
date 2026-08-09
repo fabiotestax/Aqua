@@ -98,30 +98,31 @@ def skeletons():
              ("c", (262, 42), (308, 58), (330, 96))]),
     ]
 
-    # --- g : DOUBLE-STOREY, matched to the reference anatomy. Two CLOSED
-    #         bowls — a smaller eye above a larger lower loop — joined into a
-    #         continuous contour on the right and pinched to a narrow waist on
-    #         the left, with a small spur flicking off the left of the waist.
-    #         No open tail, no droplet: reads crisp, exactly like the logotype.
+    # --- g : DOUBLE-STOREY, matched to the reference. The key is ASYMMETRY:
+    #         the two bowls share a RIGHT edge and overlap there, so the right
+    #         reads as one continuous rounded contour (like a mirrored B), while
+    #         the LEFT gets a deep notch with a small spur. Eye is smaller and
+    #         shifted right; the lower loop is larger. Counters sit left of the
+    #         weight — exactly the the logotype g. No open tail, no droplet.
     g["g"] = [
-        # eye — upper bowl, centre (185, 388), rounder & a touch larger
-        sub([("m", (185, 502)),
-             ("c", (245.77, 502), (294, 451.42), (294, 388)),
-             ("c", (294, 324.58), (245.77, 274), (185, 274)),
-             ("c", (124.23, 274), (76, 324.58), (76, 388)),
-             ("c", (76, 451.42), (124.23, 502), (185, 502)),
+        # eye — smaller upper bowl, centre (176, 372), right edge at x=266
+        sub([("m", (176, 494)),
+             ("c", (225.7, 494), (266, 439.4), (266, 372)),
+             ("c", (266, 304.6), (225.7, 250), (176, 250)),
+             ("c", (126.3, 250), (86, 304.6), (86, 372)),
+             ("c", (86, 439.4), (126.3, 494), (176, 494)),
              ("z",)]),
-        # lower loop — larger bowl, centre (180, 55), overlaps the eye's
-        # lower edge to form the connected waist
-        sub([("m", (180, 200)),
-             ("c", (247.38, 200), (302, 135.08), (302, 55)),
-             ("c", (302, -25.08), (247.38, -90), (180, -90)),
-             ("c", (112.62, -90), (58, -25.08), (58, 55)),
-             ("c", (58, 135.08), (112.62, 200), (180, 200)),
+        # lower loop — larger bowl, centre (150, 50), right edge also at x=266
+        # so the two bowls fuse into a continuous right contour
+        sub([("m", (150, 202)),
+             ("c", (214.1, 202), (266, 133.9), (266, 50)),
+             ("c", (266, -33.9), (214.1, -102), (150, -102)),
+             ("c", (85.9, -102), (34, -33.9), (34, 50)),
+             ("c", (34, 133.9), (85.9, 202), (150, 202)),
              ("z",)]),
-        # spur — small beak off the left of the waist, pointing down-left
-        sub([("m", (104, 250)),
-             ("c", (70, 244), (54, 224), (58, 200))],
+        # spur — small beak off the LEFT of the waist, pointing down-left
+        sub([("m", (80, 246)),
+             ("c", (50, 238), (36, 218), (42, 198))],
             cap="round"),
     ]
 
