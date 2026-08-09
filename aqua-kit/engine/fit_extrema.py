@@ -51,14 +51,35 @@ def fit(contour, s, min_sep_t=0.012):
         if tan=='h':   u=unit(np.array([float(gx),0.0]))
         elif tan=='v': u=unit(np.array([0.0,float(gy)]))
         else:          u=unit(np.array([float(gx),float(gy)]))
-        A.append((np.array([float(px),float(py)]), u))
-    out=[['m',round(float(A[0][0][0]),2),round(float(A[0][0][1]),2)]]
+        A.append((float(tt), np.array([float(px),float(py)]), u))
+
+    # Least-squares fit each segment's two handle lengths to the smooth spline
+    # arc it spans (locked tangents) -> beziers HUG the smooth curve, no lumps.
+    out=[['m',round(float(A[0][1][0]),2),round(float(A[0][1][1]),2)]]
     n=len(A)
     for i in range(n):
-        p0,u0=A[i]; p1,u1=A[(i+1)%n]
-        delta=p1-p0
-        l0=K*abs(np.dot(delta,u0)); l1=K*abs(np.dot(delta,u1))
-        c1=p0+u0*l0; c2=p1-u1*l1
+        t0,p0,u0=A[i]; t1,p1,u1=A[(i+1)%n]
+        a=t0; b=t1 if t1>t0 else t1+1.0
+        ts=np.linspace(a,b,40)
+        Q=np.array(splev(np.mod(ts,1.0),tck)).T
+        # chord-length parameterisation of the samples
+        d=np.r_[0,np.cumsum(np.hypot(*np.diff(Q,axis=0).T))]
+        tau=d/d[-1] if d[-1]>0 else np.linspace(0,1,len(Q))
+        base=(np.outer((1-tau)**3+3*(1-tau)**2*tau,p0)
+              + np.outer(3*(1-tau)*tau**2+tau**3,p1))
+        av=(3*(1-tau)**2*tau)[:,None]*u0        # d/dalpha
+        bv=(-3*(1-tau)*tau**2)[:,None]*u1        # d/dbeta
+        r=Q-base
+        Aaa=np.sum(av*av); Aab=np.sum(av*bv); Abb=np.sum(bv*bv)
+        Ba=np.sum(av*r); Bb=np.sum(bv*r)
+        det=Aaa*Abb-Aab*Aab
+        if abs(det)<1e-9:
+            L=np.hypot(*(p1-p0)); alpha=beta=K*L
+        else:
+            alpha=(Ba*Abb-Bb*Aab)/det; beta=(Aaa*Bb-Aab*Ba)/det
+        L=np.hypot(*(p1-p0))
+        alpha=float(np.clip(alpha,0.05*L,1.2*L)); beta=float(np.clip(beta,0.05*L,1.2*L))
+        c1=p0+u0*alpha; c2=p1-u1*beta
         out.append(['c',round(float(c1[0]),2),round(float(c1[1]),2),
                     round(float(c2[0]),2),round(float(c2[1]),2),
                     round(float(p1[0]),2),round(float(p1[1]),2)])

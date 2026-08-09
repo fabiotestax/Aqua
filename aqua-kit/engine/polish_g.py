@@ -45,7 +45,7 @@ def signed_area(A):
 contours = json.load(open("g_real_outline.json"))
 outer = max(contours, key=len)
 
-outer_c, n_anchors = fit(outer, s=350.0)
+outer_c, n_anchors = fit(outer, s=900.0)
 A = np.array([[s[-2], s[-1]] for s in outer_c])
 cc = not (signed_area(A) > 0)                  # counters wind opposite outer
 
