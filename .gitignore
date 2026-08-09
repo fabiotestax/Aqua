@@ -1,0 +1,9 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Build artifacts (regenerated from the engine)
+*.ttf
+aqua-kit/engine/specimen_stage0.png
+aqua-kit/engine/liquid_specimen.png
