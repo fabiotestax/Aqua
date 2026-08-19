@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            html, body { margin: 0; height: 100%; background: #f4f4f4; }
+            /* The override fills its parent, so the harness gives it a size. */
+            #root { width: 100%; max-width: 1200px; height: 500px; }
+            #root > div { height: 500px; }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script src="bundle.js"></script>
+    </body>
+</html>

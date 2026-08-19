@@ -1,0 +1,15 @@
+{
+    "name": "float-smoke-test",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "NODE_PATH=./node_modules esbuild entry.tsx --bundle --jsx=automatic --define:process.env.NODE_ENV='\"development\"' --outfile=bundle.js",
+        "test": "npm run build && node smoke.mjs"
+    },
+    "devDependencies": {
+        "esbuild": "^0.24.0",
+        "playwright": "^1.49.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    }
+}
