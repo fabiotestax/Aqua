@@ -4,6 +4,7 @@
   "colour": "amber",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "lumpy curve (jump 0.024) at stem 53"
   ],
@@ -96,6 +97,7 @@
   "colour": "amber",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "lumpy curve (jump 0.031) at stem 53"
   ],
@@ -188,6 +190,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 53"
   ],
@@ -274,6 +277,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 53"
   ],
@@ -366,6 +370,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 53"
   ],
@@ -458,6 +463,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.008) at stem 53"
   ],
@@ -544,6 +550,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.013) at stem 53"
   ],
@@ -638,6 +645,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.015) at stem 53"
   ],
@@ -724,6 +732,7 @@
   "colour": "green",
   "worst_stem": "106",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.016) at stem 106"
   ],
@@ -812,6 +821,7 @@
   "colour": "green",
   "worst_stem": "78",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.008) at stem 78"
   ],
@@ -898,11 +908,13 @@
   }
  },
  "k": {
-  "score": 75,
-  "colour": "amber",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "106",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "slight lump (jump 0.016) at stem 106",
    "5 curve(s) miss their extreme point at stem 106"
   ],
@@ -986,11 +998,13 @@
   }
  },
  "l": {
-  "score": 85,
-  "colour": "green",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "106",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "slight lump (jump 0.016) at stem 106"
   ],
   "stems": {
@@ -1072,6 +1086,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 53"
   ],
@@ -1158,6 +1173,7 @@
   "colour": "green",
   "worst_stem": "78",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 78"
   ],
@@ -1242,7 +1258,9 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "check: counter looked missing on the 2026-09-19 sheet \u2014 was a renderer fill-rule bug, outline has its counter; confirm on the corrected sheet",
   "flags": [
+   "check: counter looked missing on the 2026-09-19 sheet \u2014 was a renderer fill-rule bug, outline has its counter; confirm on the corrected sheet",
    "slight lump (jump 0.009) at stem 53"
   ],
   "stems": {
@@ -1334,6 +1352,7 @@
   "colour": "green",
   "worst_stem": "78",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 78"
   ],
@@ -1424,6 +1443,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 53"
   ],
@@ -1516,6 +1536,7 @@
   "colour": "amber",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "lumpy curve (jump 0.031) at stem 53"
   ],
@@ -1598,11 +1619,13 @@
   }
  },
  "s": {
-  "score": 75,
-  "colour": "amber",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "too many points (354 segments \u2014 a trace, not a drawing) at stem 53"
   ],
   "stems": {
@@ -1688,6 +1711,7 @@
   "colour": "amber",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "lumpy curve (jump 0.021) at stem 53"
   ],
@@ -1774,6 +1798,7 @@
   "colour": "green",
   "worst_stem": "78",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.009) at stem 78"
   ],
@@ -1854,11 +1879,13 @@
   }
  },
  "v": {
-  "score": 96,
-  "colour": "green",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "2 curve(s) miss their extreme point at stem 53"
   ],
   "stems": {
@@ -1940,11 +1967,13 @@
   }
  },
  "w": {
-  "score": 85,
-  "colour": "green",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "slight lump (jump 0.009) at stem 53"
   ],
   "stems": {
@@ -2026,11 +2055,13 @@
   }
  },
  "x": {
-  "score": 88,
-  "colour": "green",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "106",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "8 curve(s) miss their extreme point at stem 106"
   ],
   "stems": {
@@ -2112,11 +2143,13 @@
   }
  },
  "y": {
-  "score": 83,
-  "colour": "amber",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "slight lump (jump 0.014) at stem 53",
    "1 curve(s) miss their extreme point at stem 53"
   ],
@@ -2206,6 +2239,7 @@
   "colour": "green",
   "worst_stem": "78",
   "compatible": true,
+  "hand": null,
   "flags": [
    "2 curve(s) miss their extreme point at stem 78"
   ],
@@ -2286,11 +2320,13 @@
   }
  },
  "B.cap": {
-  "score": 70,
-  "colour": "amber",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "lumpy curve (jump 0.021) at stem 53"
   ],
   "stems": {
@@ -2388,6 +2424,7 @@
   "colour": "green",
   "worst_stem": "106",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.016) at stem 106"
   ],
@@ -2476,6 +2513,7 @@
   "colour": "green",
   "worst_stem": "53",
   "compatible": true,
+  "hand": null,
   "flags": [
    "slight lump (jump 0.011) at stem 53"
   ],
@@ -2554,11 +2592,13 @@
   }
  },
  "comma": {
-  "score": 85,
-  "colour": "green",
+  "score": 50,
+  "colour": "red",
   "worst_stem": "53",
   "compatible": true,
+  "hand": "Fabio: wrong or still not there",
   "flags": [
+   "Fabio: wrong or still not there",
    "slight lump (jump 0.018) at stem 53"
   ],
   "stems": {

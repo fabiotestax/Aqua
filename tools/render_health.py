@@ -11,6 +11,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.path import Path as MP
 from matplotlib.patches import PathPatch, Rectangle
+import pathops
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from health import parse_path
@@ -35,14 +36,34 @@ for i, name in enumerate(names):
     ax = axs[i // cols][i % cols]
     g = glyphs[STEM]["glyphs"][name]
     subs = parse_path(g["d"], g["ox"], g["oy"])
-    verts, codes = [], []
+    # The page fills with fill-rule="evenodd"; matplotlib fills nonzero. Resolve the
+    # even-odd outline with skia first so counters stay counters whatever their winding.
+    sk = pathops.Path()
+    sk.fillType = pathops.FillType.EVEN_ODD
     for sub in subs:
-        first = True
+        sk.moveTo(*sub[0][0])
         for (p0, c1, c2, p3, k) in sub:
-            if first:
-                verts.append(p0); codes.append(MP.MOVETO); first = False
-            verts += [c1, c2, p3]; codes += [MP.CURVE4] * 3
-        verts.append(verts[0]); codes.append(MP.CLOSEPOLY)
+            sk.cubicTo(*c1, *c2, *p3)
+        sk.close()
+    sk.simplify()
+    verts, codes = [], []
+    for verb, pts in sk.segments:
+        if verb == "moveTo":
+            verts.append(pts[0]); codes.append(MP.MOVETO)
+        elif verb == "lineTo":
+            verts.append(pts[0]); codes.append(MP.LINETO)
+        elif verb == "qCurveTo":
+            # skia may emit quads; lift to cubic
+            p0 = verts[-1]
+            for j in range(len(pts) - 1):
+                q = pts[j]; e = pts[j + 1]
+                verts += [(p0[0] + 2 / 3 * (q[0] - p0[0]), p0[1] + 2 / 3 * (q[1] - p0[1])),
+                          (e[0] + 2 / 3 * (q[0] - e[0]), e[1] + 2 / 3 * (q[1] - e[1])), e]
+                codes += [MP.CURVE4] * 3; p0 = e
+        elif verb == "curveTo":
+            verts += list(pts); codes += [MP.CURVE4] * 3
+        elif verb == "closePath":
+            verts.append(verts[0]); codes.append(MP.CLOSEPOLY)
     ax.add_patch(PathPatch(MP(verts, codes), facecolor=INK, edgecolor="none"))
     h = health[name]
     c = COL[h["colour"]]

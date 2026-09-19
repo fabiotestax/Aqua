@@ -1,0 +1,19 @@
+{
+  "_about": "Fabio's own verdicts on the set. The health score measures execution; this measures whether a glyph is Aqua yet. A glyph listed under not_aqua is red regardless of its geometry score. Edit this file by hand or from the Studio.",
+  "_updated": "2026-09-19",
+  "not_aqua": {
+    "k": "wrong or still not there",
+    "l": "wrong or still not there",
+    "s": "wrong or still not there",
+    "v": "wrong or still not there",
+    "w": "wrong or still not there",
+    "x": "wrong or still not there",
+    "y": "wrong or still not there",
+    "B.cap": "wrong or still not there",
+    "comma": "wrong or still not there"
+  },
+  "check": {
+    "o": "counter looked missing on the 2026-09-19 sheet — was a renderer fill-rule bug, outline has its counter; confirm on the corrected sheet"
+  },
+  "approved": {}
+}

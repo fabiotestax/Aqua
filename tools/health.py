@@ -21,6 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "out" / "glyphs.json"
 DST = ROOT / "out" / "health.json"
+HAND_FILE = ROOT / "hand.json"
+HAND = json.loads(HAND_FILE.read_text()) if HAND_FILE.exists() else {}
 
 NUM = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?")
 
@@ -286,8 +288,18 @@ def main():
         else:
             comp = (True, "ok")
         score, colour, worst, flags = score_glyph(per, comp)
+        hand_note = None
+        if name in HAND.get("not_aqua", {}):
+            hand_note = "Fabio: " + HAND["not_aqua"][name]
+            score, colour = min(score, 50), "red"
+            flags = [hand_note] + flags
+        elif name in HAND.get("check", {}):
+            hand_note = "check: " + HAND["check"][name]
+            flags = [hand_note] + flags
+        elif name in HAND.get("approved", {}):
+            hand_note = "approved by Fabio"
         report[name] = dict(score=score, colour=colour, worst_stem=worst, compatible=comp[0],
-                            flags=flags, stems=per)
+                            hand=hand_note, flags=flags, stems=per)
     DST.write_text(json.dumps(report, indent=1))
     # table
     print(f"{'glyph':8}{'score':>6}  {'colour':7}{'segs':>6}{'jump':>8}{'r_min':>7}{'nonmono':>8}{'sq':>4}{'lsb':>6}{'rsb':>6}  flags")
