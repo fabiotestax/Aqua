@@ -48,8 +48,31 @@ verdicts and `../aqua/masters/edited-paths.json` for the Import room's diff. Ser
 root, not `aqua/`, so those relative paths resolve. `node tools/shoot_studio.mjs` screenshots
 every room in light and dark into `studio/shots/` — that is how the app is shown to Fabio.
 
-Milestone 1 (shell, view only) is built. Editing, the font build, Spacing and the six optical
+Milestones 1 (shell) and 2 (editing) are built. The font build, Spacing and the six optical
 audits are the later milestones in the spec.
+
+**How editing works.** The Studio never writes to `engine.js`. Its changes live in a
+document (`studio/doc.js`): per glyph, one or more *variations*, each holding point edits
+per master weight — `{ [nodeIndex]: { d: [dx, dy], r: roundness } }` for `light` and
+`black` — plus any drawings brought in from an SVG sheet as replacement masters. The engine
+applies the document at draw time (`setDoc` → `outline(ch, s, variant)`): a node edit moves
+the on-curve point and its two handles, `r` scales those handles, and any weight between the
+masters blends Light and Black. With no document the engine's output is byte-identical to
+before. The document autosaves in the browser (`localStorage`), saves to and opens from
+`aqua-studio-edits.json` (top bar, or Cmd/Ctrl+S), and has undo/redo (Cmd/Ctrl+Z, Shift for
+redo, 80 steps). `node tools/bake_edits.mjs <file.json>` makes a document permanent: imported
+drawings become `MASTERS` lines, and the used variation's point edits go into the engine's
+`BAKED` table. Clear the Studio's document after baking.
+
+**Import.** Drop an exported sheet on the Import room. Each `glyph.<name>` path is read
+through `normalizeSVGPath` (any SVG commands, relative or absolute) into font units from its
+cell, the export's left-ink shift is undone, and it is compared with the letter *as it is
+now* (edits included). A drawing whose point structure differs is refused with the reason.
+Bringing one in replaces that weight's master, freezes the other weight as it looks now, and
+clears that letter's point edits, so the axis always has two matching outlines.
+
+`node tools/test_studio.mjs` drives the running app end to end (drag, undo, nudge, snap,
+one-weight editing, variations, save/open, autosave, import, forget) and must stay green.
 
 ### One thing that will look strange
 
@@ -130,6 +153,10 @@ Three different mechanisms, and you need to know which one you are touching:
 ```js
 Object.keys(MASTERS).forEach(n => { BUILD[MASTERS[n].ch] = makeMaster(...); });
 ```
+
+Since the Studio, every outline goes through `outline(ch, s)`: the base from `BUILD` (or the
+g's offset, or a document's imported master), with the document's or `BAKED` point edits
+laid on. `RULES` keeps the parametric builders as written, before `MASTERS` overwrote them.
 
 ---
 

@@ -26,6 +26,19 @@ for (const theme of ['light', 'dark']) {
 await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' });
 await p.waitForFunction(() => window.studioReady === true);
 await p.screenshot({ path: `${out}/glyphs-a-black-light.png` });
+
+// editing scenes: a selected, nudged point on the k with the snap and compare views
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=k&stem=106', { waitUntil: 'networkidle' });
+await p.waitForFunction(() => window.studioReady === true);
+await p.evaluate(() => { window.AquaDoc.clearAll(); });
+await p.evaluate(() => { window.AquaDoc.nudge('k', 0, 4, 18, 0); window.AquaDoc.nudge('k', 0, 5, 18, 0); window.AquaEditor.state.sel = 5; window.AquaStudio.renderRoom(); });
+await p.waitForTimeout(150);
+await p.screenshot({ path: `${out}/glyphs-editing-light.png` });
+await p.evaluate(() => { window.AquaEditor.state.compare = true; window.AquaStudio.renderRoom(); });
+await p.waitForTimeout(150);
+await p.screenshot({ path: `${out}/glyphs-compare-light.png` });
+await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
+console.log('editing scenes');
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();
 process.exit(errors.length ? 1 : 0);

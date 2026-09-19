@@ -720,9 +720,9 @@ function exportSVG(stem) {
     let dd, w, minX = 0;
     if (ch === 'g') {
       const off = d, comp = neckComp(off);
-      dd = offsetPath(REF22, off, true); minX = 42.5 + off * comp; w = 427.5 - off - off * comp;
+      dd = outline(ch, stem); minX = 42.5 + off * comp; w = 427.5 - off - off * comp;
     } else {
-      dd = BUILD[ch](stem);
+      dd = outline(ch, stem);
       minX = ch === '!' ? 4 - 0.03 * stem : 0;
       w = ch === '!' ? 1.06 * stem : glyphWidth(ch, stem);
     }
@@ -1139,6 +1139,9 @@ function makeMaster(bd, rd) {
     return out;
   };
 }
+// The rules as written, kept before the drawn masters overwrite them: the Studio's Compare
+// tool shows them, and an import in one weight builds the other master from them.
+const RULES = { ...BUILD };
 Object.keys(MASTERS).forEach(n => { BUILD[MASTERS[n].ch] = makeMaster(MASTERS[n].black, MASTERS[n].regular); });
 const CHARSET = 'a b c d e f g h i j k l m n o p q r s t u v w x y z · B · ! . ,';
 const ORDER = 'abcdefghijklmnopqrstuvwxyzB!.,';
@@ -1155,9 +1158,9 @@ function layout(str, s, noKern) {
     let dPath, w, minX;
     if (ch === 'g') {
       const c = neckComp(d);
-      dPath = offsetPath(REF22, d, true); minX = 42.5 + d * c; w = 427.5 - d - d * c;
+      dPath = outline(ch, s); minX = 42.5 + d * c; w = 427.5 - d - d * c;
     } else {
-      dPath = BUILD[ch](s);
+      dPath = outline(ch, s);
       minX = ch === '!' ? 4 - 0.03 * s : 0;
       w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
     }
@@ -1281,6 +1284,146 @@ function buildDiffs(ed) {
   return out;
 }
 
+// ── The document: edits laid over the typeface ────────────────────────────────
+// The Studio edits without touching this file. Its document is:
+//   { glyphs: { [ch]: { use: 0, variants: [{ name, light: { [node]: { d: [dx, dy], r } },
+//                                                     black: { ... } }] } },
+//     masters: { [ch]: { black, regular } } }          // drawings brought in from SVG
+// A node edit moves the on-curve point and its two handles by d, and scales those handles
+// about the point by r (roundness). Light and Black each hold their own; any weight in
+// between blends them, so an edit made "in both weights" holds across the axis.
+// tools/bake_edits.mjs writes a document into this file for good.
+const BAKED = { glyphs: {}, masters: {} };
+let DOC = { glyphs: {}, masters: {} };
+function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {} }; }
+function getDoc() { return DOC; }
+const fxp = v => fx(v);
+function serializePath(subs) {
+  let out = '';
+  for (const sub of subs) {
+    if (!sub.length) continue;
+    out += `M${fxp(sub[0][0][0])} ${fxp(sub[0][0][1])}`;
+    for (const [, c1, c2, p3, kind] of sub) {
+      out += kind === 'L' ? `L${fxp(p3[0])} ${fxp(p3[1])}`
+        : `C${fxp(c1[0])} ${fxp(c1[1])} ${fxp(c2[0])} ${fxp(c2[1])} ${fxp(p3[0])} ${fxp(p3[1])}`;
+    }
+    out += 'Z';
+  }
+  return out;
+}
+// The two drawn weights of a glyph as the axis sees them now: an imported drawing, the
+// MASTERS entry, or the rules built at 53 and 106. Both come back through one serializer,
+// so makeMaster can pair them.
+function masterPair(ch) {
+  const m = DOC.masters[ch] || BAKED.masters[ch];
+  if (m) return { black: m.black, regular: m.regular, source: m.source || 'imported' };
+  for (const n in MASTERS) if (MASTERS[n].ch === ch) return { black: MASTERS[n].black, regular: MASTERS[n].regular, source: 'drawn' };
+  const at = s => ch === 'g' ? offsetPath(REF22, Math.max(0, (107.4 - s) / 2.09), true) : RULES[ch] ? RULES[ch](s) : null;
+  const b = at(106), r = at(53);
+  return b && r ? { black: serializePath(parsePath(b)), regular: serializePath(parsePath(r)), source: ch === 'g' ? 'offset' : 'rules' } : null;
+}
+const masterFns = {};
+function basePath(ch, s) {
+  const m = DOC.masters[ch] || BAKED.masters[ch];
+  if (m) {
+    const key = m.black + '\u0000' + m.regular;
+    if (!masterFns[key]) masterFns[key] = makeMaster(m.black, m.regular);
+    return masterFns[key](s);
+  }
+  if (ch === 'g') return offsetPath(REF22, Math.max(0, (107.4 - s) / 2.09), true);
+  return BUILD[ch] ? BUILD[ch](s) : null;
+}
+function nodeEdits(ch, variant) {
+  const g = DOC.glyphs[ch] || BAKED.glyphs[ch];
+  if (!g || !g.variants || !g.variants.length) return null;
+  const v = g.variants[variant == null ? (g.use || 0) : variant] || g.variants[0];
+  const has = o => o && Object.keys(o).length;
+  return has(v.light) || has(v.black) ? v : null;
+}
+function applyEdits(d, light, black, t) {
+  const subs = parsePath(d);
+  const L = light || {}, B = black || {};
+  let i = 0;
+  for (const sub of subs) {
+    const n = sub.length;
+    for (let j = 0; j < n; j++, i++) {
+      const el = L[i], eb = B[i];
+      if (!el && !eb) continue;
+      const dl = (el && el.d) || [0, 0], db = (eb && eb.d) || [0, 0];
+      const dx = dl[0] + (db[0] - dl[0]) * t, dy = dl[1] + (db[1] - dl[1]) * t;
+      const rl = el && el.r != null ? el.r : 1, rb = eb && eb.r != null ? eb.r : 1, r = rl + (rb - rl) * t;
+      const cur = sub[j], prev = sub[(j + n - 1) % n];
+      const p = cur[0], np = [p[0] + dx, p[1] + dy];
+      cur[0] = np; prev[3] = np;
+      if (cur[4] === 'C') cur[1] = [np[0] + (cur[1][0] - p[0]) * r, np[1] + (cur[1][1] - p[1]) * r];
+      else cur[1] = [np[0] + (cur[3][0] - np[0]) / 3, np[1] + (cur[3][1] - np[1]) / 3];
+      if (prev[4] === 'C') prev[2] = [np[0] + (prev[2][0] - p[0]) * r, np[1] + (prev[2][1] - p[1]) * r];
+      else prev[2] = [prev[0][0] + 2 * (np[0] - prev[0][0]) / 3, prev[0][1] + 2 * (np[1] - prev[0][1]) / 3];
+      if (cur[4] === 'L') cur[2] = [np[0] + 2 * (cur[3][0] - np[0]) / 3, np[1] + 2 * (cur[3][1] - np[1]) / 3];
+      if (prev[4] === 'L') prev[1] = [prev[0][0] + (np[0] - prev[0][0]) / 3, prev[0][1] + (np[1] - prev[0][1]) / 3];
+    }
+  }
+  return serializePath(subs);
+}
+// The outline the Studio, the page and the export all draw: the base at this stem with the
+// document's edits laid on. With no edits it is the base string itself, untouched.
+function outline(ch, s, variant) {
+  const d = basePath(ch, s);
+  if (!d) return null;
+  const v = nodeEdits(ch, variant);
+  if (!v) return d;
+  return applyEdits(d, v.light, v.black, Math.max(0, Math.min(1, (s - 53) / 53)));
+}
+// Any SVG path (absolute or relative M L H V C S Q T Z; arcs are skipped) → absolute
+// M / C / L / Z. Illustrator writes relative commands; this reads them exactly.
+function normalizeSVGPath(d) {
+  const tk = d.match(/[MmLlHhVvCcSsQqTtZzAa]|[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?/g) || [];
+  const subs = []; let seg = [], cur = null, start = null, prevC = null, cmd = null, i = 0;
+  const num = n => { const v = []; for (let k = 0; k < n; k++) v.push(+tk[i++]); return v; };
+  const line = (a, b) => seg.push([a, [a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3], [a[0] + 2 * (b[0] - a[0]) / 3, a[1] + 2 * (b[1] - a[1]) / 3], b, 'L']);
+  const close = () => { if (cur && start && (Math.abs(cur[0] - start[0]) > 1e-6 || Math.abs(cur[1] - start[1]) > 1e-6)) line(cur, start); if (seg.length) subs.push(seg); seg = []; cur = start; prevC = null; };
+  while (i < tk.length) {
+    if (/[A-Za-z]/.test(tk[i])) { cmd = tk[i++]; if (cmd === 'Z' || cmd === 'z') { close(); continue; } }
+    if (cmd == null) { i++; continue; }
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase();
+    if (C === 'M') { let [x, y] = num(2); if (rel && cur) { x += cur[0]; y += cur[1]; } if (seg.length) subs.push(seg); seg = []; cur = start = [x, y]; cmd = rel ? 'l' : 'L'; prevC = null; }
+    else if (C === 'L') { let [x, y] = num(2); if (rel) { x += cur[0]; y += cur[1]; } line(cur, [x, y]); cur = [x, y]; prevC = null; }
+    else if (C === 'H') { let [x] = num(1); if (rel) x += cur[0]; line(cur, [x, cur[1]]); cur = [x, cur[1]]; prevC = null; }
+    else if (C === 'V') { let [y] = num(1); if (rel) y += cur[1]; line(cur, [cur[0], y]); cur = [cur[0], y]; prevC = null; }
+    else if (C === 'C') { let [x1, y1, x2, y2, x, y] = num(6); if (rel) { x1 += cur[0]; y1 += cur[1]; x2 += cur[0]; y2 += cur[1]; x += cur[0]; y += cur[1]; } seg.push([cur, [x1, y1], [x2, y2], [x, y], 'C']); prevC = [x2, y2]; cur = [x, y]; }
+    else if (C === 'S') { let [x2, y2, x, y] = num(4); if (rel) { x2 += cur[0]; y2 += cur[1]; x += cur[0]; y += cur[1]; } const c1 = prevC ? [2 * cur[0] - prevC[0], 2 * cur[1] - prevC[1]] : cur; seg.push([cur, c1, [x2, y2], [x, y], 'C']); prevC = [x2, y2]; cur = [x, y]; }
+    else if (C === 'Q' || C === 'T') {
+      let qx, qy, x, y;
+      if (C === 'Q') { [qx, qy, x, y] = num(4); if (rel) { qx += cur[0]; qy += cur[1]; x += cur[0]; y += cur[1]; } }
+      else { [x, y] = num(2); if (rel) { x += cur[0]; y += cur[1]; } [qx, qy] = prevC ? [2 * cur[0] - prevC[0], 2 * cur[1] - prevC[1]] : cur; }
+      seg.push([cur, [cur[0] + 2 / 3 * (qx - cur[0]), cur[1] + 2 / 3 * (qy - cur[1])], [x + 2 / 3 * (qx - x), y + 2 / 3 * (qy - y)], [x, y], 'C']);
+      prevC = [qx, qy]; cur = [x, y];
+    }
+    else if (C === 'A') { const a = num(7); let x = a[5], y = a[6]; if (rel) { x += cur[0]; y += cur[1]; } line(cur, [x, y]); cur = [x, y]; prevC = null; }
+    else i++;
+  }
+  if (seg.length) subs.push(seg);
+  return serializePath(subs);
+}
+// A sheet path (SVG axis, cell origin ox / oy) → font units, as mapPath does in reverse.
+function toFontUnits(d, ox, oy) {
+  return serializePath(parsePath(d).map(sub => sub.map(([p0, c1, c2, p3, k]) => [p0, c1, c2, p3].map(p => [p[0] - ox, oy - p[1]]).concat([k]))));
+}
+function translatePath(d, dx, dy) {
+  return serializePath(parsePath(d).map(sub => sub.map(([p0, c1, c2, p3, k]) => [p0, c1, c2, p3].map(p => [p[0] + dx, p[1] + dy]).concat([k]))));
+}
+// Same point structure? (outline count, pieces per outline, curve-or-line order) — what
+// interpolation needs, and what "move points, never add or delete them" protects.
+function sameSkeleton(a, b) {
+  const A = parsePath(a), B = parsePath(b);
+  if (A.length !== B.length) return { ok: false, why: `${A.length} vs ${B.length} outlines` };
+  for (let i = 0; i < A.length; i++) {
+    if (A[i].length !== B[i].length) return { ok: false, why: `outline ${i + 1} has ${A[i].length} points, the current one ${B[i].length}` };
+    for (let j = 0; j < A[i].length; j++) if (A[i][j][4] !== B[i][j][4]) return { ok: false, why: `outline ${i + 1}, point ${j + 1}: a curve where a straight run was, or the reverse` };
+  }
+  return { ok: true, why: 'ok' };
+}
+
 // ── Studio-facing helpers ─────────────────────────────────────────────────────
 // One entry point per question the Studio asks, so the g / exclam special cases in
 // layout() and exportSVG() are stated once more here and nowhere else.
@@ -1300,6 +1443,7 @@ function weightName(s) {
 }
 function bearing(s) { const d = Math.max(0, (107.4 - s) / 2.09); return 47 + 0.28 * d; }
 function kindOf(ch) {
+  if (DOC.masters[ch]) return 'drawn';
   if (ch === 'g') return 'offset';
   for (const n in MASTERS) if (MASTERS[n].ch === ch) return 'drawn';
   return BUILD[ch] ? 'parametric' : null;
@@ -1308,12 +1452,12 @@ function kindOf(ch) {
 // (w) and both sidebearings at this stem. adv is the full box, lsb + w + rsb.
 function glyph(ch, s) {
   if (ch !== 'g' && !BUILD[ch]) return null;
-  let d, w, minX = 0;
+  let w, minX = 0;
+  const d = outline(ch, s);
   if (ch === 'g') {
     const off = Math.max(0, (107.4 - s) / 2.09), c = neckComp(off);
-    d = offsetPath(REF22, off, true); minX = 42.5 + off * c; w = 427.5 - off - off * c;
+    minX = 42.5 + off * c; w = 427.5 - off - off * c;
   } else {
-    d = BUILD[ch](s);
     minX = ch === '!' ? 4 - 0.03 * s : 0;
     w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
   }
@@ -1360,6 +1504,8 @@ function nodes(d) {
 
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes,
+  BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, outline,
+  normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,
   TUCK, NECK_TABLE, neckComp, inNeck, offsetPath, H_PATH, A_PATH, EXCL_PATH,
   WORD, KC, fx, TV, TVd, THr, THl, contour,

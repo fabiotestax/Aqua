@@ -204,3 +204,23 @@ td .g svg { height: 28px; width: auto; }
 .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
 .tabs b { font-weight: 500; padding: 6px 12px; border-radius: 8px; cursor: pointer; color: var(--sub); border: 1px solid transparent; }
 .tabs b.on { color: var(--ink); background: var(--panel); border-color: var(--line); }
+
+/* ── editing ── */
+.iconbtn.off { opacity: .35; pointer-events: none; }
+.c .edited { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.canvas .node { cursor: grab; }
+.canvas .node.sel { fill: var(--blue); stroke: var(--panel); }
+.canvas .halo { fill: var(--blue); fill-opacity: .14; pointer-events: none; }
+.canvas .before { fill: none !important; stroke: var(--bad); stroke-opacity: .8; pointer-events: none; }
+.canvas .snapline { stroke: var(--blue); stroke-opacity: .7; pointer-events: none; }
+.canvas svg { touch-action: none; user-select: none; cursor: default; }
+.canvas .hint { position: absolute; right: 18px; top: 14px; font-size: 12px; color: var(--sub); }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: -4px 0 12px; cursor: pointer; }
+.check input { accent-color: var(--blue); margin: 0; }
+.card.sel { border-color: var(--blue); background: var(--blue2); }
+.pad { display: grid; grid-template-columns: 34px 34px 34px; grid-template-areas: ". u ." "l d r" "n n n"; gap: 4px; margin-top: 8px; justify-content: center; }
+.pad b { display: flex; align-items: center; justify-content: center; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; font-weight: 500; user-select: none; }
+.pad b:nth-child(1) { grid-area: u; } .pad b:nth-child(2) { grid-area: l; } .pad b:nth-child(3) { grid-area: d; } .pad b:nth-child(4) { grid-area: r; }
+.pad small { grid-area: n; text-align: center; color: var(--sub); font-size: 11px; margin-top: 2px; }
+.drop.over { border-color: var(--blue); background: var(--blue2); }
+td.bad { color: var(--bad); }

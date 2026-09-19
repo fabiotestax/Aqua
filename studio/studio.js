@@ -3,7 +3,7 @@
 // window.AquaEngine draws, window.AquaHealth judges, this file only shows.
 (() => {
 'use strict';
-const E = window.AquaEngine, H = window.AquaHealth;
+const E = window.AquaEngine, H = window.AquaHealth, D = window.AquaDoc;
 const $ = (sel, el = document) => el.querySelector(sel);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const r1 = v => Math.round(v * 10) / 10, r0 = v => Math.round(v);
@@ -45,11 +45,12 @@ const isDark = () => document.documentElement.getAttribute('data-theme') === 'da
 // one baseline (tails to −250, tall letters to 780) so a row of them lines up.
 function glyphSVG(ch, s, o = {}) {
   const g = E.glyph(ch, s); if (!g) return '';
-  const b = E.bbox(g.d), pad = o.pad ?? 12;
+  const dd = o.d || g.d;
+  const b = E.bbox(dd), pad = o.pad ?? 12;
   const x0 = b.xmin - pad, x1 = b.xmax + pad;
   const y0 = o.box === 'metrics' ? -250 : b.ymin - pad, y1 = o.box === 'metrics' ? 780 : b.ymax + pad;
   const style = o.h ? ` style="height:${o.h}px"` : '';
-  return `<svg viewBox="${r1(x0)} ${r1(-y1)} ${r1(x1 - x0)} ${r1(y1 - y0)}"${style} ${o.attrs || ''}><g transform="scale(1,-1)"><path d="${g.d}" fill-rule="evenodd"/></g></svg>`;
+  return `<svg viewBox="${r1(x0)} ${r1(-y1)} ${r1(x1 - x0)} ${r1(y1 - y0)}"${style} ${o.attrs || ''}><g transform="scale(1,-1)"><path d="${dd}" fill-rule="evenodd"/></g></svg>`;
 }
 // A line of text, laid out by the engine with its own spacing and pairs.
 function lineSVG(text, s, o = {}) {
@@ -82,12 +83,22 @@ function renderTop() {
       <span>${E.ORDER.length} letters · ${drawn} drawn by you</span>
       <span>offline</span>
       <span><i class="dot ${o.cls}"></i>${o.text}</span>
+      <span id="docstate" title="${esc(D.lastLabel())}">${D.changeCount() ? `${D.changeCount()} change${D.changeCount() > 1 ? 's' : ''}${D.dirty() ? ' · not saved to a file' : ' · saved'}` : 'no changes'}</span>
+      <button class="iconbtn ${D.canUndo() ? '' : 'off'}" id="undo" title="Undo${D.canUndo() ? ' · ' + esc(D.lastLabel()) : ''}"><svg viewBox="0 0 20 20"><path d="M8 5L4 9l4 4M4 9h8a4 4 0 0 1 0 8h-2"/></svg></button>
+      <button class="iconbtn ${D.canRedo() ? '' : 'off'}" id="redo" title="Redo"><svg viewBox="0 0 20 20"><path d="M12 5l4 4-4 4M16 9H8a4 4 0 0 0 0 8h2"/></svg></button>
+      <button class="iconbtn" id="save" title="Save your changes to a file"><svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></button>
+      <button class="iconbtn" id="open" title="Open a saved file"><svg viewBox="0 0 20 20"><path d="M10 13V3M6 7l4-4 4 4M4 16h12"/></svg></button>
+      <input type="file" id="openfile" accept=".json,application/json" style="display:none">
       <button class="iconbtn" id="theme" title="Light / dark">${isDark()
         ? '<svg viewBox="0 0 20 20"><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/><path d="M10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>'
         : '<svg viewBox="0 0 20 20"><path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"/></svg>'}</button>
     </div>`;
   $('#rooms').onclick = e => { const b = e.target.closest('[data-room]'); if (b) go(b.dataset.room); };
   $('#theme').onclick = () => { S.theme = isDark() ? 'light' : 'dark'; save('theme', S.theme); applyTheme(); renderTop(); renderRoom(); };
+  $('#undo').onclick = () => D.undo(); $('#redo').onclick = () => D.redo();
+  $('#save').onclick = () => D.download();
+  $('#open').onclick = () => $('#openfile').click();
+  $('#openfile').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { D.openText(t); } catch (err) { alert('That is not a Studio file: ' + err.message); } }); e.target.value = ''; };
 }
 function go(room) { S.room = room; save('room', room); renderTop(); renderRoom(); }
 function setStem(s) { S.stem = Math.max(53, Math.min(106, Math.round(s))); save('stem', S.stem); renderRoom(); }
@@ -116,92 +127,8 @@ function renderRoom() {
   window.studioReady = true;
 }
 
-// Glyphs — the blueprint's screen 1, view only.
-function Glyphs(root) {
-  root.classList.add('three');
-  const ch = S.glyph, s = S.stem, g = E.glyph(ch, s), rep = S.health[ch], b = E.bbox(g.d);
-  const nodes = E.nodes(g.d), nPts = nodes.reduce((n, sub) => n + sub.length, 0);
-  // canvas geometry: the letter's box plus air, tails to −330 and tall letters to 830
-  const vx0 = Math.min(-g.lsb, b.xmin) - 150, vx1 = Math.max(g.w + g.rsb, b.xmax) + 150, vy0 = -330, vy1 = 830;
-  const GUIDES = [['Tall letters', 751], ['Capitals', 715], ['Small letters', 521], ['Baseline', 0], ['Tails', -230]];
-  const tool = (name, icon, on, off) => `<div class="t ${on ? 'on' : ''} ${off ? 'off' : ''}" title="${off ? 'Editing arrives in the next build' : ''}">${icon}${name}</div>`;
-  root.innerHTML = `
-    <aside class="side">
-      <input class="search" placeholder="Search letters…" value="${esc(S.search)}" id="search">
-      <h6>Letters</h6>
-      <div class="matrix" id="matrix">${E.ORDER.split('').map(c => {
-        const h = S.health[c].colour, hide = S.search && !c.toLowerCase().includes(S.search.toLowerCase()) && !(E.GNAME[c] || '').includes(S.search.toLowerCase());
-        return `<div class="c h-${h} ${c === ch ? 'on' : ''} ${hide ? 'hide' : ''}" data-ch="${esc(c)}" title="${shown(c)} · ${H.LABEL[h]}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}</div>`; }).join('')}</div>
-      <div class="key"><i style="background:var(--ok)"></i>looks good &nbsp; <i style="background:var(--warn)"></i>needs a look &nbsp; <i style="background:var(--bad)"></i>not Aqua</div>
-      <h6>Variations of ${shown(ch)}</h6>
-      <div class="var on"><span>${shown(ch)}</span><span>main</span></div>
-      <div class="var new" title="Arrives with editing, in the next build"><span>+ New variation</span><span></span></div>
-    </aside>
-    <div class="canvas" id="canvas">
-      <svg viewBox="${r1(vx0)} ${-vy1} ${r1(vx1 - vx0)} ${vy1 - vy0}" preserveAspectRatio="xMidYMid meet">
-        <defs><pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1.1" fill="var(--dots)"/></pattern></defs>
-        <g transform="scale(1,-1)">
-          <rect x="${r1(vx0) - 400}" y="${vy0 - 400}" width="${r1(vx1 - vx0) + 800}" height="${vy1 - vy0 + 800}" fill="url(#dots)"/>
-          ${GUIDES.map(([n, y]) => `<line class="guide ${y === 0 ? 'base' : ''}" x1="${r1(vx0) - 400}" x2="${r1(vx1) + 400}" y1="${y}" y2="${y}"/>`).join('')}
-          <line class="boxline" x1="${r1(-g.lsb)}" x2="${r1(-g.lsb)}" y1="-260" y2="790"/>
-          <line class="boxline" x1="${r1(g.w + g.rsb)}" x2="${r1(g.w + g.rsb)}" y1="-260" y2="790"/>
-          <path class="skin" d="${g.d}" fill-rule="evenodd"/>
-          <g>${nodes.map(sub => sub.map((p, i) => `<circle class="node ${i === 0 ? 'start' : ''}" cx="${r1(p[0])}" cy="${r1(p[1])}" r="7.5"/>`).join('')).join('')}</g>
-        </g>
-      </svg>
-      <div class="crumb"><b>${shown(ch)}</b> &nbsp;·&nbsp; ${E.weightName(s)} &nbsp;·&nbsp; ${nPts} points &nbsp;·&nbsp; ${KIND[g.kind].toLowerCase()}</div>
-      ${GUIDES.map(([n, y]) => `<div class="pill" data-y="${y}">${n}</div>`).join('')}
-      <div class="tools">
-        ${tool('Select', '<svg viewBox="0 0 20 20"><path d="M4 3l12 7-5 1-3 5z"/></svg>', true, false)}
-        ${tool('Add drop', '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6"/></svg>', false, true)}
-        ${tool('Connect', '<svg viewBox="0 0 20 20"><circle cx="5" cy="14" r="2.5"/><circle cx="15" cy="6" r="2.5"/><path d="M7 12l6-4"/></svg>', false, true)}
-        ${tool('Move', '<svg viewBox="0 0 20 20"><path d="M10 3v14M3 10h14"/></svg>', false, true)}
-        ${tool('Nudge', '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="3"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3"/></svg>', false, true)}
-        ${tool('Compare', '<svg viewBox="0 0 20 20"><rect x="3" y="4" width="6" height="12"/><rect x="11" y="4" width="6" height="12"/></svg>', false, true)}
-      </div>
-      <div class="preview">
-        <div class="pv"><div class="box">${glyphSVG(ch, s, { box: 'metrics' })}</div>Final</div>
-        <div class="pv blur"><div class="box">${glyphSVG(ch, s, { box: 'metrics' })}</div>Squint</div>
-        <div class="pv neg"><div class="box">${glyphSVG(ch, s, { box: 'metrics' })}</div>Negative</div>
-      </div>
-    </div>
-    <aside class="insp">
-      ${weightPicker()}
-      <h6>This letter</h6>
-      <div class="card" style="margin-top:0">
-        <div class="kv"><span>Made</span><span class="ink">${KIND[g.kind]}</span></div>
-        <div class="kv"><span>Width</span><span>${r0(g.w)} units</span></div>
-        <div class="kv"><span>Room on the left</span><span>${r0(g.lsb)} units</span></div>
-        <div class="kv"><span>Room on the right</span><span>${r0(g.rsb)} units</span></div>
-        <div class="kv"><span>Points</span><span>${nPts} in ${nodes.length} outline${nodes.length > 1 ? 's' : ''}</span></div>
-        <div class="kv"><span>Ink reaches</span><span>${r0(b.ymin)} to ${r0(b.ymax)}</span></div>
-      </div>
-      <p class="small sub" style="margin:0 0 6px">${KIND_LONG[g.kind]}</p>
-      <div class="btn pri off" title="Editing arrives in the next build">Apply to all weights</div>
-      <div class="btn off" title="Editing arrives in the next build">Save as a variation</div>
-      <div class="btn off" title="Editing arrives in the next build">Start this letter over</div>
-      ${healthLines(rep)}
-    </aside>
-    <div class="bottom">
-      ${E.WEIGHTS.map(w => `<div class="wt ${w.stem === s ? 'on' : ''} ${w.master ? '' : 'off'}" data-stem="${w.stem}" title="${w.master ? 'Drawn' : 'Planned — a blend of Light and Black for now'}">${glyphSVG(ch, w.stem, { box: 'metrics' })}<small>${w.name}${w.master ? '' : ' · planned'}</small></div>`).join('')}
-      <div class="note">Light and Black are drawn. Regular is a blend of the two until it gets its own drawing. Every change will show up in all three here.</div>
-    </div>`;
-  bindWeightPicker(root);
-  $('#matrix').onclick = e => { const c = e.target.closest('[data-ch]'); if (c) setGlyph(c.dataset.ch); };
-  $('#search').oninput = e => { S.search = e.target.value; root.querySelectorAll('#matrix .c').forEach(c => {
-    const k = c.dataset.ch, hit = !S.search || k.toLowerCase().includes(S.search.toLowerCase()) || (E.GNAME[k] || '').includes(S.search.toLowerCase());
-    c.classList.toggle('hide', !hit); }); };
-  root.querySelectorAll('.bottom .wt').forEach(w => w.onclick = () => setStem(+w.dataset.stem));
-  positionPills();
-}
-// The guide names are HTML pills laid over the SVG; place them on their lines in pixels.
-function positionPills() {
-  const cv = $('#canvas'); if (!cv) return;
-  const svg = $('svg', cv), vb = svg.viewBox.baseVal, W = cv.clientWidth, Hh = cv.clientHeight;
-  const k = Math.min(W / vb.width, Hh / vb.height), oy = (Hh - vb.height * k) / 2;
-  cv.querySelectorAll('.pill').forEach(p => { p.style.top = (oy + (-(+p.dataset.y) - vb.y) * k) + 'px'; });
-}
-addEventListener('resize', positionPills);
+// Glyphs — the editor (studio/editor.js).
+function Glyphs(root) { window.AquaEditor.room(root); }
 
 // Weights — the family, the axis, and whether every letter survives it.
 function Weights(root) {
@@ -210,7 +137,7 @@ function Weights(root) {
   root.innerHTML = `<div class="main">
     <h1 class="title">Weights</h1>
     <p class="lead">One axis, from Light to Black. Light and Black are the two drawn weights; everything between them is made live. Scrub the thickness and watch the whole set follow.</p>
-    <div class="banner info"><span>?</span><span><b>Open with Fabio:</b> is the thinner drawing (thickness 53) the <b>Light</b>? If yes, Regular becomes a new drawing near thickness 78, so the family is Light · Regular · Black. That is the recommended reading and what the Studio shows for now.</span></div>
+    <div class="banner info"><span>✓</span><span><b>Settled:</b> the thinner drawing (thickness 53) is the <b>Light</b>. Regular will be a new drawing near thickness 78; until then it is a blend of Light and Black. The family is Light · Regular · Black.</span></div>
     <div class="panel">
       <div class="row" style="margin:0 0 18px"><label>Thickness</label><input type="range" min="53" max="106" step="1" value="${s}" data-act="stem"><div class="v">${s}</div><span class="sub small" style="width:90px">${E.weightName(s)}</span></div>
       <div class="line">${lineSVG('hamburgefontsiv', s)}</div>
@@ -311,23 +238,103 @@ function Test(root) {
   root.querySelectorAll('[data-word]').forEach(w => w.onclick = () => { S.text = w.dataset.word; save('text', S.text); renderRoom(); });
 }
 
-// Import — the round trip back in. The drop zone arrives with editing; the diff is live now.
+// Import — the round trip back in: drop the sheet, see what changed, bring it in.
+const IM = { files: [], rows: null, weight: null, err: null };
 function Import(root) {
   root.classList.add('one');
   const diffs = S.diffs;
+  const rows = IM.rows;
   root.innerHTML = `<div class="main">
     <h1 class="title">Import</h1>
-    <p class="lead">Bring a drawing back in. Today that is the SVG round trip: a sheet goes out from Export, you move points in Illustrator, and the sheet comes back here. Dropping files onto this page arrives in the next build; the comparison below is already live.</p>
-    <div class="drop"><b>Drop an SVG here</b>Arrives in the next build. For now, save the returned files into <code>aqua/masters/</code> and they show up below.</div>
+    <p class="lead">Bring a drawing back in. Export a sheet, move points in Illustrator (never add or delete them), save as plain SVG, and drop the file here. The Studio reads which letters changed and lets you bring them in as drawn weights.</p>
+    <div class="drop" id="drop"><b>Drop an SVG sheet here</b>or <a href="#" id="browse">choose a file</a>. Black and Light sheets can be dropped together.<input type="file" id="svgfile" accept=".svg,image/svg+xml" multiple style="display:none"></div>
+    ${IM.err ? `<div class="banner warn" style="margin-top:14px"><span>!</span><span>${esc(IM.err)}</span></div>` : ''}
+    ${rows ? rows.map(r => `<div class="panel" style="margin-top:18px">
+      <div class="kv" style="margin:0 0 6px"><span style="font-weight:600;color:var(--ink)">${esc(r.file)}</span><span>${r.weight ? (r.weight === 'black' ? 'Black · thickness 106' : 'Light · thickness 53') : 'weight unknown'} · ${r.items.length} letters found</span></div>
+      ${r.weight ? '' : `<div class="row" style="margin:0 0 10px"><label>Which weight is this?</label><span class="seg s" data-file="${esc(r.file)}"><b data-w="black">Black</b><b data-w="regular">Light</b></span></div>`}
+      <table><thead><tr><th>Letter</th><th>Your drawing</th><th>What the Studio has</th><th>Difference</th><th>Bring in</th></tr></thead><tbody>
+      ${r.items.map(it => `<tr>
+        <td><b>${esc(it.label)}</b><br><span class="sub small">${it.points} points</span></td>
+        <td><span class="g">${pathSVG(it.d)}</span></td>
+        <td><span class="g">${pathSVG(it.mine)}</span></td>
+        <td class="${it.ok ? '' : 'bad'}">${esc(it.note)}</td>
+        <td>${it.ok && it.changed ? `<input type="checkbox" data-file="${esc(r.file)}" data-ch="${esc(it.ch)}" checked>` : ''}</td></tr>`).join('')}</tbody></table>
+      <div class="btn pri inline" data-bring="${esc(r.file)}" style="margin-top:14px">Bring the ticked letters in</div>
+      <div class="btn inline" data-discard="${esc(r.file)}" style="margin-top:14px">Discard</div>
+    </div>`).join('') : ''}
     <div class="grid2" style="margin-top:18px">
       <div class="panel tight"><h6>Four rules for the round trip</h6><ol class="small" style="margin:0;padding-left:18px;line-height:1.7"><li>Keep each path's name — that is how a drawing finds its letter.</li><li>Keep each letter inside its own cell. Moving it within the cell changes its room, which is fine.</li><li>Flatten before saving so the path carries no transform.</li><li>Save as plain SVG and ignore the guides layer. <b>Move points, never add or delete them.</b></li></ol></div>
-      <div class="panel tight"><h6>What came back last time</h6><p class="small" style="margin:0">${diffs ? `${diffs.length} letters differ from what the rules draw, or were carried over from the other weight. Fifteen of them are already in as drawn masters. B still needs both weights drawn on the same points.` : 'Reading the returned files…'}</p></div>
+      <div class="panel tight"><h6>What a drawing becomes</h6><p class="small" style="margin:0">A letter you bring in stops following the rules and becomes a drawn weight, like the fifteen already in. Bring in one weight and the other stays as it is, so the axis still has two matching drawings. Bring in both for the change to hold across the range. "Forget the imported drawing" in the Glyphs room takes it back out.</p></div>
     </div>
-    <div class="panel"><h6>Your drawing (filled) against what the rules draw (outline)</h6>
+    <div class="panel"><h6>The last round (already in)</h6>
+      <p class="small sub" style="margin:0 0 8px">${diffs ? `The two sheets that came back in September. ${diffs.length} letters differ from what the rules draw or were carried over from the other weight; all but B are in as drawn weights.` : 'Reading the returned files…'}</p>
       ${diffs ? diffs.map(d => `<div class="diffrow"><div class="name">${esc(d.name === 'B.cap' ? 'B' : d.name)}<small>${esc(d.devLabel === 'identical' ? 'identical' : d.devLabel + ' moved')}</small></div>
-        ${['black', 'regular'].map(k => `<div><svg viewBox="${d.vb}" preserveAspectRatio="xMidYMid meet"><g transform="${d.shift}"><path d="${d[k + 'Theirs']}" fill-rule="evenodd"/></g><path class="mine" d="${d[k + 'Mine']}" fill-rule="evenodd"/></svg><div class="cap">${k === 'black' ? 'Black' : 'Light'} · ${esc(d[k + 'DevLabel'])}</div></div>`).join('')}</div>`).join('') : '<p class="sub small">Reading…</p>'}
+        ${['black', 'regular'].map(k => `<div><svg viewBox="${d.vb}" preserveAspectRatio="xMidYMid meet"><g transform="${d.shift}"><path d="${d[k + 'Theirs']}" fill-rule="evenodd"/></g><path class="mine" d="${d[k + 'Mine']}" fill-rule="evenodd"/></svg><div class="cap">${k === 'black' ? 'Black' : 'Light'} · ${esc(d[k + 'DevLabel'])}</div></div>`).join('')}</div>`).join('') : ''}
     </div>
   </div>`;
+  const drop = $('#drop'), input = $('#svgfile');
+  $('#browse').onclick = e => { e.preventDefault(); input.click(); };
+  input.onchange = e => { readSheets([...e.target.files]); e.target.value = ''; };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); readSheets([...e.dataTransfer.files]); };
+  root.querySelectorAll('[data-file] b[data-w]').forEach(b => b.onclick = () => { const r = IM.rows.find(x => x.file === b.closest('[data-file]').dataset.file); r.weight = b.dataset.w; compareRows(r); renderRoom(); });
+  root.querySelectorAll('[data-bring]').forEach(b => b.onclick = () => {
+    const r = IM.rows.find(x => x.file === b.dataset.bring); if (!r.weight) { IM.err = 'Say which weight this sheet is first.'; renderRoom(); return; }
+    const picked = [...root.querySelectorAll(`input[type=checkbox][data-file="${CSS.escape(r.file)}"]:checked`)].map(i => i.dataset.ch);
+    let n = 0; const fails = [];
+    for (const ch of picked) { const it = r.items.find(x => x.ch === ch); const res = D.importMaster(ch, r.weight, it.d); if (res.ok) n++; else fails.push(`${shown(ch)}: ${res.why}`); }
+    IM.rows = IM.rows.filter(x => x !== r); IM.err = fails.length ? 'Could not bring in ' + fails.join('; ') : null;
+    D.commit(`Bring in ${n} drawing${n === 1 ? '' : 's'} from ${r.file}`);
+  });
+  root.querySelectorAll('[data-discard]').forEach(b => b.onclick = () => { IM.rows = IM.rows.filter(x => x.file !== b.dataset.discard); renderRoom(); });
+}
+function pathSVG(d) { if (!d) return ''; const b = E.bbox(d); if (!b) return ''; return `<svg viewBox="${r1(b.xmin - 10)} ${r1(-780)} ${r1(b.xmax - b.xmin + 20)} ${r1(780 + 250)}" style="height:56px;width:auto"><g transform="scale(1,-1)"><path d="${d}" fill-rule="evenodd"/></g></svg>`; }
+// Read dropped sheets: find each glyph path, map it into font units from its cell, compare.
+function readSheets(files) {
+  IM.err = null;
+  const svgs = files.filter(f => /\.svg$/i.test(f.name) || f.type === 'image/svg+xml');
+  if (!svgs.length) { IM.err = 'That is not an SVG file.'; renderRoom(); return; }
+  Promise.all(svgs.map(f => f.text().then(t => ({ name: f.name, text: t })))).then(list => {
+    IM.rows = IM.rows || [];
+    for (const { name, text } of list) {
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      const paths = [...doc.querySelectorAll('path[id^="glyph."]')];
+      if (!paths.length) { IM.err = `${name}: no letters found — the paths need their glyph.<name> ids.`; continue; }
+      const m = /stem\s+(\d+)u/.exec(text) || /(\d{2,3})/.exec(name);
+      const stem = m ? +m[1] : null;
+      const weight = stem === 106 ? 'black' : stem === 53 ? 'regular' : null;
+      const byName = {}; for (const ch of E.ORDER) byName[E.GNAME[ch] || ch] = ch;
+      const v1 = !!doc.querySelector('path[id="glyph.zero"]') || paths.length > 30;
+      const cells = E.cellOrigins(v1 ? E.ORDER_V1 : E.ORDER);
+      const items = [];
+      for (const p of paths) {
+        const gname = p.id.slice(6), ch = byName[gname]; if (!ch) continue;
+        const cell = cells[gname]; if (!cell) continue;
+        const raw = E.toFontUnits(E.normalizeSVGPath(p.getAttribute('d') || ''), cell.ox, cell.oy);
+        items.push({ ch, label: shown(ch), raw, points: E.nodes(raw).reduce((n, s) => n + s.length, 0) });
+      }
+      const row = { file: name, weight, items };
+      if (weight) compareRows(row);
+      IM.rows = IM.rows.filter(x => x.file !== name).concat([row]);
+    }
+    renderRoom();
+  });
+}
+function compareRows(r) {
+  const stem = r.weight === 'black' ? 106 : 53;
+  for (const it of r.items) {
+    // the sheet placed the ink at the cell edge (export shifts by the letter's left ink edge); undo that
+    it.d = E.translatePath(it.raw, E.glyph(it.ch, stem).minX, 0);
+    // compare with the letter as it is now — the sheet went out with every Studio edit in it
+    const mine = E.serializePath(E.parsePath(E.outline(it.ch, r.weight === 'black' ? 106 : 53)));
+    it.mine = mine;
+    const chk = E.sameSkeleton(it.d, mine);
+    if (!chk.ok) { it.ok = false; it.changed = true; it.note = 'Cannot bring in — ' + chk.why; continue; }
+    const A = E.samplePath(it.d, 0, 0), B = E.samplePath(mine, 0, 0);
+    const dev = Math.max(E.devOneWay(A, B), E.devOneWay(B, A));
+    it.ok = true; it.changed = dev >= 1; it.note = dev < 1 ? 'unchanged' : `${Math.round(dev)} units moved`;
+  }
 }
 
 // Export — the SVG round trip out, plus where the font build will go.
@@ -338,7 +345,7 @@ function Export(root) {
   const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sheet);
   root.innerHTML = `<div class="main">
     <h1 class="title">Export</h1>
-    <p class="lead">Every letter goes out as one plain path on a ruled sheet, ready for Illustrator. Edit both drawn weights if you want a change to hold across the whole range.</p>
+    <p class="lead">Every letter goes out as one plain path on a ruled sheet, ready for Illustrator, with every change you have made in the Studio included. Edit both drawn weights if you want a change to hold across the whole range.</p>
     <div class="panel">
       <h6>SVG sheet</h6>
       <div class="btn pri inline" data-dl="106">Black · thickness 106</div>
@@ -423,11 +430,20 @@ function Health(root) {
 }
 
 // ── boot ──────────────────────────────────────────────────────────────────────
+window.AquaStudio = { S, go, setStem, setGlyph, render: renderRoom, renderRoom, renderTop, glyphSVG, lineSVG, weightPicker, bindWeightPicker, healthLines, KIND, KIND_LONG, shown, esc };
 applyTheme();
+D.init();
 computeHealth();
 renderTop(); renderRoom();
+D.onChange(() => { computeHealth(); renderTop(); renderRoom(); });
+addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) D.redo(); else D.undo(); return; }
+  if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); D.download(); return; }
+  if (window.AquaEditor && window.AquaEditor.keydown(e)) e.preventDefault();
+});
+addEventListener('beforeunload', e => { if (D.dirty() && D.changeCount()) { e.preventDefault(); e.returnValue = ''; } });
 fetch('../tools/hand.json').then(r => r.ok ? r.json() : null).then(h => { if (h) { S.hand = h; computeHealth(); renderTop(); renderRoom(); } }).catch(() => {});
 fetch('../aqua/masters/edited-paths.json').then(r => r.ok ? r.json() : null).then(ed => { if (ed) { S.edited = ed; S.diffs = E.buildDiffs(ed); if (S.room === 'Import') renderRoom(); } }).catch(() => {});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderTop(); renderRoom(); });
-window.AquaStudio = { S, go, setStem, setGlyph, render: renderRoom };
 })();
