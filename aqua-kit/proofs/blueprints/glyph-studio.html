@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Aqua Studio — Glyph Studio blueprint</title>
+<style>
+  :root{--paper:#f5f3ef;--ink:#141414;--mute:#8a867f;--line:#d9d5cd;--panel:#fbfaf7;--accent:#c8362e;--node:#1f6fd6;--ok:#2a8f5a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#e9e6e0;font:14px/1.4 -apple-system,Inter,Helvetica,Arial,sans-serif;color:var(--ink)}
+  .app{width:1600px;height:1000px;background:var(--paper);display:grid;grid-template-rows:56px 1fr 150px;grid-template-columns:230px 1fr 340px;margin:0 auto}
+  .top{grid-column:1/4;display:flex;align-items:center;border-bottom:1px solid var(--line);padding:0 20px;gap:28px}
+  .logo{font-weight:700;letter-spacing:.14em;font-size:13px}
+  .logo small{font-weight:400;color:var(--mute);letter-spacing:.06em;margin-left:8px}
+  .tabs{display:flex;gap:4px}
+  .tab{padding:8px 14px;border-radius:8px;color:var(--mute);font-size:13px}
+  .tab.on{background:var(--ink);color:#fff}
+  .status{margin-left:auto;color:var(--mute);font-size:12px;display:flex;gap:18px}
+  .status b{color:var(--ok)}
+  .side{border-right:1px solid var(--line);padding:16px;overflow:hidden}
+  .side h4,.insp h4{margin:0 0 10px;font-size:11px;letter-spacing:.12em;color:var(--mute);text-transform:uppercase}
+  .matrix{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#c9c5bd;background:#fff}
+  .cell.done{color:var(--ink);border-color:#bdb8ae;font-weight:600}
+  .cell.sel{outline:2px solid var(--node);outline-offset:-2px}
+  .cell.gen{color:var(--accent);border-style:dashed}
+  .legend{margin-top:12px;font-size:11px;color:var(--mute);line-height:1.7}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .alts{margin-top:16px}
+  .alt{display:flex;justify-content:space-between;padding:6px 8px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;background:#fff;font-size:12px}
+  .alt.on{border-color:var(--node)}
+  .canvas{position:relative;overflow:hidden}
+  .canvas svg{width:100%;height:100%}
+  .hud{position:absolute;left:16px;top:12px;font-size:12px;color:var(--mute)}
+  .hud b{color:var(--ink)}
+  .tools{position:absolute;left:16px;bottom:12px;display:flex;gap:6px}
+  .tool{padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;font-size:12px;color:var(--mute)}
+  .tool.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .insp{border-left:1px solid var(--line);padding:16px;background:var(--panel);overflow:hidden;font-size:13px}
+  .masters{display:flex;gap:4px;margin-bottom:14px}
+  .m{flex:1;text-align:center;padding:6px 0;border:1px solid var(--line);border-radius:6px;font-size:11px;color:var(--mute);background:#fff}
+  .m.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .m.it{flex:.9;font-style:italic}
+  .row{display:flex;align-items:center;justify-content:space-between;margin:9px 0}
+  .row label{color:var(--mute);font-size:12px}
+  .slider{flex:1;margin:0 12px;height:4px;background:#ddd9d0;border-radius:2px;position:relative}
+  .slider i{position:absolute;top:-5px;width:14px;height:14px;border-radius:50%;background:#fff;border:1.5px solid var(--ink)}
+  .val{width:44px;text-align:right;font-variant-numeric:tabular-nums}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:12px}
+  .seg span{padding:5px 10px;color:var(--mute);background:#fff}
+  .seg span.on{background:var(--ink);color:#fff}
+  .delta{border:1px dashed var(--accent);border-radius:8px;padding:10px;margin:12px 0;background:#fff}
+  .delta h5{margin:0 0 6px;font-size:11px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+  .btns{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  .btn{padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:#fff;font-size:12px;text-align:center}
+  .btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .qa{margin-top:14px;font-size:12px;line-height:1.8;border-top:1px solid var(--line);padding-top:10px}
+  .qa b{color:var(--ok)}
+  .bottom{grid-column:1/4;border-top:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:24px}
+  .bottom .w{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mute);font-size:11px}
+  .bottom .w svg{height:78px}
+  .bottom .w.pending{opacity:.32}
+  .bottom .cap{margin-left:auto;font-size:12px;color:var(--mute);max-width:300px;text-align:right}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">AQUA STUDIO <small>the logotype · Aqua Sans</small></div>
+    <div class="tabs">
+      <div class="tab on">Glyph Studio</div><div class="tab">Family</div><div class="tab">Kerning</div>
+      <div class="tab">Testing</div><div class="tab">Import</div><div class="tab">Export</div>
+      <div class="tab">Docs</div><div class="tab">Control</div>
+    </div>
+    <div class="status"><span>v0.1 · 7 glyphs</span><span>local · offline</span><span>health <b>● OK</b></span></div>
+  </div>
+
+  <div class="side">
+    <h4>Glyph matrix</h4>
+    <div class="matrix">
+      <div class="cell done">B</div><div class="cell done">l</div><div class="cell done">e</div><div class="cell done">p</div><div class="cell done">h</div><div class="cell done">a</div>
+      <div class="cell done sel">g</div><div class="cell gen">L</div><div class="cell">o</div><div class="cell">c</div><div class="cell">b</div><div class="cell">d</div>
+      <div class="cell">q</div><div class="cell">n</div><div class="cell">m</div><div class="cell">r</div><div class="cell">u</div><div class="cell">v</div>
+      <div class="cell">w</div><div class="cell">x</div><div class="cell">y</div><div class="cell">k</div><div class="cell">i</div><div class="cell">j</div>
+      <div class="cell">f</div><div class="cell">t</div><div class="cell">s</div><div class="cell">z</div><div class="cell">0</div><div class="cell">1</div>
+      <div class="cell">A</div><div class="cell">D</div><div class="cell">fi</div><div class="cell">é</div><div class="cell">ã</div><div class="cell">⚓</div>
+    </div>
+    <div class="legend">
+      <i style="background:#bdb8ae"></i>drawn &nbsp; <i style="border:1px dashed #c8362e"></i>missing → generate<br>
+      <i style="background:#c9c5bd"></i>planned &nbsp; <i style="border:2px solid #1f6fd6"></i>open
+    </div>
+    <div class="alts">
+      <h4>Alternates · g</h4>
+      <div class="alt on"><span>g</span><span>master</span></div>
+      <div class="alt"><span>g.alt01</span><span>open tail</span></div>
+      <div class="alt" style="color:#8a867f"><span>+ new alternate</span><span></span></div>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <svg viewBox="-230 -790 1060 1120">
+      <defs>
+        <pattern id="dots" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1.2" fill="#cfcac0"/></pattern>
+      </defs>
+      <g transform="scale(1,-1)">
+        <rect x="-400" y="-500" width="1600" height="1600" fill="url(#dots)"/>
+        <!-- construction guides -->
+        <g stroke="#b9b3a7" stroke-width="1">
+          <line x1="-400" x2="1200" y1="720" y2="720" stroke-dasharray="4 4"/>
+          <line x1="-400" x2="1200" y1="700" y2="700"/>
+          <line x1="-400" x2="1200" y1="540" y2="540"/>
+          <line x1="-400" x2="1200" y1="0" y2="0" stroke="#8a867f" stroke-width="1.4"/>
+          <line x1="-400" x2="1200" y1="-220" y2="-220"/>
+        </g>
+        <!-- outline (generated skin) -->
+        <path d="M320 -171Q279 -175 240.0 -173.5Q201 -172 163 -159Q138 -151 114.5 -136.0Q91 -121 78 -98Q63 -72 63 -39Q63 -28 65.5 -17.5Q68 -7 75 0Q83 9 97.0 13.0Q111 17 123.5 22.5Q136 28 142 39Q144 44 144 49Q146 66 126.0 72.0Q106 78 88 87Q76 93 68 101Q51 119 52.0 147.5Q53 176 70 194Q81 205 95.5 212.0Q110 219 123 228Q130 232 134.5 237.0Q139 242 139 248Q140 255 134 265Q126 277 113.5 286.0Q101 295 91 305Q74 325 73.5 353.5Q73 382 80 410Q84 426 90.5 441.0Q97 456 107 468Q134 503 181.0 516.5Q228 530 275 528Q315 526 349.5 512.5Q384 499 408 470Q430 444 440.0 408.0Q450 372 444 339Q439 310 421.5 285.5Q404 261 378 245Q334 217 283 217Q266 217 249.5 219.5Q233 222 217 222Q201 223 186.0 219.5Q171 216 161 205Q153 196 148.5 184.5Q144 173 143 161Q141 140 152 125Q157 118 165.0 112.0Q173 106 181 102Q207 90 235.5 91.0Q264 92 292.5 95.5Q321 99 350 96Q382 92 410.5 74.5Q439 57 458.0 31.0Q477 5 480 -27Q482 -54 471.0 -82.0Q460 -110 441 -129Q418 -151 385.5 -159.5Q353 -168 320 -171ZM260 465Q225 465 200.5 438.5Q176 412 176 375Q176 338 200.5 311.5Q225 285 260 285Q295 285 319.5 311.5Q344 338 344 375Q344 412 319.5 438.5Q295 465 260 465ZM271 28Q228 28 197.5 6.0Q167 -16 167 -47Q167 -78 197.5 -100.0Q228 -122 271 -122Q314 -122 344.5 -100.0Q375 -78 375 -47Q375 -16 344.5 6.0Q314 28 271 28Z" fill="#141414" fill-opacity=".16" stroke="#141414" stroke-width="1.2" fill-rule="evenodd"/>
+        <!-- skeleton (bones) -->
+        <g fill="none" stroke="#1f6fd6" stroke-width="2" stroke-opacity=".8">
+          <circle cx="258" cy="375" r="137"/>
+          <path d="M255 240 C 200 232, 160 200, 150 150 C 142 105, 175 92, 240 88"/>
+          <ellipse cx="271" cy="-47" rx="160" ry="105"/>
+          <path d="M128 249 C 90 235, 60 200, 55 147 C 52 105, 95 72, 133 50"/>
+        </g>
+        <!-- nodes -->
+        <g fill="#fff" stroke="#1f6fd6" stroke-width="2">
+          <circle cx="258" cy="512" r="7"/><circle cx="395" cy="375" r="7"/><circle cx="121" cy="375" r="7"/><circle cx="255" cy="240" r="7"/>
+          <circle cx="150" cy="150" r="7"/><circle cx="240" cy="88" r="7"/>
+          <circle cx="271" cy="58" r="7"/><circle cx="431" cy="-47" r="7"/><circle cx="271" cy="-152" r="7"/><circle cx="111" cy="-47" r="7"/>
+          <circle cx="128" cy="249" r="7"/><circle cx="133" cy="50" r="7"/>
+        </g>
+        <!-- selected node: spur tip (droplet terminal) with optical delta -->
+        <g>
+          <circle cx="55" cy="147" r="26" fill="none" stroke="#c8362e" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <circle cx="55" cy="147" r="8" fill="#c8362e" stroke="#fff" stroke-width="2"/>
+          <line x1="55" y1="147" x2="58" y2="145" stroke="#c8362e" stroke-width="3"/>
+          <!-- tension handles -->
+          <line x1="55" y1="147" x2="55" y2="205" stroke="#1f6fd6" stroke-width="1.2"/><circle cx="55" cy="205" r="4" fill="#1f6fd6"/>
+          <line x1="55" y1="147" x2="55" y2="89" stroke="#1f6fd6" stroke-width="1.2"/><circle cx="55" cy="89" r="4" fill="#1f6fd6"/>
+        </g>
+      </g>
+      <!-- labels (unflipped) -->
+      <g font-size="13" fill="#8a867f" font-family="Inter,Helvetica,Arial">
+        <text x="-150" y="-712">ascender 720</text><text x="-150" y="-694">cap 700</text><text x="-150" y="-534">x-height 540</text>
+        <text x="-150" y="6">baseline 0</text><text x="-150" y="226">descender −220</text>
+        <text x="420" y="-395" fill="#1f6fd6">eye</text><text x="455" y="60" fill="#1f6fd6">loop</text>
+        <text x="175" y="-135" fill="#1f6fd6">link</text><text x="-55" y="-150" fill="#c8362e" font-weight="600">spur · droplet</text>
+        <text x="-125" y="-118" fill="#c8362e">optical Δ +3,−2</text>
+      </g>
+    </svg>
+    <div class="hud"><b>g</b> · Regular · 12 nodes · skin regenerated in 4 ms</div>
+    <div class="tools">
+      <div class="tool on">Nodes</div><div class="tool">Tension</div><div class="tool">Optical Δ</div><div class="tool">Grid snap ✓</div><div class="tool">Show math</div><div class="tool">Compare alt</div>
+    </div>
+  </div>
+
+  <div class="insp">
+    <h4>Master</h4>
+    <div class="masters"><div class="m">Light</div><div class="m on">Regular</div><div class="m">Medium</div><div class="m">Bold</div><div class="m">Black</div><div class="m it">Ital</div></div>
+
+    <h4>Glyph rules · g</h4>
+    <div class="row"><label>Stroke</label><div class="slider"><i style="left:38%"></i></div><div class="val">96</div></div>
+    <div class="row"><label>Droplet pool</label><div class="slider"><i style="left:22%"></i></div><div class="val">0.55</div></div>
+    <div class="row"><label>Curve tension</label><div class="slider"><i style="left:55%"></i></div><div class="val">0.55</div></div>
+    <div class="row"><label>LIQD</label><div class="slider"><i style="left:8%"></i></div><div class="val">8</div></div>
+
+    <h4 style="margin-top:16px">Node · spur.tip</h4>
+    <div class="row"><label>Terminal</label><div class="seg"><span>Butt</span><span class="on">Droplet</span></div></div>
+    <div class="row"><label>Weight</label><div class="slider"><i style="left:40%"></i></div><div class="val">+8</div></div>
+    <div class="row"><label>Snap</label><div class="seg"><span class="on">Grid</span><span>Guide</span><span>Free</span></div></div>
+
+    <div class="delta">
+      <h5>Optical Δ · poetic license</h5>
+      <div class="row" style="margin:4px 0"><label>Δx</label><div class="slider"><i style="left:56%"></i></div><div class="val">+3</div></div>
+      <div class="row" style="margin:4px 0"><label>Δy</label><div class="slider"><i style="left:44%"></i></div><div class="val">−2</div></div>
+      <div style="font-size:11px;color:#8a867f;margin-top:4px">bounded ±12 · shown as red tick · interpolates across masters · toggle “Show math” to compare</div>
+    </div>
+
+    <div class="btns">
+      <div class="btn pri">Propagate to all weights</div>
+      <div class="btn">Save as g.alt02</div>
+      <div class="btn">Regenerate from rules</div>
+    </div>
+
+    <div class="qa">
+      <b>✓</b> curvature max jump 0.0004 &nbsp; <b>✓</b> min radius 15<br>
+      <b>✓</b> interpolation compatible · 12/12 nodes<br>
+      <b>✓</b> counters open at Black · <b>✓</b> stroke ≥ 40 at Light
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="w"><svg viewBox="-20 -600 560 820"><g transform="scale(1,-1)"><use href="#gpath"/></g></svg><span>Light · pending</span></div>
+    <div class="w"><svg viewBox="-20 -600 560 820"><g transform="scale(1,-1)"><path id="gpath" d="M320 -171Q279 -175 240.0 -173.5Q201 -172 163 -159Q138 -151 114.5 -136.0Q91 -121 78 -98Q63 -72 63 -39Q63 -28 65.5 -17.5Q68 -7 75 0Q83 9 97.0 13.0Q111 17 123.5 22.5Q136 28 142 39Q144 44 144 49Q146 66 126.0 72.0Q106 78 88 87Q76 93 68 101Q51 119 52.0 147.5Q53 176 70 194Q81 205 95.5 212.0Q110 219 123 228Q130 232 134.5 237.0Q139 242 139 248Q140 255 134 265Q126 277 113.5 286.0Q101 295 91 305Q74 325 73.5 353.5Q73 382 80 410Q84 426 90.5 441.0Q97 456 107 468Q134 503 181.0 516.5Q228 530 275 528Q315 526 349.5 512.5Q384 499 408 470Q430 444 440.0 408.0Q450 372 444 339Q439 310 421.5 285.5Q404 261 378 245Q334 217 283 217Q266 217 249.5 219.5Q233 222 217 222Q201 223 186.0 219.5Q171 216 161 205Q153 196 148.5 184.5Q144 173 143 161Q141 140 152 125Q157 118 165.0 112.0Q173 106 181 102Q207 90 235.5 91.0Q264 92 292.5 95.5Q321 99 350 96Q382 92 410.5 74.5Q439 57 458.0 31.0Q477 5 480 -27Q482 -54 471.0 -82.0Q460 -110 441 -129Q418 -151 385.5 -159.5Q353 -168 320 -171ZM260 465Q225 465 200.5 438.5Q176 412 176 375Q176 338 200.5 311.5Q225 285 260 285Q295 285 319.5 311.5Q344 338 344 375Q344 412 319.5 438.5Q295 465 260 465ZM271 28Q228 28 197.5 6.0Q167 -16 167 -47Q167 -78 197.5 -100.0Q228 -122 271 -122Q314 -122 344.5 -100.0Q375 -78 375 -47Q375 -16 344.5 6.0Q314 28 271 28Z" fill="#141414" fill-rule="evenodd"/></g></svg><span>Regular · live</span></div>
+    <div class="w pending"><svg viewBox="-20 -600 560 820"><g transform="scale(1,-1)"><use href="#gpath"/></g></svg><span>Medium · pending</span></div>
+    <div class="w pending"><svg viewBox="-20 -600 560 820"><g transform="scale(1,-1)"><use href="#gpath"/></g></svg><span>Bold · pending</span></div>
+    <div class="w pending"><svg viewBox="-20 -600 560 820"><g transform="scale(1,-1)"><use href="#gpath"/></g></svg><span>Black · pending</span></div>
+    <div class="cap">Family strip: every edit re-renders the glyph in all masters. Greyed = not built yet (Family phase).</div>
+  </div>
+</div>
+<script>
+  // first weight tile should also be pending-styled
+  document.querySelectorAll('.bottom .w')[0].classList.add('pending');
+</script>
+</body>
+</html>
