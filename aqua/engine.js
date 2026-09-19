@@ -1288,7 +1288,7 @@ const METRICS = { upm: 1000, baseline: 0, xHeight: 521, xOvershoot: 528, capHeig
                   ascender: 751, descender: DESC, overshoot: 7, stemMin: 53, stemMax: 106 };
 // The family: Light and Black are the two drawn masters (stems 53 and 106). Regular is a
 // planned third master near 78; until it is drawn it is a blend of the other two.
-// (Open with Fabio: whether 53 is the Light. Recommended yes.)
+// Settled with Fabio 2026-09-19: the thinner drawing (53) is the Light.
 const WEIGHTS = [
   { name: 'Light', stem: 53, master: true },
   { name: 'Regular', stem: 78, master: false },

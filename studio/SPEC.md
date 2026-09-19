@@ -34,8 +34,8 @@ not read code) is the only user. Plain language everywhere; Apple-grade UI; ligh
 - `Aqua.dc.html` + `MASTERS` is canonical. aqua-kit is retired (`archive/`).
 - Metrics: UPM 1000, x-height 521 (round overshoot 528), cap 715, ascender 751,
   **descender −230**, stem axis 53 → 106.
-- Family: **Light / Regular / Black**. Existing masters are 53 and 106. Open question for
-  Fabio only: is 53 the Light (recommended) with a new Regular master near stem 78?
+- Family: **Light / Regular / Black**. Existing masters are 53 and 106. Settled by Fabio
+  2026-09-19: 53 is the Light; Regular is a new master near stem 78.
 - Every glyph keeps an interpolation-clean spine (identical point structure across masters).
 - Health score gates the build. Fabio's hand verdicts override geometry.
 - Spacing stays on hold until the reshape lands. Order: reshape → B → reimport →

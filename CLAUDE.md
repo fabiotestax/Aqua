@@ -97,7 +97,8 @@ archive/design-sync/          the old Claude Design ↔ GitHub sync record
 - Descender is **−230**. The drawn y and j tails are the design; the brief's −178 is retired.
 - Target family: **three weights — Light, Regular, Black** — with the spine (point structure)
   kept interpolation-clean on every glyph so further instances can be added later.
-  Weight naming against the existing masters (53 / 106) is being settled: 53 reads as a Light.
+  Weight naming settled by Fabio 2026-09-19: **53 is the Light**, 106 the Black; Regular is a
+  new master to be drawn near 78.
 - The g gets rebuilt on the same parametric parts as the rest, and must still look like the g.
 - Every glyph carries a **health score** (curvature, interpolation compatibility, point
   discipline, spacing sanity, hand-checked) shown as a colour code, so the state of the set

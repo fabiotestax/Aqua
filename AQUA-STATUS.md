@@ -88,7 +88,8 @@ descender         −230      (the brief said −178; the drawn y and j tails go
 overshoot            7
 ```
 
-Stem axis runs **53 → 106**. 106 is Black, 53 is Regular.
+Stem axis runs **53 → 106**. 106 is Black, 53 is Light (settled 2026-09-19; it was called
+Regular before). A Regular master near 78 is planned.
 
 The raster-to-units scale is **1.439**, fixed by the g: the logotype g's
 descender-to-bowl-top ratio is 0.330 and the vector g's is also 0.330. Every other metric
