@@ -36,8 +36,13 @@ is retired; only its verification tools and the Studio blueprints carry forward.
 
 ### Aqua Studio
 
+**Live:** https://fabiotestax.github.io/Aqua/studio/ — GitHub Pages, served from this
+branch's root (repository made public and Pages switched on by Fabio, 2026-09-19). Every push
+to the branch redeploys it within a minute or two. `.nojekyll` at the root keeps Pages from
+processing the files. When the branch is merged, switch the Pages branch to `main`.
+
 ```
-python3 -m http.server 8000        # from the repo root, then open http://localhost:8000/studio/
+python3 -m http.server 8000        # locally: from the repo root, then open http://localhost:8000/studio/
 ```
 
 `studio/` is the app around the typeface (spec: `studio/SPEC.md`; blueprints:
