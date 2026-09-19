@@ -34,6 +34,23 @@ never in the page.
 source of truth for the typeface. The earlier skeleton-stroking engine (`archive/aqua-kit/`)
 is retired; only its verification tools and the Studio blueprints carry forward.
 
+### Aqua Studio
+
+```
+python3 -m http.server 8000        # from the repo root, then open http://localhost:8000/studio/
+```
+
+`studio/` is the app around the typeface (spec: `studio/SPEC.md`; blueprints:
+`studio/blueprints/`). Plain HTML + CSS + JS, no framework, no build: `index.html` loads
+`../aqua/engine.js`, `health.js` (the health score, ported from `tools/health.py` and
+validated against it) and `studio.js` (the rooms). It reads `../tools/hand.json` for Fabio's
+verdicts and `../aqua/masters/edited-paths.json` for the Import room's diff. Serve the repo
+root, not `aqua/`, so those relative paths resolve. `node tools/shoot_studio.mjs` screenshots
+every room in light and dark into `studio/shots/` — that is how the app is shown to Fabio.
+
+Milestone 1 (shell, view only) is built. Editing, the font build, Spacing and the six optical
+audits are the later milestones in the spec.
+
 ### One thing that will look strange
 
 The file is written in a component format (`<x-dc>` template + a `Component` logic class),
