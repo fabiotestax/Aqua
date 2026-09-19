@@ -712,21 +712,11 @@ function mapPath(d, ox, oy) {
 function exportSVG(stem) {
   const cols = 6, cw = 1150, chh = 1300, chars = ORDER.split('');
   const rows = Math.ceil(chars.length / cols);
-  const d = Math.max(0, (107.4 - stem) / 2.09), sb = 47 + 0.28 * d;
   let glyphs = '', guides = '';
   chars.forEach((ch, i) => {
     const c = i % cols, r = (i / cols) | 0;
     const ox = c * cw + 90, oy = r * chh + 1000;
-    let dd, w, minX = 0;
-    if (ch === 'g') {
-      const off = d, comp = neckComp(off);
-      dd = outline(ch, stem); minX = 42.5 + off * comp; w = 427.5 - off - off * comp;
-    } else {
-      dd = outline(ch, stem);
-      minX = ch === '!' ? 4 - 0.03 * stem : 0;
-      w = ch === '!' ? 1.06 * stem : glyphWidth(ch, stem);
-    }
-    const cl = SHAPE[ch] || 'ff', lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+    const g = glyph(ch, stem), dd = g.d, w = g.w, minX = g.minX, lsb = g.lsb, rsb = g.rsb;
     const name = GNAME[ch] || ch;
     glyphs += `  <path id="glyph.${name}" d="${mapPath(dd, ox - minX, oy)}"/>\n`;
     const L = ox - lsb, R = ox + w + rsb;
@@ -1148,28 +1138,17 @@ const ORDER = 'abcdefghijklmnopqrstuvwxyzB!.,';
 // the grid the returned SVGs were drawn on — section 08 still maps their cells
 const ORDER_V1 = 'abcdefghijkmnopqrstuvwxyzB0123456789!.,';
 function layout(str, s, noKern) {
-  const d = Math.max(0, (107.4 - s) / 2.09), sb = 47 + 0.28 * d;
-  const kS = 0.40 + 0.32 * s / 106;
+  const sb = bearing(s), kS = 0.40 + 0.32 * s / 106;
   let cur = 0, prev = null;
   const glyphs = [], pairs = [];
   for (const ch of str) {
     if (ch === ' ') { cur += 4.0 * sb; prev = null; continue; }
-    if (ch !== 'g' && !BUILD[ch]) continue;
-    let dPath, w, minX;
-    if (ch === 'g') {
-      const c = neckComp(d);
-      dPath = outline(ch, s); minX = 42.5 + d * c; w = 427.5 - d - d * c;
-    } else {
-      dPath = outline(ch, s);
-      minX = ch === '!' ? 4 - 0.03 * s : 0;
-      w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
-    }
-    const cl = SHAPE[ch] || 'ff';
-    const lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
-    const kv = prev && !noKern ? (KERN[prev + ch] || 0) * kS : 0;
+    const g = glyph(ch, s);
+    if (!g) continue;
+    const kv = prev && !noKern ? kernOf(prev + ch) * kS : 0;
     if (prev) { cur += kv; pairs.push({ p: prev + ch, k: Math.round(kv) }); }
-    glyphs.push({ key: ch, d: dPath, tf: `translate(${(cur + lsb - minX).toFixed(1)},0)` });
-    cur += lsb + w + rsb;
+    glyphs.push({ key: ch, d: g.d, tf: `translate(${(cur + g.lsb - g.minX).toFixed(1)},0)` });
+    cur += g.lsb + g.w + g.rsb;
     prev = ch;
   }
   return { glyphs, w: Math.round(cur), pairs };
@@ -1293,9 +1272,9 @@ function buildDiffs(ed) {
 // about the point by r (roundness). Light and Black each hold their own; any weight in
 // between blends them, so an edit made "in both weights" holds across the axis.
 // tools/bake_edits.mjs writes a document into this file for good.
-const BAKED = { glyphs: {}, masters: {} };
-let DOC = { glyphs: {}, masters: {} };
-function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {} }; }
+const BAKED = { glyphs: {}, masters: {}, spacing: {} };
+let DOC = { glyphs: {}, masters: {}, spacing: null };
+function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {}, spacing: (doc && doc.spacing) || null }; }
 function getDoc() { return DOC; }
 const fxp = v => fx(v);
 function serializePath(subs) {
@@ -1454,15 +1433,36 @@ function glyph(ch, s) {
   if (ch !== 'g' && !BUILD[ch]) return null;
   let w, minX = 0;
   const d = outline(ch, s);
-  if (ch === 'g') {
+  if (spacing().fromInk) {
+    // room from ink: the box is the drawing's own bounds, whatever the old table said
+    const b = bbox(d); minX = b.xmin; w = b.xmax - b.xmin;
+  } else if (ch === 'g') {
     const off = Math.max(0, (107.4 - s) / 2.09), c = neckComp(off);
     minX = 42.5 + off * c; w = 427.5 - off - off * c;
   } else {
     minX = ch === '!' ? 4 - 0.03 * s : 0;
     w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
   }
-  const sb = bearing(s), cl = SHAPE[ch] || 'ff', lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+  const sb = bearing(s), cl = shapeOf(ch), lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
   return { ch, name: GNAME[ch] || ch, kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s };
+}
+// ── Spacing, with the document's say ──────────────────────────────────────────
+// doc.spacing = { fromInk: bool, shape: { [ch]: 'rf' }, kern: { [pair]: units at Black } }.
+// A kern override of 0 removes a pair; a pair not in the override table keeps KERN's value.
+function spacing() { return DOC.spacing || BAKED.spacing || {}; }
+function shapeOf(ch) { const sp = spacing(); return (sp.shape && sp.shape[ch]) || (BAKED.spacing && BAKED.spacing.shape && BAKED.spacing.shape[ch]) || SHAPE[ch] || 'ff'; }
+function kernOf(pair) {
+  const sp = spacing();
+  if (sp.kern && pair in sp.kern) return sp.kern[pair];
+  if (BAKED.spacing && BAKED.spacing.kern && pair in BAKED.spacing.kern) return BAKED.spacing.kern[pair];
+  return KERN[pair] || 0;
+}
+function kernPairs() {
+  const out = {}; for (const k in KERN) out[k] = KERN[k];
+  if (BAKED.spacing && BAKED.spacing.kern) for (const k in BAKED.spacing.kern) out[k] = BAKED.spacing.kern[k];
+  const sp = spacing(); if (sp.kern) for (const k in sp.kern) out[k] = sp.kern[k];
+  for (const k in out) if (!out[k]) delete out[k];
+  return out;
 }
 // Parse an engine path (M / C / L / Z, absolute) into subpaths of cubic segments
 // [p0, c1, c2, p3, kind] — lines are lifted to cubics with handles at thirds, kind 'L'.
@@ -1503,7 +1503,7 @@ function nodes(d) {
 }
 
 return {
-  METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes,
+  METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
   BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, outline,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,

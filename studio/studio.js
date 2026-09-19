@@ -31,7 +31,7 @@ const S = {
   view: q.get('view') || 'final',            // Test room: final | negative | squint | flip | mirror | heat
   guide: q.get('guide') || 'CLAUDE.md',
   search: '',
-  hand: null, health: null, diffs: null, docs: {}, edited: null
+  hand: null, health: null, diffs: null, docs: {}, edited: null, build: null, realFont: q.get('real') === '1'
 };
 const applyTheme = () => {
   if (S.theme === 'dark' || S.theme === 'light') document.documentElement.setAttribute('data-theme', S.theme);
@@ -159,48 +159,73 @@ function Weights(root) {
   root.querySelectorAll('[data-stem]').forEach(p => p.onclick = () => setStem(+p.dataset.stem));
 }
 
-// Spacing — on hold by decision, but everything it will need is visible.
+// Spacing — on hold by decision, but live to try: room from ink, edge classes, pairs.
+const CLS = { f: 'flat', r: 'round', o: 'open' };
 function Spacing(root) {
   root.classList.add('one');
-  const s = S.stem, sb = bearingsAt(s);
+  const s = S.stem, sb = E.bearing(s), sp = E.spacing(), fromInk = !!sp.fromInk, kS = 0.40 + 0.32 * s / 106;
   const strip = text => {
     const L = E.layout(text, s), cells = [];
-    // walk the text alongside the laid-out glyphs so a word space is known as one
     let ti = 0;
     for (let i = 0; i < L.glyphs.length; i++) {
       const gl = L.glyphs[i], g = E.glyph(gl.key, s), b = E.bbox(g.d), tx = +gl.tf.match(/-?[\d.]+/)[0];
       let space = false; while (text[ti] !== gl.key) { if (text[ti] === ' ') space = true; ti++; } ti++;
-      const x0 = tx - g.lsb + g.minX, x1 = tx + g.minX + g.w + g.rsb;   // the letter's box in line units
-      const inkL = tx + b.xmin, inkR = tx + b.xmax;                         // where the ink actually is
-      const gap = i ? r0(inkL - cells[i - 1].inkR) : null;                  // ink to ink, the rhythm
+      const x0 = tx - g.lsb + g.minX, x1 = tx + g.minX + g.w + g.rsb;
+      const inkL = tx + b.xmin, inkR = tx + b.xmax;
+      const gap = i ? r0(inkL - cells[i - 1].inkR) : null;
       cells.push({ ch: gl.key, d: gl.d, tx, x0, x1, inkL, inkR, gap, space });
     }
     return `<div class="strip">${cells.map((c, i) => `<div class="cell">
         <svg viewBox="${r1(c.x0)} -771 ${r1(c.x1 - c.x0)} 1015"><g transform="scale(1,-1)"><rect class="box" x="${r1(c.x0)}" y="-240" width="${r1(c.x1 - c.x0)}" height="1000"/><g transform="translate(${r1(c.tx)},0)"><path d="${c.d}" fill-rule="evenodd"/></g></g></svg>
         <div class="gap ${c.gap != null && !c.space && (c.gap < 70 || c.gap > 85) ? 'out' : ''}">${c.gap == null ? '&nbsp;' : c.space ? 'word space' : c.gap + ' before'}</div></div>`).join('')}</div>`;
   };
+  const seg = (ch, side, cur) => `<span class="seg s" data-edge="${esc(ch)}" data-side="${side}">${['f', 'r', 'o'].map(k => `<b class="${cur === k ? 'on' : ''}" data-k="${k}">${CLS[k]}</b>`).join('')}</span>`;
   const rows = E.ORDER.split('').map(c => {
-    const g = E.glyph(c, s), b = E.bbox(g.d);
+    const g = E.glyph(c, s), b = E.bbox(g.d), cl = E.shapeOf(c);
     const inkL = r0(b.xmin - g.minX + g.lsb), inkR = r0(g.w + g.rsb + g.minX - b.xmax);
-    return `<tr><td><span class="g">${glyphSVG(c, s, { box: 'metrics' })}</span></td><td>${shown(c)}</td><td>${(E.SHAPE[c] || 'ff').split('').map(k => ({ f: 'flat', r: 'round', o: 'open' })[k]).join(' · ')}</td>
-      <td class="num">${r0(g.lsb)}</td><td class="num">${r0(g.rsb)}</td><td class="num">${r0(g.w)}</td><td class="num ${inkL < 0 ? 'x' : ''}" style="${inkL < 0 ? 'color:var(--bad)' : ''}">${inkL}</td><td class="num" style="${inkR < 0 ? 'color:var(--bad)' : ''}">${inkR}</td></tr>`;
+    const changed = sp.shape && sp.shape[c];
+    return `<tr><td><span class="g">${glyphSVG(c, s, { box: 'metrics' })}</span></td><td>${shown(c)}${changed ? ' <i class="dotc"></i>' : ''}</td>
+      <td>${seg(c, 0, cl[0])}</td><td>${seg(c, 1, cl[1])}</td>
+      <td class="num">${r0(g.lsb)}</td><td class="num">${r0(g.rsb)}</td><td class="num">${r0(g.w)}</td>
+      <td class="num" style="${inkL < 0 ? 'color:var(--bad)' : ''}">${inkL}</td><td class="num" style="${inkR < 0 ? 'color:var(--bad)' : ''}">${inkR}</td></tr>`;
+  }).join('');
+  const pairs = E.kernPairs(), keys = Object.keys(pairs).sort();
+  const pairRows = keys.map(k => {
+    const v = pairs[k], changed = sp.kern && k in sp.kern;
+    return `<tr><td><b>${esc(k[0])}·${esc(k[1])}</b>${changed ? ' <i class="dotc"></i>' : ''}</td>
+      <td><span class="g">${lineSVG(k, s, { h: 40, noKern: true })}</span></td><td><span class="g">${lineSVG(k, s, { h: 40 })}</span></td>
+      <td class="num"><input type="number" class="num-in" data-pair="${esc(k)}" value="${v}" step="1"></td><td class="num">${Math.round(v * kS)}</td>
+      <td><a href="#" data-drop="${esc(k)}">remove</a></td></tr>`;
   }).join('');
   root.innerHTML = `<div class="main">
     <h1 class="title">Spacing</h1>
-    <p class="lead">How much room each letter keeps on its left and right, and which pairs pull closer. Measured from the outlines, so it only settles once the drawings do.</p>
-    <div class="banner warn"><span>⏸</span><span><b>On hold until the reshape lands.</b> The order is: reshape the letters → redraw B → bring the drawings back in → take each letter's room from its ink → then fix the pairs. Nothing here is edited before that.</span></div>
+    <p class="lead">How much room each letter keeps on its left and right, and which pairs pull closer. Everything here is live to try and lands in every room; nothing is final until the reshape lands.</p>
+    <div class="banner warn"><span>⏸</span><span><b>On hold until the reshape lands.</b> The order is: reshape the letters → redraw B → bring the drawings back in → take each letter's room from its ink → then fix the pairs. You can try things here now; expect to redo the pairs after the reshape.</span></div>
     <div class="panel"><div class="row" style="margin:0 0 14px"><label>Thickness</label><input type="range" min="53" max="106" step="1" value="${s}" data-act="stem"><div class="v">${s}</div></div>
+      <label class="check" style="margin:0 0 14px"><input type="checkbox" id="fromink" ${fromInk ? 'checked' : ''}> <b>Room from ink</b> &nbsp;<span class="sub">each letter's box comes from where its ink actually is, not from the old table (the j and k bugs go away; the g and B change width)</span></label>
       <h6>Rhythm</h6><p class="small sub" style="margin:0 0 10px">The gap between one letter's ink and the next should sit in the 70–85 band. Amber means it is out of band at this weight; pairs that pull closer on purpose show up here too.</p>
       ${['nnonon', 'hhohoh', 'aqua bonefish'].map(strip).join('<div style="height:10px"></div>')}</div>
     <div class="grid2">
-      <div class="panel tight"><h6>How the room is set</h6><p class="small" style="margin:0">Room is set by what the edge <i>does</i>, not by which letter it is. A flat edge gets the full amount, a round one 0.82 of it, an open or slanted one 0.68. The base amount at this weight is <b>${r1(sb)} units</b>; it opens up as the letters get lighter. A word space is four of them.</p></div>
-      <div class="panel tight"><h6>Pairs</h6><p class="small" style="margin:0">${Object.keys(E.KERN).length} pairs pull closer than their room alone would put them (m·a, r·o, v·a …). They are fitted to today's outlines and will be redone after the reshape. They shrink toward Light, where letters need the room back.</p></div>
+      <div class="panel tight"><h6>How the room is set</h6><p class="small" style="margin:0">Room is set by what the edge <i>does</i>, not by which letter it is. A flat edge gets the full amount, a round one 0.82 of it, an open or slanted one 0.68. The base amount at this weight is <b>${r1(sb)} units</b>; it opens up as the letters get lighter. A word space is four of them. Change a letter's edges in the table below.</p></div>
+      <div class="panel tight"><h6>Pairs</h6><p class="small" style="margin:0">${keys.length} pairs pull closer than their room alone would put them. Values are in units at Black and shrink toward Light. Edit a value, remove a pair, or add one below. ${D.spacingChanges() ? `<a href="#" id="resetsp">Put everything back to the tables</a>.` : ''}</p></div>
     </div>
     <div class="panel"><h6>Every letter at thickness ${s}</h6>
-      <table><thead><tr><th></th><th>Letter</th><th>Edges</th><th class="num">Room left</th><th class="num">Room right</th><th class="num">Width</th><th class="num">Ink to box, left</th><th class="num">Ink to box, right</th></tr></thead><tbody>${rows}</tbody></table>
-      <p class="small sub" style="margin:10px 0 0">"Ink to box" is what the drawing actually leaves; red means the ink sticks out of its box. Those are the ones "room from ink" will fix.</p></div>
+      <table><thead><tr><th></th><th>Letter</th><th>Left edge</th><th>Right edge</th><th class="num">Room left</th><th class="num">Room right</th><th class="num">Width</th><th class="num">Ink to box, left</th><th class="num">Ink to box, right</th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="small sub" style="margin:10px 0 0">"Ink to box" is what the drawing actually leaves; red means the ink sticks out of its box. A blue dot marks an edge you changed.</p></div>
+    <div class="panel"><h6>Pairs</h6>
+      <div class="row" style="margin:0 0 12px;gap:8px"><input class="search" id="np" placeholder="two letters, e.g. ra" maxlength="2" style="width:160px;margin:0"><input type="number" class="num-in" id="nv" placeholder="units" value="-12" step="1"><div class="btn inline" id="addpair" style="margin:0">Add pair</div></div>
+      <table><thead><tr><th>Pair</th><th>Room only</th><th>With the pair</th><th class="num">At Black</th><th class="num">At thickness ${s}</th><th></th></tr></thead><tbody>${pairRows}</tbody></table></div>
   </div>`;
   bindWeightPicker(root);
+  // re-render one tick later, never inside the field's own change/blur handling
+  const later = f => setTimeout(f, 0);
+  $('#fromink').onchange = e => { const on = e.target.checked; later(() => D.setFromInk(on)); };
+  root.querySelectorAll('[data-edge]').forEach(sg => sg.onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return;
+    const ch = sg.dataset.edge, side = +sg.dataset.side, cur = E.shapeOf(ch), k = b.dataset.k; later(() => D.setShape(ch, side ? cur[0] + k : k + cur[1])); });
+  root.querySelectorAll('[data-pair]').forEach(i => i.onchange = () => { const k = i.dataset.pair, v = +i.value; later(() => D.setKern(k, v)); });
+  root.querySelectorAll('[data-drop]').forEach(a => a.onclick = e => { e.preventDefault(); const k = a.dataset.drop; later(() => D.setKern(k, 0)); });
+  $('#addpair').onclick = () => { const k = $('#np').value; if (k.length !== 2 || !E.ORDER.includes(k[0]) || !E.ORDER.includes(k[1])) { alert('Type two letters from the set, like "ra".'); return; } const v = +$('#nv').value; later(() => D.setKern(k, v)); };
+  const rs = $('#resetsp'); if (rs) rs.onclick = e => { e.preventDefault(); if (confirm('Put the room, the edges and the pairs back to the tables?')) D.resetSpacing(); };
 }
 
 // Test — type anything, at any size, in every way of looking at it.
@@ -209,6 +234,10 @@ function Test(root) {
   const s = S.stem, views = [['final', 'Normal'], ['negative', 'Negative'], ['squint', 'Squint'], ['flip', 'Upside down'], ['mirror', 'Mirrored'], ['heat', 'Darkness']];
   const cls = { final: '', negative: 'neg', squint: 'blur', flip: 'flip', mirror: 'mirror', heat: 'heat' }[S.view] || '';
   const fo = S.view === 'heat' ? { filter: 'heat' } : {};
+  // the built font: wght runs 300 (Light, 53) · 400 (Regular, 78) · 900 (Black, 106)
+  const wght = s <= 78 ? 300 + (s - 53) / 25 * 100 : 400 + (s - 78) / 28 * 500;
+  const real = S.realFont && S.build;
+  const rf = (text, px) => `<div class="realfont" style="font-variation-settings:'wght' ${wght.toFixed(0)};font-size:${px ? px + 'px' : 'min(11vw, 150px)'}">${esc(text)}</div>`;
   const avail = E.ORDER.split('').map(shown).join(' ');
   root.innerHTML = `
     <aside class="side">
@@ -219,6 +248,7 @@ function Test(root) {
       <h6>Look at it</h6>
       <div class="seg w" id="views" style="flex-wrap:wrap">${views.map(([k, n]) => `<b class="${S.view === k ? 'on' : ''}" data-view="${k}" style="flex-basis:33%">${n}</b>`).join('')}</div>
       <p class="small sub">Squint and Darkness show where the weight sits. Upside down and Mirrored hide the words so only the shapes are left.</p>
+      <label class="check" title="${S.build ? 'Show the last built font file instead of the live drawing' : 'No font has been built yet'}"><input type="checkbox" id="realfont" ${S.realFont ? 'checked' : ''} ${S.build ? '' : 'disabled'}> Show the built font${S.build ? ` (${esc(S.build.version)}${S.build.draft ? ', draft' : ''})` : ''}</label>
       <div class="card"><h6>Quick words</h6>${['hamburgefontsiv', 'aqua bonefish', 'nnonon', 'liquid glass', 'vixen wax', 'quick jazz'].map(w => `<div class="var" data-word="${w}" style="cursor:pointer"><span>${w}</span></div>`).join('')}</div>
     </aside>
     <div class="main">
@@ -227,12 +257,13 @@ function Test(root) {
         <feColorMatrix type="matrix" values="0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 0 1"/>
         <feComponentTransfer><feFuncR type="table" tableValues="0.04 0.08 0.10 0.95 1 1"/><feFuncG type="table" tableValues="0.04 0.10 0.55 0.85 0.45 1"/><feFuncB type="table" tableValues="0.05 0.55 0.85 0.15 0.05 0.85"/></feComponentTransfer>
       </filter></svg>
-      <div class="stage ${cls}" style="margin-bottom:18px"><div class="line">${lineSVG(S.text, s, fo)}</div></div>
-      <div class="stage ${cls}"><div class="ladder">${[16, 24, 40, 72, 120].map(px => `<div class="rung"><div class="lab">${px} px</div>${lineSVG(S.text, s, { h: px * 1.015, ...fo })}</div>`).join('')}</div></div>
-      <p class="small sub" style="margin-top:14px">Sizes are true to the screen: the ladder shows the same words at 16, 24, 40, 72 and 120 pixels, at ${E.weightName(s)} (thickness ${s}).</p>
+      <div class="stage ${cls}" style="margin-bottom:18px">${real ? rf(S.text) : `<div class="line">${lineSVG(S.text, s, fo)}</div>`}</div>
+      <div class="stage ${cls}"><div class="ladder">${[16, 24, 40, 72, 120].map(px => `<div class="rung"><div class="lab">${px} px</div>${real ? rf(S.text, px) : lineSVG(S.text, s, { h: px * 1.015, ...fo })}</div>`).join('')}</div></div>
+      <p class="small sub" style="margin-top:14px">Sizes are true to the screen: the ladder shows the same words at 16, 24, 40, 72 and 120 pixels, at ${E.weightName(s)} (thickness ${s}).${real ? ` This is the built font, version ${esc(S.build.version)}${S.build.draft ? ' (draft)' : ''} from ${esc(S.build.date)} — it lags behind edits made since.` : ''}</p>
     </div>`;
   bindWeightPicker(root);
-  const t = $('#text'); t.oninput = () => { S.text = t.value; save('text', S.text); root.querySelectorAll('.stage').forEach((st, i) => {
+  const rfc = $('#realfont'); if (rfc) rfc.onchange = () => { S.realFont = rfc.checked; renderRoom(); };
+  const t = $('#text'); t.oninput = () => { S.text = t.value; save('text', S.text); if (S.realFont && S.build) { renderRoom(); $('#text').focus(); return; } root.querySelectorAll('.stage').forEach((st, i) => {
     st.innerHTML = i === 0 ? `<div class="line">${lineSVG(S.text, S.stem, fo)}</div>` : `<div class="ladder">${[16, 24, 40, 72, 120].map(px => `<div class="rung"><div class="lab">${px} px</div>${lineSVG(S.text, S.stem, { h: px * 1.015, ...fo })}</div>`).join('')}</div>`; }); };
   $('#views').onclick = e => { const b = e.target.closest('[data-view]'); if (b) { S.view = b.dataset.view; renderRoom(); } };
   root.querySelectorAll('[data-word]').forEach(w => w.onclick = () => { S.text = w.dataset.word; save('text', S.text); renderRoom(); });
@@ -356,8 +387,14 @@ function Export(root) {
     </div>
     <div class="panel"><h6>Preview of the sheet at thickness ${s}</h6><div class="sheet"><img alt="export sheet" src="${src}"></div></div>
     <div class="grid2">
-      <div class="panel tight"><h6>Font file</h6><p class="small" style="margin:0">A real variable font (TTF and WOFF2) comes in a later build, once Light · Regular · Black are all drawn and every letter passes the health check. The check is the gate: nothing ships red.</p></div>
-      <div class="panel tight"><h6>Versions</h6><p class="small" style="margin:0">Each export will be numbered and kept, so a drawing can always be traced back to the sheet it came from. Arrives with the font build.</p></div>
+      <div class="panel tight"><h6>Font file</h6>${S.build ? `<div class="kv"><span>Last build</span><span class="ink">${esc(S.build.family)} ${esc(S.build.version)}${S.build.draft ? ' · draft' : ''}</span></div>
+        <div class="kv"><span>When</span><span>${esc(S.build.date)}</span></div>
+        <div class="kv"><span>Gate</span><span style="color:var(--${S.build.gate.open ? 'ok' : 'bad'})">${S.build.gate.open ? 'open' : 'closed — ' + S.build.gate.red.length + ' not Aqua yet'}</span></div>
+        <div class="kv"><span>Every letter blends</span><span>${S.build.interpolatable ? 'yes' : 'no'}</span></div>
+        <div class="kv"><span>Weights</span><span>${S.build.masters.map(m => m.name).join(' · ')}</span></div>
+        <a class="btn pri" href="fonts/Aqua-VF.woff2" download="Aqua-VF-${esc(S.build.version)}.woff2" style="margin-top:10px">Download the font (WOFF2, ${S.build.size_kb} KB)</a>
+        <p class="small sub" style="margin:8px 0 0">A draft is built with the gate closed, to look at. The real one waits until every letter is green. Ask for a new build when your edits are in.</p>` : `<p class="small" style="margin:0">No font built yet. The build runs in the workshop, not the browser; ask for one.</p>`}</div>
+      <div class="panel tight"><h6>How a build happens</h6><p class="small" style="margin:0">The drawings go out of the engine as three weights — Light, Regular, Black — and through the font tools: a check that every letter blends cleanly across the range, then the variable font itself, plus an editable Glyphs file. Every build is numbered; the number, the date and the gate state are kept with the font.</p></div>
     </div>
   </div>`;
   bindWeightPicker(root);
@@ -424,6 +461,7 @@ function Health(root) {
     <div class="panel" style="margin-top:18px"><h6>What needs work</h6>
       ${broken.length ? `<table><thead><tr><th></th><th>Letter</th><th class="num">Score</th><th>Findings</th></tr></thead><tbody>${broken.map(r => `<tr><td><span class="g">${glyphSVG(r.ch, 106, { box: 'metrics' })}</span></td><td><b>${shown(r.ch)}</b><br><span class="sub small">${KIND[E.kindOf(r.ch)]}</span></td><td class="num" style="color:var(--${r.colour === 'red' ? 'bad' : 'warn'})">${r.score}</td><td>${r.flags.map(f => esc(f.text)).join('<br>')}</td></tr>`).join('')}</tbody></table>` : '<p class="small sub" style="margin:0">Nothing. Every letter is green.</p>'}
     </div>
+    ${S.build ? `<div class="panel tight" style="margin-top:18px"><h6>Last font build</h6><p class="small" style="margin:0">${esc(S.build.family)} ${esc(S.build.version)}${S.build.draft ? ' (draft)' : ''} · ${esc(S.build.date)} · gate ${S.build.gate.open ? 'open' : 'closed'} · every letter blends: ${S.build.interpolatable ? 'yes' : 'no'}.</p></div>` : ''}
     <p class="small sub">Scores are computed live from the outlines at thicknesses 53, 78 and 106; the worst weight governs. Your verdicts come from tools/hand.json.</p>
   </div>`;
   root.querySelectorAll('.tile').forEach(t => t.onclick = () => setGlyph(t.dataset.ch));
@@ -444,6 +482,7 @@ addEventListener('keydown', e => {
 });
 addEventListener('beforeunload', e => { if (D.dirty() && D.changeCount()) { e.preventDefault(); e.returnValue = ''; } });
 fetch('../tools/hand.json').then(r => r.ok ? r.json() : null).then(h => { if (h) { S.hand = h; computeHealth(); renderTop(); renderRoom(); } }).catch(() => {});
+fetch('fonts/build-info.json').then(r => r.ok ? r.json() : null).then(b => { if (b) { S.build = b; if (['Export', 'Test', 'Health'].includes(S.room)) renderRoom(); } }).catch(() => {});
 fetch('../aqua/masters/edited-paths.json').then(r => r.ok ? r.json() : null).then(ed => { if (ed) { S.edited = ed; S.diffs = E.buildDiffs(ed); if (S.room === 'Import') renderRoom(); } }).catch(() => {});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderTop(); renderRoom(); });
 })();

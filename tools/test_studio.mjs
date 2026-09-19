@@ -117,6 +117,28 @@ await p.click('[data-act="forget"]'); await p.waitForTimeout(150);
 ok(await p.evaluate(() => !window.AquaDoc.hasMaster('n') && window.AquaEngine.kindOf('n') === 'parametric'), 'forgetting the drawing restores the rules');
 
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
+
+// ── Milestone 3: spacing edits and the built font ──
+await p.goto('http://localhost:8000/studio/?room=Spacing&theme=light&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.evaluate(() => { window.AquaDoc.clearAll(); });
+await p.waitForTimeout(100);
+const advB0 = await p.evaluate(() => window.AquaEngine.glyph('B', 106).w);
+await p.click('#fromink'); await p.waitForTimeout(150);
+const advB1 = await p.evaluate(() => window.AquaEngine.glyph('B', 106).w);
+ok(Math.abs(advB0 - 400) < 0.1 && Math.abs(advB1 - 453) < 0.1, `room from ink: B width ${advB0} → ${advB1}`);
+await p.click('[data-edge="n"][data-side="1"] b[data-k="o"]'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaEngine.shapeOf('n') === 'fo'), 'edge class of n set to flat · open');
+await p.locator('input[data-pair="ma"]').fill('-40'); await p.locator('input[data-pair="ma"]').dispatchEvent('change'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaEngine.kernOf('ma') === -40), 'pair ma changed to -40');
+await p.locator('#np').fill('zz'); await p.locator('#nv').fill('-9'); await p.click('#addpair'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaEngine.kernOf('zz') === -9 && window.AquaDoc.changeCount() >= 4), 'new pair zz added and counted');
+await p.click('a[data-drop="zz"]'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaEngine.kernOf('zz') === 0), 'pair removed again');
+await p.goto('http://localhost:8000/studio/?room=Test&theme=light&stem=106&real=1', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.waitForFunction(() => document.querySelector('.realfont'), null, { timeout: 5000 });
+ok(await p.evaluate(() => document.fonts.check("40px AquaVF")), 'the built font loads in the Test room');
+await p.screenshot({ path: 'studio/shots/test-realfont-light.png' });
+await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();
 process.exit(errors.length ? 1 : 0);

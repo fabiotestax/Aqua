@@ -224,3 +224,9 @@ td .g svg { height: 28px; width: auto; }
 .pad small { grid-area: n; text-align: center; color: var(--sub); font-size: 11px; margin-top: 2px; }
 .drop.over { border-color: var(--blue); background: var(--blue2); }
 td.bad { color: var(--bad); }
+
+/* ── spacing + font ── */
+.num-in { width: 72px; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; background: var(--panel); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.dotc { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); vertical-align: 2px; }
+@font-face { font-family: AquaVF; src: url(fonts/Aqua-VF.woff2) format('woff2'); font-weight: 300 900; font-display: block; }
+.realfont { font-family: AquaVF, sans-serif; line-height: 1.05; white-space: nowrap; overflow: hidden; }

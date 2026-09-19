@@ -53,8 +53,29 @@ verdicts and `../aqua/masters/edited-paths.json` for the Import room's diff. Ser
 root, not `aqua/`, so those relative paths resolve. `node tools/shoot_studio.mjs` screenshots
 every room in light and dark into `studio/shots/` — that is how the app is shown to Fabio.
 
-Milestones 1 (shell) and 2 (editing) are built. The font build, Spacing and the six optical
-audits are the later milestones in the spec.
+Milestones 1 (shell), 2 (editing) and 3 (font build, Spacing, health gate) are built. The
+six optical audits and the New-glyph room are Milestone 4.
+
+**The font build.** `node tools/export_masters.mjs [edits.json]` writes `build/masters.json`
+straight from the engine (no browser): every glyph at the three master stems 53 / 78 / 106,
+placed at its sidebearing with its advance, plus kerning per master, the word space, the
+metrics and the health of the set. `python3 tools/build_font.py [--draft]` (venv) turns that
+into three UFOs + a designspace (wght 300 Light · 400 Regular · 900 Black, mapped to the
+stems), runs `fontTools.varLib.interpolatable`, then fontmake → `build/Aqua-VF.ttf`,
+WOFF2, and glyphsLib → `build/Aqua.glyphs`. Contour direction is set by nesting parity (outer
+counter-clockwise in the UFO; ufo2ft flips for TrueType). `build/` is ignored; the WOFF2 and
+`build-info.json` (version, date, gate, interpolatable) are copied to `studio/fonts/`, which
+is committed, so the Test room can show the real font ("Show the built font") and the Export
+room offers the download. The gate: a red glyph stops the build; `--draft` builds anyway as
+"Aqua Draft". The Regular master at 78 is the engine's own output (true for the parametric
+glyphs, the blend for drawn ones) and is what keeps the variable font faithful between the
+drawn weights.
+
+**Spacing.** Still on hold by decision, but the room is live to try: "Room from ink" (advance
+from the drawing's bounds instead of the hardcoded table), edge classes per letter, the kern
+pairs (edit, remove, add). All of it goes through `doc.spacing` and the engine's `spacing()`
+/ `shapeOf()` / `kernOf()` / `kernPairs()`, so it lands in every room, the export sheet and
+the font build; `bake_edits.mjs` bakes it into `BAKED.spacing`.
 
 **How editing works.** The Studio never writes to `engine.js`. Its changes live in a
 document (`studio/doc.js`): per glyph, one or more *variations*, each holding point edits

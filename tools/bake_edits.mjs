@@ -48,7 +48,16 @@ for (const ch of Object.keys(doc.glyphs || {})) {
   baked.glyphs[ch] = { use: 0, variants: [{ name: 'main', light: v.light, black: v.black }] };
   report.push(`baked ${Object.keys(v.light).length + Object.keys(v.black).length} point edits of ${ch}${g.variants.length > 1 ? ` (variation "${v.name}"; ${g.variants.length - 1} other variation(s) stay in the file)` : ''}`);
 }
-const bakedLine = `const BAKED = ${JSON.stringify({ glyphs: baked.glyphs, masters: {} })};`;
+// 3. spacing: the whole table as it stands after this document
+const spacing = Object.assign({}, baked.spacing || {});
+if (doc.spacing) {
+  if (doc.spacing.fromInk != null) spacing.fromInk = !!doc.spacing.fromInk;
+  spacing.shape = Object.assign({}, spacing.shape || {}, doc.spacing.shape || {});
+  spacing.kern = Object.assign({}, spacing.kern || {}, doc.spacing.kern || {});
+  const n = Object.keys(doc.spacing.shape || {}).length + Object.keys(doc.spacing.kern || {}).length;
+  if (n || doc.spacing.fromInk) report.push(`baked spacing: room from ink ${spacing.fromInk ? 'on' : 'off'}, ${Object.keys(doc.spacing.shape || {}).length} edge classes, ${Object.keys(doc.spacing.kern || {}).length} pairs`);
+}
+const bakedLine = `const BAKED = ${JSON.stringify({ glyphs: baked.glyphs, masters: {}, spacing })};`;
 if (!/^const BAKED = .*$/m.test(src)) throw new Error('could not find BAKED in the engine');
 src = src.replace(/^const BAKED = .*$/m, bakedLine);
 

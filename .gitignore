@@ -47,3 +47,6 @@ aqua-kit/engine/pinches_zoom.png
 .DS_Store
 tools/out/*.svg
 tools/out/page.png
+
+# font build workshop (the WOFF2 and build-info are copied to studio/fonts/)
+build/

@@ -106,8 +106,18 @@ function importMaster(ch, weight, d) {
 function forgetMaster(ch) { delete doc.masters[ch]; commit(`Forget the imported drawing of ${ch}`); }
 function hasMaster(ch) { return !!doc.masters[ch]; }
 
+// ── spacing ──
+// doc.spacing = { fromInk, shape: { ch: 'rf' }, kern: { pair: units at Black } } — on hold by
+// decision, but live to try; the engine reads it through spacing() / shapeOf() / kernOf().
+function spacingDoc() { return doc.spacing || (doc.spacing = { fromInk: false, shape: {}, kern: {} }); }
+function setFromInk(on) { spacingDoc().fromInk = !!on; commit(on ? 'Room from ink: on' : 'Room from ink: off'); }
+function setShape(ch, cls) { const sp = spacingDoc(); if (cls === E.SHAPE[ch] || (!E.SHAPE[ch] && cls === 'ff')) delete sp.shape[ch]; else sp.shape[ch] = cls; commit(`Edges of ${ch}: ${cls}`); }
+function setKern(pair, v) { const sp = spacingDoc(); v = Math.round(v || 0); if (v === (E.KERN[pair] || 0)) delete sp.kern[pair]; else sp.kern[pair] = v; commit(v ? `Pair ${pair}: ${v}` : `Remove pair ${pair}`); }
+function resetSpacing() { delete doc.spacing; commit('Spacing back to the tables'); }
+function spacingChanges() { const sp = doc.spacing; if (!sp) return 0; return (sp.fromInk ? 1 : 0) + Object.keys(sp.shape || {}).length + Object.keys(sp.kern || {}).length; }
+
 // ── files ──
-function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length; return n + Object.keys(doc.masters).length; }
+function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length; return n + Object.keys(doc.masters).length + spacingChanges(); }
 function toJSON() { doc.saved = new Date().toISOString(); return JSON.stringify(doc, null, 1); }
 function download() {
   const a = document.createElement('a');
@@ -127,5 +137,6 @@ function get() { return doc; }
 return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty,
          variants, variant, used, hasEdits, nudge, setNode, resetNode, nodeState, applyToAll, weightsDiffer, resetGlyph,
          addVariant, useVariant, renameVariant, removeVariant,
-         importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange };
+         importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange,
+         setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc };
 });

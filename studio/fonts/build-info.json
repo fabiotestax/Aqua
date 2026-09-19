@@ -1,0 +1,50 @@
+{
+ "build": 2,
+ "version": "0.2",
+ "family": "Aqua Draft",
+ "draft": true,
+ "date": "2026-09-19 17:02 UTC",
+ "commit": "3ed203a",
+ "edits": null,
+ "masters": [
+  {
+   "name": "Light",
+   "stem": 53,
+   "wght": 300
+  },
+  {
+   "name": "Regular",
+   "stem": 78,
+   "wght": 400
+  },
+  {
+   "name": "Black",
+   "stem": 106,
+   "wght": 900
+  }
+ ],
+ "glyphs": 31,
+ "gate": {
+  "open": false,
+  "red": [
+   "B",
+   "comma",
+   "k",
+   "l",
+   "s",
+   "v",
+   "w",
+   "x",
+   "y"
+  ],
+  "amber": [
+   "a",
+   "b",
+   "r",
+   "t"
+  ]
+ },
+ "interpolatable": true,
+ "file": "Aqua-VF.woff2",
+ "size_kb": 7
+}
