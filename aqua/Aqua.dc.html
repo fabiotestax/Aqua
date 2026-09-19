@@ -1155,15 +1155,25 @@ function buildComma(s) {
 // ── Capital B ─────────────────────────────────────────────────────────────────
 // Two rounded-rectangle counters on one stem, the lower one wider, with the waist pinched
 // rather than mitred — the outer wall runs in and back out across the bar in one curve.
+// Constructed against the logotype's B (refs/logotype/logotype-01.svg, path 0). Measured at
+// s = 106: ink width 453, cap 715, stem 129 (a capital carries ~1.2 s), bar 72 thick centred
+// at 0.515 cap, upper bowl out to 427 and lower to the full 453, waist pinched to 312,
+// counters 189×236 over 213×249, top-left corner ~0.2 s and bottom-left ~0.47 s.
+// Widths are fixed to the artwork; every stroke thickness is a function of s and contrast.
 function buildCapB(s) {
-  const cap = 700, bot = -4, W = 400, k = contrastK(s), th = 0.72 * s * k;
-  const W1 = 0.90 * W, yM = 0.50 * cap, yBT = yM + th / 2, yBB = yM - th / 2;
-  const rc = 0.34 * s, Wn = W1 - 0.085 * W;
-  const r1 = Math.min(0.45 * (W1 - s), 0.45 * (cap - yBT));
-  const r3 = Math.min(0.45 * (W - s), 0.45 * (yBB - bot));
-  const cu = [s, W1 - s, yBT, cap - th], cd = [s, W - s, bot + th, yBB];
+  const cap = 715, bot = 0, W = 453, k = contrastK(s);
+  const bs = 1.20 * s;                                   // the B's stem
+  const th = 0.68 * s * k;                               // the bar (horizontal: takes contrast)
+  const tTop = 0.75 * s * k, tBot = 0.77 * s * k;        // top and bottom walls
+  const yM = 0.515 * cap, yBT = yM + th / 2, yBB = yM - th / 2;
+  const W1 = 0.943 * W, Wn = 0.69 * W;                   // upper bowl reach, waist
+  const wr1 = 1.02 * s, wr2 = 1.04 * s;                  // right walls, upper / lower
+  const rcT = 0.20 * s, rcB = 0.47 * s;                  // outer stem corners, top / bottom
+  const r1 = Math.min(0.45 * (W1 - bs), 0.45 * (cap - yBT));
+  const r3 = Math.min(0.45 * (W - bs), 0.45 * (yBB - bot));
+  const cu = [bs, W1 - wr1, yBT, cap - tTop], cd = [bs, W - wr2, bot + tBot, yBB];
   const box = ([xl, xr, yb, yt]) => {
-    const r = Math.min(0.42 * (xr - xl), 0.42 * (yt - yb));
+    const r = Math.min(0.38 * (xr - xl), 0.38 * (yt - yb));
     return contour([
       { p: [xl, yb + r], t: TVd }, { p: [xl + r, yb], t: THr },
       { p: [xr - r, yb], t: THr }, { p: [xr, yb + r], t: TV },
@@ -1171,13 +1181,13 @@ function buildCapB(s) {
       { p: [xl + r, yt], t: THl }, { p: [xl, yt - r], t: TVd }]);
   };
   return contour([
-    { p: [0, cap - rc], t: TV }, { p: [rc, cap], t: THr },
+    { p: [0, cap - rcT], t: TV }, { p: [rcT, cap], t: THr },
     { p: [W1 - r1, cap], t: THr }, { p: [W1, cap - r1], t: TVd },
     { p: [W1, yBT + 0.62 * r1], t: TVd },
-    { p: [Wn, yM], t: TVd },
+    { p: [Wn, yM], t: TVd },                               // the waist, one smooth S in and out
     { p: [W, yBB - 0.62 * r3], t: TVd },
     { p: [W, bot + r3], t: TVd }, { p: [W - r3, bot], t: THl },
-    { p: [rc, bot], t: THl }, { p: [0, bot + rc], t: TV }])
+    { p: [rcB, bot], t: THl }, { p: [0, bot + rcB], t: TV }])
     + box(cu) + box(cd);
 }
 
