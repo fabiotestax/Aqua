@@ -15,11 +15,20 @@ and open questions. This file only covers how to work in the repo.
 cd aqua && python3 -m http.server     # then open http://localhost:8000/Aqua.dc.html
 ```
 
-`aqua/Aqua.dc.html` is a plain static page. It loads `support.js` from the same folder,
-`masters/edited-paths.json` for section 08, and pulls IBM Plex Sans + IBM Plex Mono from
-Google Fonts. No build step, no package manager. Serve it over HTTP — `file://` blocks the
-`fetch` that section 08 needs. (The runtime also loads React + Babel from unpkg; in a
-sandbox without CDN access, `tools/` carries a Playwright renderer that serves them locally.)
+`aqua/Aqua.dc.html` is a plain static page. It loads `engine.js` (the typeface) and
+`support.js` (the component runtime) from the same folder, `masters/edited-paths.json` for
+section 08, and pulls IBM Plex Sans + IBM Plex Mono from Google Fonts. No build step, no
+package manager. Serve it over HTTP — `file://` blocks the `fetch` that section 08 needs.
+(The runtime also loads React + Babel from unpkg; in a sandbox without CDN access,
+`tools/export_glyphs.mjs` and `tools/shoot_page.mjs` serve them from a local npm pack:
+`npm pack react@18.3.1 react-dom@18.3.1 @babel/standalone@7.29.0`, unpack, and point
+`AQUA_VENDOR` at a folder holding `umd/react*.production.min.js` and `babel.min.js`.)
+
+**The geometry is `aqua/engine.js`** (lifted out of the page 2026-09-19, byte-identical
+export before and after). It is a plain script with no dependencies: `window.AquaEngine` in a
+browser, `require('./aqua/engine.js')` in Node. The page's own script block is now only the
+`Component` class; the Studio (`studio/`) imports the same file. Edit glyphs in the engine,
+never in the page.
 
 **This file is canonical.** Decided 2026-09-19: `Aqua.dc.html` + `MASTERS` is the single
 source of truth for the typeface. The earlier skeleton-stroking engine (`archive/aqua-kit/`)
@@ -46,7 +55,8 @@ CLAUDE.md                     this file — how to work in the repo
 AQUA-STATUS.md                the full state of the project — read this first
 
 aqua/                         THE TYPEFACE (canonical)
-  Aqua.dc.html                everything: builders, masters, spacing, UI, export, reimport
+  engine.js                   the typeface: builders, masters, spacing, export, reimport
+  Aqua.dc.html                the proof page — loads engine.js, adds only its own UI
   support.js                  the component runtime the page needs
   masters/masters.json        the drawn weights as ingested
   masters/edited-paths.json   raw paths parsed from the returned SVGs (section 08 reads this)
@@ -78,10 +88,10 @@ archive/design-sync/          the old Claude Design ↔ GitHub sync record
 - The reshape phase from AQUA-STATUS §13 never happened; many glyphs are half-baked. Spacing
   stays on hold until the set is reshaped, per the existing rule.
 
-Inside `Aqua.dc.html`, in order: constants and the contrast curve → shared primitives
+Inside `engine.js`, in order: constants and the contrast curve → shared primitives
 (`contour`, `cutTop`, `foot`, `arch`, `corner`, `buildRing`, `strokePath`, `offsetPath`) →
 one `buildX(s)` per parametric glyph → SVG export + reimport → the spacing block (`SHAPE`,
-`SBK`, `KERN`, `glyphWidth`, `layout`) → `MASTERS` and `makeMaster` → the `Component` class.
+`SBK`, `KERN`, `glyphWidth`, `layout`) → `MASTERS` and `makeMaster` → `layout` → the reimport diff. The `Component` class stays in the page.
 
 ---
 

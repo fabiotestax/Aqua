@@ -1,0 +1,1299 @@
+// Aqua — the typeface as a plain module.
+//
+// Everything that draws a glyph lives here: the contrast law, the shared primitives, one
+// buildX(s) per parametric glyph, the anisotropic offset for the g, the drawn masters and
+// their interpolation, the spacing tables, the SVG export and the reimport diff.
+// Aqua.dc.html and the Studio both load this file; neither owns any geometry of its own.
+//
+// Loads as a classic <script> (window.AquaEngine) and as a CommonJS module (require).
+// No dependencies. Only samplePath() touches the DOM, and only when called.
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  root.AquaEngine = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+'use strict';
+const SRC = "M254 -174Q214 -173 176.0 -161.5Q138 -150 108.0 -131.0Q78 -112 62.5 -88.0Q47 -64 53 -39Q60 -10 95 15Q108 25 121.5 33.5Q135 42 134 50Q134 58 122.5 64.5Q111 71 99 79Q75 93 59.0 110.0Q43 127 42 145Q41 163 55.5 181.5Q70 200 92 215Q105 224 117.0 232.0Q129 240 129 249Q130 258 120.0 268.0Q110 278 100 289Q66 325 63 362Q61 391 76.0 420.0Q91 449 118.0 473.5Q145 498 179.0 512.5Q213 527 249 528Q285 529 319.5 515.0Q354 501 381.0 477.0Q408 453 423.0 423.5Q438 394 436 363Q434 327 409.0 294.0Q384 261 347.0 239.5Q310 218 273 217Q264 216 255.0 217.0Q246 218 237 220Q228 221 219.0 222.5Q210 224 201 223Q185 220 169.0 209.5Q153 199 142.5 184.0Q132 169 133 155Q133 138 148.0 124.0Q163 110 185.0 101.5Q207 93 227 91Q239 90 249.5 91.5Q260 93 271 94Q282 96 293.5 97.0Q305 98 316 97Q351 95 385.5 74.5Q420 54 443.5 24.5Q467 -5 470 -36Q473 -74 442.5 -106.0Q412 -138 361.5 -157.0Q311 -176 254 -174ZM250 465Q215 465 190.5 438.5Q166 412 166 375Q166 338 190.5 311.5Q215 285 250 285Q285 285 309.5 311.5Q334 338 334 375Q334 412 309.5 438.5Q285 465 250 465ZM261 28Q218 28 187.5 6.0Q157 -16 157 -47Q157 -78 187.5 -100.0Q218 -122 261 -122Q304 -122 334.5 -100.0Q365 -78 365 -47Q365 -16 334.5 6.0Q304 28 261 28Z";
+
+const REF22 = "M132.9 49.1C132.9 95 42.5 93.5 42.5 147.8C42.5 201.2 128.2 203.3 128.2 251.7C128.2 298.4 63.1 319.9 63.1 370.4C63.1 462.6 171.1 527.9 254.3 527.9C337.4 527.9 436 460 436 370.5C436 263.1 326 219.7 237.6 219.7C197.7 219.7 133.5 213.4 133.5 157.6C133.5 110.7 198.2 90.8 236 90.8C258.8 90.8 281.1 97.3 304 97.3C376.9 97.3 470 36.7 470 -42.9C470 -137.7 340.3 -174.1 264.7 -174.1C195.5 -174.1 51.8 -146 51.8 -54.3C51.8 -2 132.9 4.6 132.9 49.1ZM250 465C202.1 465 166 421.2 166 375C166 328.8 202.1 285 250 285C297.9 285 334 328.8 334 375C334 421.2 297.9 465 250 465ZM261 28C217.4 28 157 4.5 157 -47C157 -98.5 217.4 -122 261 -122C304.6 -122 365 -98.5 365 -47C365 4.5 304.6 28 261 28Z";
+
+const REF28 = "M82.5 -111.6C66.3 -96.3 51.3 -76.4 51.3 -53.1C51.3 -19.3 78.7 3.5 103.8 21.6C112.5 27.8 134.1 36.7 134.1 49.2C134.1 61.8 116.7 67.6 107.9 73.2C81.9 89.7 41.9 111.7 41.9 147.3C41.9 179.6 74.9 202.9 98.4 219.4C109.2 227 129.1 235 129.1 250.4C129.1 265.7 108.4 279.4 99.1 289.9C79.5 312.3 62.8 337.8 62.8 368.7C62.8 460.4 171.4 528.1 254.1 528.1C336.1 528.1 436.2 459 436.2 370.3C436.2 285.4 343.2 216.5 263.6 216.5C244.9 216.5 226.9 223.4 208.3 223.4C177.3 223.4 132.9 191.2 132.9 157.9C132.9 112.3 198.6 90.6 236 90.6C259.1 90.6 281.7 97.5 304.8 97.5C375.2 97.5 470.3 34.6 470.3 -42.7C470.3 -73.3 452.5 -98.3 430.2 -117.7C385.7 -156.3 323.5 -174.2 265.4 -174.2C202 -174.2 129.8 -156.2 82.5 -111.6ZM250 465C201.6 465 166 421.6 166 375C166 328.4 201.6 285 250 285C298.4 285 334 328.4 334 375C334 421.6 298.4 465 250 465ZM261 28C217.8 28 157 4.5 157 -47C157 -98.5 217.8 -122 261 -122C304.2 -122 365 -98.5 365 -47C365 4.5 304.2 28 261 28Z";
+
+// Contrast is a function of weight, not a constant. As the stem thins the horizontals thin
+// FASTER than the verticals, so the light cuts keep the drawn, watery character instead of
+// flattening into a geometric sans. thin/stem runs 0.49 at Black to 0.35 at Regular
+// (the curve is defined down to 0.28 so the axis can be extended later without a refit).
+const thinRatio = s => 0.28 + 0.21 * (Math.max(26, Math.min(106, s)) - 26) / 80;
+const contrastK = s => thinRatio(s) / 0.49;
+const CONTRAST = 0.50;
+// One angle for the whole family: every cut terminal climbs 0.34 to the right across its
+// own stem, so the h, the exclam and anything derived from them share a single slope.
+const SLANT = 0.34;
+const SL = (() => { const L = Math.hypot(1, SLANT); return [1 / L, SLANT / L]; })();
+// shallow down-left tangent used where the a's sole hands over to the bowl's underside
+const TUCK = (() => { const L = Math.hypot(1, 0.30); return [-1 / L, -0.30 / L]; })();
+
+// Solved against the polished outline so the neck holds its 0.65 ratio to the stem.
+const NECK_TABLE = [[0, 1], [11, 0.573], [19, 0.571], [26, 0.575], [33, 0.574], [39, 0.576]];
+function neckComp(d) {
+  if (d <= 0) return 1;
+  for (let i = 1; i < NECK_TABLE.length; i++) {
+    const [x0, y0] = NECK_TABLE[i-1], [x1, y1] = NECK_TABLE[i];
+    if (d <= x1) return y0 + (y1 - y0) * (d - x0) / (x1 - x0);
+  }
+  return NECK_TABLE[NECK_TABLE.length - 1][1];
+}
+const inNeck = p => p[0] < 250 && p[1] > 20 && p[1] < 280;
+
+function offsetPath(d0, amount, fixNeck) {
+  const tk = d0.match(/[MCZ]|-?[\d.]+/g);
+  const cs = []; let cur = null, c = null, i = 0;
+  while (i < tk.length) {
+    const t = tk[i];
+    if (t === 'M') { cur = [+tk[i+1], +tk[i+2]]; c = { segs: [] }; cs.push(c); i += 3; }
+    else if (t === 'C') {
+      c.segs.push([cur, [+tk[i+1], +tk[i+2]], [+tk[i+3], +tk[i+4]], [+tk[i+5], +tk[i+6]]]);
+      cur = [+tk[i+5], +tk[i+6]]; i += 7;
+    } else i++;
+  }
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1]], add = (a, b) => [a[0]+b[0], a[1]+b[1]];
+  const mul = (a, s) => [a[0]*s, a[1]*s], len = a => Math.hypot(a[0], a[1]);
+  const unit = a => { const l = len(a) || 1; return [a[0]/l, a[1]/l]; };
+  const f = v => Math.round(v*10)/10;
+  let out = '';
+  cs.forEach(cc => {
+    const segs = cc.segs, n = segs.length;
+    const tan = segs.map(S => { let t = sub(S[1], S[0]); if (len(t) < 1e-6) t = sub(S[3], S[0]); return unit(t); });
+    const comp = fixNeck === false ? 1 : neckComp(amount);
+    // horizontals thin faster than verticals, and the gap widens as the weight drops. The
+    // neck band keeps the flat 0.50 it was solved against, so its 0.65 ratio still holds.
+    const CH = Math.max(0.5, 0.80 - 0.0058 * amount);
+    const A = segs.map((S, k) => {
+      const t = tan[k], nk = inNeck(S[0]);
+      const c = nk ? CONTRAST : CH;
+      let fac = c + (1 - c) * Math.abs(t[1]);
+      if (nk) fac *= comp;
+      return add(S[0], mul([t[1], -t[0]], amount * fac));
+    });
+    const nu = segs.map((S, k) => {
+      const a = A[k], b = A[(k+1) % n];
+      const ratio = len(sub(b, a)) / (len(sub(S[3], S[0])) || 1);
+      const t1 = unit(sub(S[1], S[0])), t2 = unit(sub(S[2], S[3]));
+      return [a, add(a, mul(t1, len(sub(S[1], S[0])) * ratio)), add(b, mul(t2, len(sub(S[2], S[3])) * ratio)), b];
+    });
+    out += `M${f(nu[0][0][0])} ${f(nu[0][0][1])}`;
+    nu.forEach(S => { out += `C${f(S[1][0])} ${f(S[1][1])} ${f(S[2][0])} ${f(S[2][1])} ${f(S[3][0])} ${f(S[3][1])}`; });
+    out += 'Z';
+  });
+  return out;
+}
+
+const H_PATH = "M106 698C106 652.1 106 606.1 106 560.2C106 510.5 120.3 470.1 138 470.1C204.3 470.1 204.3 528 258.5 528C325.1 528 379 474.1 379 407.5C379 289.3 379 171.2 379 53C379 23.7 355.3 0 326 0C296.7 0 273 23.7 273 53C273 158.1 273 263.1 273 368.2C273 414.3 235.6 451.7 189.5 451.7C143.4 451.7 106 414.3 106 368.2C106 263.1 106 158.1 106 53C106 23.7 82.3 0 53 0C23.7 0 0 23.7 0 53C0 268 0 483 0 698C0 727.3 23.7 751 53 751C82.3 751 106 727.3 106 698Z";
+
+const A_PATH = "M192 528C290.3 528 370 480.5 370 422C370 321.3 370 220.7 370 120C370 49.9 273.9 -7 155.4 -7C69.6 -7 0 59.7 0 142C0 223.7 86.6 289.8 193.4 289.8C230.7 289.8 261 341.9 261 406.1C261 430.2 190.9 443.2 104.4 443.2C81 443.2 62 462.2 62 485.6C62 509 81 528 104.4 528C133.6 528 162.8 528 192 528ZM109 141.4C109 95.7 146.8 58.7 193.4 58.7C240 58.7 277.8 96.5 277.8 143.1C277.8 150.8 277.8 158.5 277.8 166.2C277.8 198.2 240 224.1 193.4 224.1C146.8 224.1 109 187.1 109 141.4Z";
+
+const EXCL_PATH = "M4 698C4 727.3 27.7 751 57 751C86.3 751 110 727.3 110 698C110 551.3 110 404.7 110 258C110 228.7 86.3 205 57 205C27.7 205 4 228.7 4 258C4 404.7 4 551.3 4 698ZM0.8 56.2C0.8 87.2 26 112.4 57 112.4C88 112.4 113.2 87.2 113.2 56.2C113.2 25.2 88 0 57 0C26 0 0.8 25.2 0.8 56.2Z";
+
+// ink width and left edge shrink predictably: every horizontal extreme has a vertical
+// tangent, so it moves by exactly the offset — except the g's left edge, which is inside
+// the compensated neck band.
+const WORD = [
+  { key: 'h', p: H_PATH, w0: 379.1, minX0: 0, neck: false, extra: 0 },
+  { key: 'a', p: A_PATH, w0: 370.4, minX0: 0, neck: false, extra: 0 },
+  { key: 'g', p: null,   w0: 427.5, minX0: 42.5, neck: true, extra: 0 },
+  { key: '!', p: EXCL_PATH, w0: 112, minX0: 0, neck: false, extra: 10 }
+];
+
+// Glyphs are CONSTRUCTED at each weight, not offset from the Black master. Terminals are
+// true semicircular caps of radius s/2, so they stay round all the way down instead of
+// shrinking to spikes. Every point sits on an extremum; every handle is the circle
+// constant on quarter turns, so a lump cannot occur.
+const KC = 0.5523, fx = v => Math.round(v * 10) / 10;
+const TV = [0, 1], TVd = [0, -1], THr = [1, 0], THl = [-1, 0];
+function contour(P) {
+  let out = `M${fx(P[0].p[0])} ${fx(P[0].p[1])}`;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length];
+    // a point may carry a separate INCOMING tangent (tin) — that is the only way to put a
+    // real corner in the outline (the slant-cut terminal needs one)
+    const bt = b.tin || b.t;
+    const t0 = a.t, t1 = [-bt[0], -bt[1]];
+    const dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1];
+    const collinear = Math.abs(t0[0] * (-t1[0]) + t0[1] * (-t1[1]) - 1) < 1e-6;
+    const chordPar = Math.abs(t0[0] * dy - t0[1] * dx) < 0.01;
+    const perp = Math.abs(t0[0] * t1[0] + t0[1] * t1[1]) < 0.5;
+    let h0, h1;
+    if (collinear && chordPar) { h0 = h1 = Math.hypot(dx, dy) / 3; }
+    else if (perp) { h0 = KC * Math.abs(t0[0] ? dx : dy); h1 = KC * Math.abs(t1[0] ? dx : dy); }
+    // (floor applied below — a zero-length handle has an undefined tangent and breaks
+    //  interpolation, so no handle may fall under 15% of its own chord)
+    else {
+      // S-curve. Scale off the tangent axis, but never below half the chord — otherwise a
+      // chord running perpendicular to its own tangents collapses the handles to a cusp.
+      const sp = Math.max(Math.abs(t0[0] ? dx : dy), Math.hypot(dx, dy) * 0.5);
+      h0 = (a.k0 ?? 0.55) * sp; h1 = (b.k1 ?? 0.45) * sp;
+    }
+    const floor = Math.hypot(dx, dy) * 0.15;
+    h0 = Math.max(h0, floor); h1 = Math.max(h1, floor);
+    // an explicit handle length wins over the solver — that is how a true circular fillet
+    // on a diagonal join is expressed (see corner())
+    if (a.hx != null) h0 = a.hx;
+    if (b.hn != null) h1 = b.hn;
+    out += `C${fx(a.p[0] + t0[0] * h0)} ${fx(a.p[1] + t0[1] * h0)} ${fx(b.p[0] + t1[0] * h1)} ${fx(b.p[1] + t1[1] * h1)} ${fx(b.p[0])} ${fx(b.p[1])}`;
+  }
+  return out + 'Z';
+}
+// A stem, top and bottom, shared by h/n/b/u/m/w so every one of them ends the same way:
+// the ascender is an angled cut on SLANT with softened corners, the foot is a rounded
+// square — a flat sole with generous corners, not a semicircular cap.
+function cutTop(x0, s, asc) {
+  const fr = 0.34 * s, fr2 = 0.28 * s, ascL = asc - SLANT * s;
+  return [
+    { p: [x0, ascL - fr], t: TV },
+    { p: [x0 + fr * SL[0], ascL + fr * SL[1]], t: SL },
+    { p: [x0 + s - fr2 * SL[0], asc - fr2 * SL[1]], t: SL }];
+}
+function foot(x0, s) {
+  const rb = 0.30 * s;
+  return [
+    { p: [x0 + s, rb], t: TVd }, { p: [x0 + s - rb, 0], t: THl },
+    { p: [x0 + rb, 0], t: THl }, { p: [x0, rb], t: TV }];
+}
+// the arch that carries h, n, m and (mirrored) u. armX/armY set where it leaves the stem,
+// oaX/oaY its crown; the crown is a horizontal, so it takes the weight's contrast.
+function arch(x0, s, W, k, xh, ov) {
+  const armY = xh - 0.48 * s, armX = x0 + s + 32;
+  const oaY = xh + ov, oaX = (armX + x0 + W) / 2, iaY = oaY - 0.72 * s * k, iaX = x0 + W / 2;
+  const spring = iaY - (W - 2 * s) / 2;
+  return { armY, armX, oaY, oaX, iaY, iaX, spring };
+}
+function buildH(s) {
+  const asc = 751, xh = 521, ov = 7, W = 379, k = contrastK(s), fr2 = 0.28 * s;
+  const A = arch(0, s, W, k, xh, ov), rise = 0.85 * s;
+  return contour([
+    { p: [s, asc - fr2], t: TVd }, { p: [s, Math.min(A.armY + rise, asc - fr2 - 1)], t: TVd },
+    { p: [A.armX, A.armY], t: THr, k0: 0.55 }, { p: [A.oaX, A.oaY], t: THr, k1: 0.45 },
+    { p: [W, A.oaY - (W - A.oaX)], t: TVd },
+    ...foot(W - s, s),
+    { p: [W - s, A.spring], t: TV },
+    { p: [A.iaX, A.iaY], t: THl }, { p: [s, A.spring], t: TVd },
+    ...foot(0, s),
+    ...cutTop(0, s, asc)]);
+}
+function buildA(s) {
+  const xh = 521, ov = 7, W = 370, top = xh + ov, bot = -ov;
+  // The outer silhouette is FIXED — no term below depends on s. Only the inner edges move,
+  // each one offset from its own outer edge by the stroke it carries, so every weight is the
+  // same shape eroded by ink and the masters interpolate without any compensation table.
+  const bowlTop = 285, ltx = 118, tx = 62, lean = 106 - s;
+  // The shoulder's turn eases wider than the stroke as the weight drops, and the arm's top
+  // edge runs all the way to where that turn begins — so the shoulder is a TRUE quarter
+  // circle. Holding the apex at a fixed x made it a flattened ellipse that broke into a
+  // visible corner where it met the stem.
+  const shR = s + 0.45 * lean, shX = W - shR;
+  // the stem stops short of the baseline in a small squared foot and the bowl tucks under it
+  // — the flick the artwork ends on. Outer geometry, so it is identical at every weight.
+  const tipY = 44, tipR = 40, k = contrastK(s);
+  const armTt = 0.62 * s * k;        // arm at the terminal = the thin stroke
+  const rise = 0.24 * s;             // arm top climbs from terminal to shoulder, so the arm
+  const underY = top - rise - armTt; // tapers by its top edge while the underside stays flat
+  // the arm narrows toward the terminal, then stops in a true semicircle:
+  // no cut, no corner anywhere on the a
+  const capR = armTt / 2;  // the arm's top edge leaves the terminal on the chord to the shoulder, so the climb is one
+  // monotone arc — leaving it horizontal made it run flat and then hump into the shoulder
+  const TOPT = (() => { const L = Math.hypot(shX - tx - capR, rise); return [(shX - tx - capR) / L, rise / L]; })();
+  const inX = W - s;                 // stem inner edge = aperture's right wall
+  // Aperture is a parallel slot, not a lens: a straight run of inner edge with a rounded
+  // corner at each end. The old single tangency point pinched it shut as the stroke thinned.
+  const slot = underY - bowlTop;
+  // The arm does not turn a corner into the stem, it pours into it: the aperture's top turn
+  // is a large sweep taken off the slot's own height, so the inside answers the outer
+  // shoulder instead of reading as a right angle with a small fillet on it.
+  const cr = Math.min(0.62 * slot, 0.45 * (inX - tx - capR));
+  // the aperture's floor is one continuous arch from the bowl's left shoulder up into the
+  // stem — a flat run across the top of the bowl is what made the light weights read squared
+  const cr2 = Math.min(0.30 * s + 26, 0.45 * slot);
+  // Counter = the bowl inset by its own walls. It is a TRUE ELLIPSE (four points, circle
+  // constant on every quarter) so it can never read squared — a circle at Black, opening
+  // toward the lower left as the stroke thins, exactly as the artwork does.
+  // The side walls ease off the stroke as the weight drops, which keeps the counter close
+  // to round instead of letting the fixed outer width stretch it wide.
+  const cl = s + 0.10 * lean, crF = W - 0.87 * s - 0.18 * lean;
+  // a touch of lift on the bottom wall at the light end keeps the bowl from pinching
+  // where the counter passes the tuck
+  const cb = bot + 0.62 * s * k + 0.06 * lean, ct = bowlTop - 0.54 * s * k;
+  const cmx = (cl + crF) / 2, cmy = (cb + ct) / 2;
+
+  return contour([
+    { p: [tx + capR, top - rise], t: TOPT },
+    { p: [shX, top], t: THr },
+    { p: [W, top - shR], t: TVd },
+    { p: [W, tipY + tipR], t: TVd },
+    { p: [W - tipR, tipY], t: THl },
+    { p: [286, 6], t: TUCK, k0: 0.34 },
+    { p: [0.42 * W, bot], t: THl },
+    { p: [0, 150], t: TV },
+    { p: [ltx, bowlTop], t: THr },
+    { p: [inX, bowlTop + cr2], t: TV },
+    { p: [inX, underY - cr], t: TV },
+    { p: [inX - cr, underY], t: THl },
+    { p: [tx + capR, underY], t: THl },
+    { p: [tx, underY + capR], t: TV }])
+    + contour([
+    { p: [cl, cmy], t: TVd }, { p: [cmx, cb], t: THr },
+    { p: [crF, cmy], t: TV }, { p: [cmx, ct], t: THl }]);
+}
+function buildExcl(s) {
+  const asc = 751, w = s / 2, cx = w + 4, yB = 205, r = 0.53 * s;
+  const x0 = cx - w, rb = 0.30 * s, fr2 = 0.28 * s;
+  // same cut top and rounded-square sole as the h, lifted to the bar's baseline
+  const sole = foot(x0, s).map(p => ({ ...p, p: [p.p[0], p.p[1] + yB] }));
+  return contour([
+    { p: [x0 + s, asc - fr2], t: TVd }, ...sole, ...cutTop(x0, s, asc)])
+    + contour([{ p: [cx - r, r], t: TV }, { p: [cx, 2 * r], t: THr },
+               { p: [cx + r, r], t: TVd }, { p: [cx, 0], t: THl }]);
+}
+
+// ── Derived from the h ────────────────────────────────────────────────────────
+// Everything below reuses the h's three parts: cutTop for the terminal, foot for the
+// sole, arch for the shoulder. No new proportions are invented — only where those
+// parts are placed.
+
+// n: the h with the ascender taken off. The stem's cut terminal now sits on the
+// x-height and the shoulder springs straight off it.
+function buildN(s) {
+  const xh = 521, ov = 7, W = 379, k = contrastK(s);
+  const A = arch(0, s, W, k, xh, ov);
+  return contour([
+    { p: [A.oaX, A.oaY], t: THr, k1: 0.45 },
+    { p: [W, A.oaY - (W - A.oaX)], t: TVd },
+    ...foot(W - s, s),
+    { p: [W - s, A.spring], t: TV },
+    { p: [A.iaX, A.iaY], t: THl },
+    { p: [s, A.spring], t: TVd },
+    ...foot(0, s),
+    ...cutTop(0, s, xh).map((p, i) => i === 2 ? { ...p, k0: 0.30 } : p)]);
+}
+
+// b: the h's ascender and shoulder, with the shoulder's joint mirrored at the
+// baseline to close the bowl. Counter is an ellipse, like the a's.
+function buildB(s) {
+  const asc = 751, xh = 521, ov = 7, W = 379, k = contrastK(s), fr2 = 0.28 * s;
+  const top = xh + ov, bot = -ov, th = 0.72 * s * k;
+  const rB = Math.min(0.48 * (W - s), 0.44 * (top - bot));
+  const jf = 0.34 * s, rb = 0.30 * s;
+  const cl = s, cr = W - s, cb = bot + th, ct = top - th;
+  const rc = Math.min((cr - cl) / 2, (ct - cb) / 2);
+  return contour([
+    { p: [s, asc - fr2], t: TVd },
+    { p: [s, top + 1.05 * jf], t: TVd },
+    // the flick: the bowl leaves the stem on a small ledge before it settles onto its own
+    // top edge, which is the droplet the artwork hangs on every joint
+    { p: [s + jf, top + 0.16 * s], t: THr },
+    { p: [s + 2.1 * jf, top], t: THr },
+    { p: [W - rB, top], t: THr },
+    { p: [W, top - rB], t: TVd },
+    { p: [W, bot + rB], t: TVd },
+    { p: [W - rB, bot], t: THl },
+    { p: [s + jf, bot], t: THl },
+    { p: [s, bot + jf], t: THl },
+    { p: [s - jf, bot], t: THl },
+    { p: [rb, bot], t: THl },
+    { p: [0, bot + rb], t: TV },
+    ...cutTop(0, s, asc)])
+    + contour([
+      { p: [cl, cb + rc], t: TVd }, { p: [cl + rc, cb], t: THr },
+      { p: [cr - rc, cb], t: THr }, { p: [cr, cb + rc], t: TV },
+      { p: [cr, ct - rc], t: TV }, { p: [cr - rc, ct], t: THl },
+      { p: [cl + rc, ct], t: THl }, { p: [cl, ct - rc], t: TVd }]);
+}
+function buildD(s) { return flipPath(buildB(s), 379, null); }
+
+// u: the n's bowl, righted. Symmetric rather than a flipped n — the shoulder's spur
+// only makes sense hanging off a stem, not holding one up — so both stems take the
+// cut terminal and the bowl is a true half-round.
+function buildU(s) {
+  const xh = 521, ov = 7, W = 379, k = contrastK(s), fr2 = 0.28 * s;
+  const cx = W / 2, ro = -ov + cx, ib = -ov + 0.72 * s * k, ri = ib + (cx - s);
+  return contour([
+    ...cutTop(0, s, xh),
+    { p: [s, xh - fr2], t: TVd }, { p: [s, ri], t: TVd },
+    { p: [cx, ib], t: THr },
+    { p: [W - s, ri], t: TV },
+    ...cutTop(W - s, s, xh),
+    { p: [W, xh - fr2], t: TVd }, { p: [W, ro], t: TVd },
+    { p: [cx, -ov], t: THl }, { p: [0, ro], t: TV }]);
+}
+
+// m: two of the n's arches on a compressed width, meeting in a valley the same depth
+// as the n's own shoulder joint.
+function buildM(s) {
+  const xh = 521, ov = 7, Wa = 330, k = contrastK(s), oaY = xh + ov;
+  const x1 = Wa - s, Wm = 2 * Wa - s;
+  const A1 = arch(0, s, Wa, k, xh, ov), A2 = arch(x1, s, Wa, k, xh, ov);
+  return contour([
+    { p: [A1.oaX, oaY], t: THr, k1: 0.45 },
+    { p: [(x1 + s + A2.armX) / 2, A1.armY], t: THr, k0: 0.5, k1: 0.5 },
+    { p: [A2.oaX, oaY], t: THr, k1: 0.45 },
+    { p: [Wm, oaY - (Wm - A2.oaX)], t: TVd },
+    ...foot(Wm - s, s),
+    { p: [Wm - s, A2.spring], t: TV },
+    { p: [A2.iaX, A2.iaY], t: THl },
+    { p: [x1 + s, A2.spring], t: TVd },
+    ...foot(x1, s),
+    { p: [x1, A1.spring], t: TV },
+    { p: [A1.iaX, A1.iaY], t: THl },
+    { p: [s, A1.spring], t: TVd },
+    ...foot(0, s),
+    ...cutTop(0, s, xh).map((p, i) => i === 2 ? { ...p, k0: 0.30 } : p)]);
+}
+
+// w: the m turned over — two of the u's bowls on the m's width, meeting under a
+// middle stem. Three cut terminals across the top, no feet.
+function buildW(s) {
+  const xh = 521, ov = 7, Wu = 330, k = contrastK(s), fr2 = 0.28 * s;
+  const Wm = 2 * Wu - s, c1 = Wu / 2, c2 = Wm - Wu / 2, xp = Wu - s / 2;
+  // The two bowls are circles of one radius, and the middle stem stands where they would
+  // cross: the peak is that crossing height, so the junction carries the bowls' own weight.
+  // Landing them on the stem's edges instead made the wall taper to nothing as it rose.
+  // Each bowl is the u's bowl, whole: same radius, same counter. They overlap under the
+  // middle stem and the letter's vertex is exactly where the two circles cross, so the wall
+  // keeps the u's thickness right through the junction instead of tapering into it.
+  const R = Wu / 2, ro = -ov + R, ib = -ov + 0.72 * s * k, ri = ib + (R - s);
+  const dxj = (Wu - s) / 2, hy = Math.sqrt(R * R - dxj * dxj), yj = ro - hy;
+  const TJa = [-hy / R, -dxj / R], TJb = [-hy / R, dxj / R], kj = 0.39;
+  return contour([
+    ...cutTop(0, s, xh),
+    { p: [s, xh - fr2], t: TVd }, { p: [s, ri], t: TVd },
+    { p: [c1, ib], t: THr },
+    { p: [Wu - s, ri], t: TV },
+    ...cutTop(Wu - s, s, xh),
+    { p: [Wu, xh - fr2], t: TVd }, { p: [Wu, ri], t: TVd },
+    { p: [c2, ib], t: THr },
+    { p: [Wm - s, ri], t: TV },
+    ...cutTop(Wm - s, s, xh),
+    { p: [Wm, xh - fr2], t: TVd }, { p: [Wm, ro], t: TVd },
+    { p: [c2, -ov], t: THl, k0: kj },
+    { p: [xp, yj], t: TJa, tin: TJb, k0: kj, k1: kj },
+    { p: [c1, -ov], t: THl, k1: kj }, { p: [0, ro], t: TV }]);
+}
+
+// ── Three more parts ──────────────────────────────────────────────────────────
+// cutBot is cutTop turned over: the same 0.34 slope, so a stroke that ends pointing DOWN
+// (the r's arm) is cut on the family angle rather than rounded off.
+function cutBot(x0, s, base) {
+  const fr = 0.34 * s, fr2 = 0.28 * s, hi = base + SLANT * s, nSL = [-SL[0], -SL[1]];
+  return [
+    { p: [x0 + s, hi + fr], t: TVd },
+    { p: [x0 + s - fr * SL[0], hi - fr * SL[1]], t: nSL },
+    { p: [x0 + fr2 * SL[0], base + fr2 * SL[1]], t: nSL }];
+}
+// A true circular fillet between two straight edges: trim each by r/tan(θ/2) and hand
+// contour() the exact handle length. The generic solver assumes axis-aligned tangents, so
+// on a diagonal join — the v's vertex, the s has none, the t's bar does — it would guess a
+// quarter ellipse and put a visible flat on the inside of the turn.
+function corner(V, d1, d2, r) {
+  const dot = -(d1[0] * d2[0] + d1[1] * d2[1]);
+  const ang = Math.acos(Math.max(-1, Math.min(1, dot)));
+  const L = r / Math.tan(ang / 2), h = (4 / 3) * Math.tan((Math.PI - ang) / 4) * r;
+  return [
+    { p: [V[0] - d1[0] * L, V[1] - d1[1] * L], t: d1, hx: h },
+    { p: [V[0] + d2[0] * L, V[1] + d2[1] * L], t: d2, tin: d2, hn: h }];
+}
+function isect(p, d, q, e) {
+  const rx = q[0] - p[0], ry = q[1] - p[1], det = -d[0] * e[1] + e[0] * d[1];
+  const a = (-rx * e[1] + e[0] * ry) / det;
+  return [p[0] + d[0] * a, p[1] + d[1] * a];
+}
+const nrm = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+
+// The s is the one letter with no straight edge and no extremum to hang a corner on, so it
+// is drawn as a CENTRELINE with a width rule rather than as an outline. Width follows the
+// normal: s where the stroke stands up, thin where it lies down — the same contrast law the
+// rest of the family gets from contrastK, applied continuously instead of at four points.
+function strokePath(nodes, wFn) {
+  const B = (p0,p1,p2,p3,t) => { const u=1-t; return [u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0], u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]; };
+  const D = (p0,p1,p2,p3,t) => { const u=1-t; return [3*u*u*(p1[0]-p0[0])+6*u*t*(p2[0]-p1[0])+3*t*t*(p3[0]-p2[0]), 3*u*u*(p1[1]-p0[1])+6*u*t*(p2[1]-p1[1])+3*t*t*(p3[1]-p2[1])]; };
+  const S = [], N = 22, segs = nodes.length - 1;
+  for (let i = 0; i < segs; i++) {
+    const a = nodes[i], b = nodes[i + 1];
+    const ch = Math.hypot(b.p[0] - a.p[0], b.p[1] - a.p[1]);
+    const h0 = (a.h0 ?? 0.40) * ch, h1 = (b.h1 ?? 0.40) * ch;
+    const p1 = [a.p[0] + a.t[0] * h0, a.p[1] + a.t[1] * h0];
+    const p2 = [b.p[0] - b.t[0] * h1, b.p[1] - b.t[1] * h1];
+    for (let j = i ? 1 : 0; j <= N; j++) {
+      const t = j / N;
+      S.push({ p: B(a.p, p1, p2, b.p, t), d: D(a.p, p1, p2, b.p, t), u: (i + t) / segs });
+    }
+  }
+  const L = [], R = [];
+  S.forEach(sm => {
+    const l = Math.hypot(sm.d[0], sm.d[1]) || 1, n = [-sm.d[1] / l, sm.d[0] / l];
+    const w = wFn(sm.u, n) / 2;
+    L.push([sm.p[0] + n[0] * w, sm.p[1] + n[1] * w]);
+    R.push([sm.p[0] - n[0] * w, sm.p[1] - n[1] * w]);
+  });
+  const f = v => Math.round(v * 10) / 10;
+  let d = `M${f(L[0][0])} ${f(L[0][1])}`;
+  for (let i = 1; i < L.length; i++) d += `L${f(L[i][0])} ${f(L[i][1])}`;
+  for (let i = R.length - 1; i >= 0; i--) d += `L${f(R[i][0])} ${f(R[i][1])}`;
+  return d + 'Z';
+}
+
+// The ring, from your artwork: NOT an ellipse. The outer walls run dead straight for the
+// middle 36% of the height and the caps are elliptical quarters onto them; the counter is a
+// rounded rectangle — straight sides, straight top and bottom, one radius on all four
+// corners. That pairing is what makes it read as water held in a shape rather than a circle.
+function buildRing(W, bot, top, s, th, thT) {
+  const cx = W / 2, cy = (top + bot) / 2, hs = 0.18 * (top - bot);
+  const xl = s, xr = W - s, yb = bot + th, yt = top - (thT ?? th);
+  const cr = Math.min(0.40 * (xr - xl), 0.34 * (yt - yb));
+  return contour([
+    { p: [0, cy + hs], t: TVd }, { p: [0, cy - hs], t: TVd }, { p: [cx, bot], t: THr },
+    { p: [W, cy - hs], t: TV }, { p: [W, cy + hs], t: TV }, { p: [cx, top], t: THl }])
+    + contour([
+    { p: [xl, yb + cr], t: TVd }, { p: [xl + cr, yb], t: THr }, { p: [xr - cr, yb], t: THr },
+    { p: [xr, yb + cr], t: TV }, { p: [xr, yt - cr], t: TV }, { p: [xr - cr, yt], t: THl },
+    { p: [xl + cr, yt], t: THl }, { p: [xl, yt - cr], t: TVd }]);
+}
+function buildO(s) { return buildRing(379, -7, 528, s, 0.72 * s * contrastK(s)); }
+function buildZero(s) { return buildRing(330, -7, 700, s, 0.72 * s * contrastK(s)); }
+
+// 1: the stem, with a flag cut off the top-left corner. The flag runs on its own 0.71 slope
+// — steeper than the family's 0.34 terminal cut, which it meets at the stem's top-left — and
+// ends on a vertical cut, because a slanted cut on a stroke already this steep reads as a rip.
+function buildOne(s) {
+  const fig = 700, k = contrastK(s), th = 0.72 * s * k, thF = 0.86 * th;
+  const x0 = 118, W = x0 + s + 46, fr2 = 0.28 * s;
+  const d = nrm([-0.815, -0.579]), dU = [-d[0], -d[1]], sl = 0.579 / 0.815;
+  const yTL = fig - SLANT * s, drop = thF / 0.815;
+  const Tt = [0, yTL - sl * x0], Tb = [0, Tt[1] - drop];
+  const J1 = [x0, Tb[1] + sl * x0];
+  return contour([
+    { p: [x0 + s, fig - fr2], t: TVd },
+    ...foot(x0, s),
+    ...corner(J1, TV, d, 0.26 * s),
+    ...corner(Tb, d, TV, 0.32 * thF),
+    ...corner(Tt, TV, dU, 0.32 * thF),
+    ...corner([x0, yTL], dU, SL, 0.30 * s),
+    { p: [x0 + s - fr2 * SL[0], fig - fr2 * SL[1]], t: SL }]);
+}
+
+// e: the o with a bar laid across the middle and the ring cut open below it. The bar's top
+// edge is the counter's floor; its underside is the aperture's ceiling and belongs to the
+// outer contour, which is why the e is one loop and one counter rather than two counters.
+function buildE(s) {
+  const xh = 521, ov = 7, W = 379, k = contrastK(s);
+  const top = xh + ov, bot = -ov, cx = W / 2, cy = (top + bot) / 2;
+  const hs = 0.18 * (top - bot), th = 0.72 * s * k;
+  const xl = s, xr = W - s, yb = bot + th, yt = top - th;
+  const barT = cy + 46, barB = barT - th, fr = 0.20 * s, nSL = [-SL[0], -SL[1]];
+  // the counter's top corners are radiused off its WIDTH, not its height. Off the height
+  // they went square at the light end and drove into the cap, leaving a wall of ten units
+  // where the shoulder should be thickest.
+  const cr = Math.min(0.42 * (xr - xl), 0.85 * (yt - barT));
+  const cr2 = Math.min(0.42 * (xr - xl), 0.85 * (barB - yb));
+  const crR = Math.max(0.10 * s, Math.min(cr2, (cy - hs - SLANT * s - yb) - 0.28 * s));
+  // the terminal lands exactly where the outer wall stops running straight, so the cap arc
+  // ends on it and the cut is the family's 0.34 with nothing else to reconcile
+  return contour([
+    ...corner([W, barB], THr, TV, fr),
+    { p: [W, cy + hs], t: TV }, { p: [cx, top], t: THl },
+    { p: [0, cy + hs], t: TVd }, { p: [0, cy - hs], t: TVd }, { p: [cx, bot], t: THr },
+    ...corner([W, cy - hs], TV, nSL, 0.26 * s),
+    ...corner([xr, cy - hs - SLANT * s], nSL, TVd, 0.26 * s),
+    { p: [xr, yb + crR], t: TVd }, { p: [xr - crR, yb], t: THl },
+    { p: [xl + cr2, yb], t: THl }, { p: [xl, yb + cr2], t: TV },
+    { p: [xl, barB - fr], t: TV }, { p: [xl + fr, barB], t: THr }])
+    + contour([
+      { p: [xl, barT + fr], t: TV }, { p: [xl, yt - cr], t: TV }, { p: [xl + cr, yt], t: THr },
+      { p: [xr - cr, yt], t: THr }, { p: [xr, yt - cr], t: TVd }, { p: [xr, barT + fr], t: TVd },
+      { p: [xr - fr, barT], t: THl }, { p: [xl + fr, barT], t: THl }]);
+}
+
+// s: two bowls of one radius joined by a spine, drawn as a single centreline. The bowls'
+// outer edges are pinned to 0 and to W at every weight, so the silhouette holds while the
+// ink erodes inward — the same rule the a follows.
+function buildS(s) {
+  const top = 528, bot = -7, k = contrastK(s), th = 0.72 * s * k;
+  const cxU = 168, yU = 385, cxL = 172, yL = 120;
+  const a = 168 - s / 2, bU = 143 - th / 2, bL = 127 - th / 2;
+  const E = (cx, cy, ra, rb, deg) => { const t = deg * Math.PI / 180; return { p: [cx + ra * Math.cos(t), cy + rb * Math.sin(t)], d: [-ra * Math.sin(t), rb * Math.cos(t)] }; };
+  const up = d => nrm(d), dn = d => nrm([-d[0], -d[1]]);
+  const n1 = E(cxU, yU, a, bU, -16), n2 = E(cxU, yU, a, bU, 90), n3 = E(cxU, yU, a, bU, 180), n4 = E(cxU, yU, a, bU, 228);
+  const n6 = E(cxL, yL, a, bL, 44), n7 = E(cxL, yL, a, bL, 0), n8 = E(cxL, yL, a, bL, -90), n9 = E(cxL, yL, a, bL, -195);
+  const nodes = [
+    { p: n1.p, t: up(n1.d) }, { p: n2.p, t: up(n2.d) }, { p: n3.p, t: up(n3.d) }, { p: n4.p, t: up(n4.d) },
+    { p: [(n4.p[0] + n6.p[0]) / 2, (n4.p[1] + n6.p[1]) / 2], t: nrm([n6.p[0] - n4.p[0], n6.p[1] - n4.p[1]]) },
+    { p: n6.p, t: dn(n6.d) }, { p: n7.p, t: dn(n7.d) }, { p: n8.p, t: dn(n8.d) }, { p: n9.p, t: dn(n9.d) }];
+  return strokePath(nodes, (u, n) => {
+    const taper = 0.74 + 0.26 * Math.min(1, Math.min(u, 1 - u) / 0.13);
+    return (th + (s - th) * Math.abs(n[0])) * taper;
+  });
+}
+
+// r: the n's shoulder, stopped. The arm ends in a cutBot terminal, so the r's only new
+// decision is where to stop it — 0.72 of a stem below the shoulder's own joint.
+function buildR(s) {
+  const xh = 521, ov = 7, W = 300, k = contrastK(s);
+  const A = arch(0, s, W, k, xh, ov), base = A.spring - 0.72 * s;
+  return contour([
+    { p: [A.oaX, A.oaY], t: THr, k1: 0.45 },
+    { p: [W, A.oaY - (W - A.oaX)], t: TVd },
+    ...cutBot(W - s, s, base),
+    { p: [W - s, base + 0.28 * s], t: TV },
+    { p: [W - s, A.spring], t: TV },
+    { p: [A.iaX, A.iaY], t: THl },
+    { p: [s, A.spring], t: TVd },
+    ...foot(0, s),
+    ...cutTop(0, s, xh).map((p, i) => i === 2 ? { ...p, k0: 0.30 } : p)]);
+}
+
+// t: the stem with a bar. Every junction is filleted rather than mitred — the inside of the
+// cross is where a rounded family gives itself away if it uses a corner.
+function buildT(s) {
+  const xh = 521, k = contrastK(s), th = 0.72 * s * k, ascT = 646;
+  const x0 = 62, W = 158 + s, barT = xh, barB = xh - th;
+  const fr3 = 0.22 * s, rb2 = 0.32 * th, fr2 = 0.28 * s;
+  // your skeleton turns the t's foot out to the right instead of sitting it flat; the tail
+  // is one quarter in, one quarter out, and a vertical cut across the thin stroke
+  const xT = W - 22, rr = 0.30 * th;
+  const Ri = xT - rr - (x0 + s), Ro = xT - rr - x0;
+  const tail = [
+    { p: [x0 + s, th + 0.85 * Ri], t: TVd },
+    { p: [xT - rr, th], t: THr },
+    { p: [xT, th - rr], t: TVd }, { p: [xT, rr], t: TVd },
+    { p: [xT - rr, 0], t: THl },
+    { p: [x0, 0.85 * Ro], t: TV }];
+  return contour([
+    ...cutTop(x0, s, ascT),
+    { p: [x0 + s, ascT - fr2], t: TVd },
+    { p: [x0 + s, barT + fr3], t: TVd },
+    { p: [x0 + s + fr3, barT], t: THr },
+    { p: [W - rb2, barT], t: THr },
+    { p: [W, barT - rb2], t: TVd },
+    { p: [W, barB + rb2], t: TVd },
+    { p: [W - rb2, barB], t: THl },
+    { p: [x0 + s + fr3, barB], t: THl },
+    { p: [x0 + s, barB - fr3], t: TVd },
+    ...tail,
+    { p: [x0, barB - fr3], t: TV },
+    { p: [x0 - fr3, barB], t: THl },
+    { p: [rb2, barB], t: THl },
+    { p: [0, barB + rb2], t: TV },
+    { p: [0, barT - rb2], t: TV },
+    { p: [rb2, barT], t: THr },
+    { p: [x0 - fr3, barT], t: THr },
+    { p: [x0, barT + fr3], t: TV }]);
+}
+
+// f: the t's bar under a hook. The hook's terminal is cut square to the stroke instead of on
+// the family slant — the stroke is horizontal there, so a 0.34 cut would read as a droop.
+function buildF(s) {
+  const asc = 751, xh = 521, k = contrastK(s), th = 0.72 * s * k;
+  const x0 = 62, Ro = 150 + 0.24 * s, W = Math.max(158 + s, x0 + Ro + 9);
+  const barT = xh, barB = xh - th, fr3 = 0.22 * s, rb2 = 0.32 * th, rb3 = 0.30 * th;
+  return contour([
+    { p: [x0, asc - Ro], t: TV },
+    { p: [x0 + Ro - rb3, asc], t: THr },
+    { p: [x0 + Ro, asc - rb3], t: TVd },
+    { p: [x0 + Ro, asc - th + rb3], t: TVd },
+    { p: [x0 + Ro - rb3, asc - th], t: THl },
+    { p: [x0 + s, asc - Ro + 26], t: TVd },
+    { p: [x0 + s, barT + fr3], t: TVd },
+    { p: [x0 + s + fr3, barT], t: THr },
+    { p: [W - rb2, barT], t: THr },
+    { p: [W, barT - rb2], t: TVd },
+    { p: [W, barB + rb2], t: TVd },
+    { p: [W - rb2, barB], t: THl },
+    { p: [x0 + s + fr3, barB], t: THl },
+    { p: [x0 + s, barB - fr3], t: TVd },
+    ...foot(x0, s),
+    { p: [x0, barB - fr3], t: TV },
+    { p: [x0 - fr3, barB], t: THl },
+    { p: [rb2, barB], t: THl },
+    { p: [0, barB + rb2], t: TV },
+    { p: [0, barT - rb2], t: TV },
+    { p: [rb2, barT], t: THr },
+    { p: [x0 - fr3, barT], t: THr },
+    { p: [x0, barT + fr3], t: TV }]);
+}
+
+// i: the exclam's stem at x-height, with the same dot.
+function buildI(s) {
+  const xh = 521, r = 0.53 * s, cy = xh + 66 + r, fr2 = 0.28 * s;
+  return contour([{ p: [s, xh - fr2], t: TVd }, ...foot(0, s), ...cutTop(0, s, xh)])
+    + contour([{ p: [s / 2 - r, cy], t: TV }, { p: [s / 2, cy + r], t: THr },
+               { p: [s / 2 + r, cy], t: TVd }, { p: [s / 2, cy - r], t: THl }]);
+}
+
+// l: constructed against the logotype's own l (refs/logotype/logotype-01.svg, path 10).
+// A straight stem of width s with the family foot and the family shoulder — but the top is
+// not a chisel cut. Measured off the artwork: the cut rises from the left shoulder, CRESTS
+// at ~0.72 s across, then rounds down to the right corner ~0.20 s below the crest. A drop
+// settling, not a plane. The crest is an explicit horizontal-tangent point so the extreme
+// sits on-curve, and every landmark is a function of s so the shape survives the axis.
+function buildL(s) {
+  const asc = 751, ascL = asc - SLANT * s;
+  // shoulder radius 0.22 s (the family's 0.34 s cut-shoulder is for a plane; a dome wants
+  // the left edge to climb almost to the top and turn over short and full)
+  const frL = 0.22 * s, crestX = 0.72 * s, dropR = 0.18 * s;
+  return contour([
+    { p: [s, asc - dropR], t: TVd },                        // top-right corner, softened
+    ...foot(0, s),
+    { p: [0, ascL - frL], t: TV },                           // left edge, up to the shoulder
+    { p: [frL * SL[0], ascL + frL * SL[1]], t: SL },         // shoulder onto the family slant
+    { p: [crestX, asc], t: THr, k0: 0.50 },                  // the crest
+  ]);
+}
+
+// v: the only letter in the set built from straight edges. Four cut terminals' worth of
+// geometry reduces to two: both tops take the family's 0.34 cut, and both vertices are true
+// circular fillets. The apex is dropped by the fillet's own set-back so the rounded point
+// still lands on the baseline overshoot rather than floating above it.
+function buildV(s) {
+  const xh = 521, k = contrastK(s), W = 340;
+  const wL = s, wR = s * (0.52 + 0.28 * k);
+  const rOut = 0.20 * s, rIn = 0.30 * s, rT = 0.24 * s;
+  const Vo = [0.46 * W, -7 - 2.6 * rOut];
+  const dLo = nrm([Vo[0], Vo[1] - xh]), dRo = nrm([W - Vo[0], xh - Vo[1]]);
+  const dLu = [-dLo[0], -dLo[1]], dRd = [-dRo[0], -dRo[1]];
+  const B = [wL, xh], D = [W, xh];
+  const A = isect([0, xh], dLo, B, SL);
+  const C = isect([W - wR, xh], dRd, D, SL);
+  const Vi = isect(B, dLo, [W - wR, xh], dRd);
+  return contour([
+    ...corner(A, dLu, SL, rT),
+    ...corner(B, SL, dLo, rT),
+    ...corner(Vi, dLo, dRo, rIn),
+    ...corner(C, dRo, SL, rT),
+    ...corner(D, SL, dRd, rT),
+    ...corner(Vo, dRd, dLu, rOut)]);
+}
+
+// ── From your skeleton ────────────────────────────────────────────────────────
+const DESC = -230;
+// A p is a b turned over and a q is that turned again — same points, same order, same
+// count, so nothing new has to hold across the axis.
+function flipPath(d, kx, ky) {
+  const tk = d.match(/[MCLZ]|-?[\d.]+/g);
+  let out = '', i = 0;
+  const X = v => kx == null ? +v : kx - +v, Y = v => ky == null ? +v : ky - +v;
+  while (i < tk.length) {
+    if (tk[i] === 'M') { out += `M${fx(X(tk[i+1]))} ${fx(Y(tk[i+2]))}`; i += 3; }
+    else if (tk[i] === 'L') { out += `L${fx(X(tk[i+1]))} ${fx(Y(tk[i+2]))}`; i += 3; }
+    else if (tk[i] === 'C') {
+      out += `C${fx(X(tk[i+1]))} ${fx(Y(tk[i+2]))} ${fx(X(tk[i+3]))} ${fx(Y(tk[i+4]))} ${fx(X(tk[i+5]))} ${fx(Y(tk[i+6]))}`;
+      i += 7;
+    } else { out += 'Z'; i++; }
+  }
+  return out;
+}
+
+// ── Round trip ────────────────────────────────────────────────────────────────
+// Every glyph goes out as a plain path on a font grid — y already flipped into SVG's
+// downward axis so no transform is attached and nothing is baked when it comes back.
+// Cell origin is the baseline at the left sidebearing: x = X − ox, y = oy − Y.
+const GNAME = { '!':'exclam', '.':'period', ',':'comma', '0':'zero', '1':'one', '2':'two',
+                '3':'three', '4':'four', '5':'five', '6':'six', '7':'seven', '8':'eight',
+                '9':'nine', B:'B.cap' };
+function mapPath(d, ox, oy) {
+  const tk = d.match(/[MCLZ]|-?[\d.]+/g);
+  let out = '', i = 0;
+  const X = v => fx(ox + +v), Y = v => fx(oy - +v);
+  while (i < tk.length) {
+    if (tk[i] === 'M') { out += `M${X(tk[i+1])} ${Y(tk[i+2])}`; i += 3; }
+    else if (tk[i] === 'L') { out += `L${X(tk[i+1])} ${Y(tk[i+2])}`; i += 3; }
+    else if (tk[i] === 'C') { out += `C${X(tk[i+1])} ${Y(tk[i+2])} ${X(tk[i+3])} ${Y(tk[i+4])} ${X(tk[i+5])} ${Y(tk[i+6])}`; i += 7; }
+    else { out += 'Z'; i++; }
+  }
+  return out;
+}
+function exportSVG(stem) {
+  const cols = 6, cw = 1150, chh = 1300, chars = ORDER.split('');
+  const rows = Math.ceil(chars.length / cols);
+  const d = Math.max(0, (107.4 - stem) / 2.09), sb = 47 + 0.28 * d;
+  let glyphs = '', guides = '';
+  chars.forEach((ch, i) => {
+    const c = i % cols, r = (i / cols) | 0;
+    const ox = c * cw + 90, oy = r * chh + 1000;
+    let dd, w, minX = 0;
+    if (ch === 'g') {
+      const off = d, comp = neckComp(off);
+      dd = offsetPath(REF22, off, true); minX = 42.5 + off * comp; w = 427.5 - off - off * comp;
+    } else {
+      dd = BUILD[ch](stem);
+      minX = ch === '!' ? 4 - 0.03 * stem : 0;
+      w = ch === '!' ? 1.06 * stem : glyphWidth(ch, stem);
+    }
+    const cl = SHAPE[ch] || 'ff', lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+    const name = GNAME[ch] || ch;
+    glyphs += `  <path id="glyph.${name}" d="${mapPath(dd, ox - minX, oy)}"/>\n`;
+    const L = ox - lsb, R = ox + w + rsb;
+    guides +=
+      `  <g opacity="0.5"><rect x="${fx(L)}" y="${fx(oy - 751)}" width="${fx(R - L)}" height="981" fill="none" stroke="#c8c8c8"/>` +
+      `<path d="M${fx(L - 30)} ${fx(oy)}H${fx(R + 30)}M${fx(L - 30)} ${fx(oy - 521)}H${fx(R + 30)}M${fx(L - 30)} ${fx(oy + 230)}H${fx(R + 30)}" stroke="#e0a08c" fill="none"/>` +
+      `<text x="${fx(L)}" y="${fx(oy + 300)}" font-family="monospace" font-size="46" fill="#b0aca2">${name}</text></g>\n`;
+  });
+  const W = cols * cw + 120, H = rows * chh + 200;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n` +
+    `<!-- Aqua · stem ${Math.round(stem)}u · upm 1000 · x-height 521 · ascender 751 · descender -230\n` +
+    `     One path per glyph, id="glyph.<name>". Coordinates are already in SVG axis (y down);\n` +
+    `     the baseline of each cell sits on the middle pink rule. Edit the outlines freely, but:\n` +
+    `     keep the ids, keep each glyph inside its own cell, and flatten/expand any transform\n` +
+    `     before saving so the path data is absolute. Delete nothing from #guides - it is ignored. -->\n` +
+    `<rect width="${W}" height="${H}" fill="#ffffff"/>\n<g id="guides" stroke-width="2">\n${guides}</g>\n` +
+    `<g id="outlines" fill="#111111" fill-rule="evenodd">\n${glyphs}</g>\n</svg>\n`;
+}
+function buildP(s) { return flipPath(buildB(s), null, 521); }
+function buildQ(s) { return flipPath(buildP(s), 379, null); }
+
+// c: the ring opened across the whole straight run of its right wall. Both terminals take
+// the family's 0.34 cut — the wall is vertical where they land, so nothing is reconciled.
+function buildC(s) {
+  const xh = 521, ov = 7, W = 379, k = contrastK(s);
+  const top = xh + ov, bot = -ov, cx = W / 2, cy = (top + bot) / 2;
+  const hs = 0.18 * (top - bot), th = 0.72 * s * k, nSL = [-SL[0], -SL[1]];
+  const xl = s, xr = W - s, yb = bot + th, yt = top - th, rt = 0.26 * s;
+  const yTi = cy - hs - SLANT * s, yTo = cy + hs - SLANT * s;
+  const crT = Math.min(0.42 * (xr - xl), 0.85 * (yt - yb));
+  const crB = Math.max(0.10 * s, Math.min(crT, (yTi - yb) - 0.28 * s));
+  return contour([
+    ...corner([W, cy + hs], SL, TV, rt),
+    { p: [cx, top], t: THl }, { p: [0, cy + hs], t: TVd },
+    { p: [0, cy - hs], t: TVd }, { p: [cx, bot], t: THr },
+    ...corner([W, cy - hs], TV, nSL, rt),
+    ...corner([xr, yTi], nSL, TVd, rt),
+    { p: [xr, yb + crB], t: TVd }, { p: [xr - crB, yb], t: THl },
+    { p: [xl + crB, yb], t: THl }, { p: [xl, yb + crB], t: TV },
+    { p: [xl, yt - crT], t: TV }, { p: [xl + crT, yt], t: THr },
+    { p: [xr - crT, yt], t: THr }, { p: [xr, yt - crT], t: TVd },
+    ...corner([xr, yTo], TVd, SL, rt)]);
+}
+
+// k: the stem, plus an arm and a leg that are pure straight strokes. Both terminals are cut
+// vertically — a 0.34 cut on a stroke already climbing at 45° reads as a slip — and the
+// crotch is a circular fillet solved from the two edge directions, not a guessed quarter.
+function buildK(s) {
+  const asc = 751, xh = 521, W = 350, fr2 = 0.28 * s;
+  const vA = 1.02 * s, vL = 1.10 * s, aTop = 0.52 * xh, lBot = 0.44 * xh;
+  const dA = nrm([W - s, xh - aTop]), dL = nrm([W - s, -lBot]);
+  const nA = [-dA[0], -dA[1]], nL = [-dL[0], -dL[1]];
+  const crotch = isect([s, aTop - vA], dA, [s, lBot + vL], dL);
+  const r1 = 0.22 * s, r2 = 0.20 * s;
+  return contour([
+    { p: [s, asc - fr2], t: TVd },
+    ...corner([s, aTop], TVd, dA, r1),
+    ...corner([W, xh], dA, TVd, r2),
+    ...corner([W, xh - vA], TVd, nA, r2),
+    ...corner(crotch, nA, dL, r1),
+    ...corner([W, vL], dL, TVd, r2),
+    ...corner([W, 0], TVd, nL, r2),
+    ...corner([s, lBot], nL, TVd, r1),
+    ...foot(0, s),
+    ...cutTop(0, s, asc)]);
+}
+
+// x: two straight strokes and four crotches, every one of them found by intersecting the
+// edge lines rather than placed by hand, so the junctions hold as the strokes thicken.
+function buildX(s) {
+  const xh = 521, W = 340, w = 0.92 * s, r = 0.22 * s;
+  const dA = nrm([W - w, -xh]), dB = [-dA[0], dA[1]];
+  const nA = [-dA[0], -dA[1]], nB = [-dB[0], -dB[1]];
+  const A2 = [w, xh], B2 = [W - w, xh], A1 = [0, xh], B1 = [W, xh];
+  return contour([
+    ...corner([0, xh], nA, THr, r), ...corner(A2, THr, dA, r),
+    ...corner(isect(A2, dA, B2, dB), dA, nB, r),
+    ...corner(B2, nB, THr, r), ...corner(B1, THr, dB, r),
+    ...corner(isect(A2, dA, B1, dB), dB, dA, r),
+    ...corner([W, 0], dA, THl, r), ...corner([W - w, 0], THl, nA, r),
+    ...corner(isect(A1, dA, B1, dB), nA, dB, r),
+    ...corner([w, 0], dB, THl, r), ...corner([0, 0], THl, nB, r),
+    ...corner(isect(A1, dA, B2, dB), nB, nA, r)]);
+}
+
+// y: the u, with its right stem carried through the baseline into a tail. The bowl's outer
+// underside runs into the tail's own left edge, so the two are one curve and the junction
+// never has to be drawn.
+function buildY(s) {
+  const xh = 521, ov = 7, W = 379, k = contrastK(s), fr2 = 0.28 * s;
+  const th = 0.72 * s * k, desc = DESC;
+  const ibY = -ov + th, cxi = W / 2, cxb = 0.44 * W;
+  const riL = ibY + (cxi - s), riR = ibY + (W - s - cxi);
+  const yJ = -ov - 0.55 * s, ro = -ov + cxb;
+  const Rt = 175, rr = 0.30 * th, xT = 0.42 * W;
+  return contour([
+    { p: [s, xh - fr2], t: TVd }, { p: [s, riL], t: TVd },
+    { p: [cxi, ibY], t: THr }, { p: [W - s, riR], t: TV },
+    ...cutTop(W - s, s, xh),
+    { p: [W, xh - fr2], t: TVd }, { p: [W, desc + Rt], t: TVd },
+    { p: [xT + rr, desc], t: THl },
+    { p: [xT, desc + rr], t: TV }, { p: [xT, desc + th - rr], t: TV },
+    { p: [xT + rr, desc + th], t: THr },
+    { p: [W - s, desc + 0.80 * Rt], t: TV }, { p: [W - s, yJ], t: TV },
+    { p: [cxb, -ov], t: THl }, { p: [0, ro], t: TV },
+    ...cutTop(0, s, xh)]);
+}
+
+// j: the i's stem and dot, carried down into the same tail the y uses.
+function buildJ(s) {
+  const xh = 521, k = contrastK(s), th = 0.72 * s * k, desc = DESC;
+  const x0 = 96, fr2 = 0.28 * s, r = 0.53 * s, cy = xh + 66 + r;
+  const Rt = 190, rr = 0.30 * th;
+  return contour([
+    { p: [x0 + s, xh - fr2], t: TVd }, { p: [x0 + s, desc + Rt], t: TVd },
+    { p: [rr, desc], t: THl },
+    { p: [0, desc + rr], t: TV }, { p: [0, desc + th - rr], t: TV },
+    { p: [rr, desc + th], t: THr },
+    { p: [x0, desc + 0.78 * Rt], t: TV },
+    ...cutTop(x0, s, xh)])
+    + contour([{ p: [x0 + s / 2 - r, cy], t: TV }, { p: [x0 + s / 2, cy + r], t: THr },
+               { p: [x0 + s / 2 + r, cy], t: TVd }, { p: [x0 + s / 2, cy - r], t: THl }]);
+}
+
+// z: two bars and a diagonal. The bar ends are rounded on the horizontal stroke's own
+// thickness; the two diagonal joints are fillets solved from the diagonal's real angle.
+function buildZ(s) {
+  const xh = 521, k = contrastK(s), th = 0.72 * s * k, W = 340;
+  const hz = 1.06 * s, r = 0.30 * th, rc = 0.24 * s;
+  const d = nrm([-(W - hz), -(xh - 2 * th)]), dU = [-d[0], -d[1]];
+  return contour([
+    ...corner([0, xh], TV, THr, r), ...corner([W, xh], THr, TVd, r),
+    ...corner([W, xh - th], TVd, d, rc), ...corner([hz, th], d, THr, rc),
+    ...corner([W, th], THr, TVd, r), ...corner([W, 0], TVd, THl, r),
+    ...corner([0, 0], THl, TV, r), ...corner([0, th], TV, dU, rc),
+    ...corner([W - hz, xh - th], dU, THl, rc), ...corner([0, xh - th], THl, TV, rc)]);
+}
+
+// ── Punctuation: water, not dots ──────────────────────────────────────────────
+// The full stop is a droplet rather than a disc — the mass sits low and right and the crown
+// pulls left, which is what a drop does when it lands. The comma is the same drop with the
+// tail it leaves behind.
+function buildPeriod(s) {
+  const r = 0.56 * s, cx = r, cy = r;
+  return contour([
+    { p: [cx - r, cy + 0.10 * r], t: TV },
+    { p: [cx - 0.24 * r, cy + 1.32 * r], t: THr, k0: 0.62, k1: 0.52 },
+    { p: [cx + r, cy], t: TVd },
+    { p: [cx, cy - r], t: THl }]);
+}
+function buildComma(s) {
+  const r = 0.56 * s, cx = r, cy = 1.16 * r;
+  return contour([
+    { p: [cx - r, cy + 0.08 * r], t: TV },
+    { p: [cx - 0.22 * r, cy + 1.28 * r], t: THr, k0: 0.62, k1: 0.52 },
+    { p: [cx + r, cy], t: TVd },
+    { p: [cx - 0.12 * r, cy - 2.5 * r], tin: nrm([-0.5, -1]), t: nrm([-0.14, 1]) }]);
+}
+
+// ── Capital B ─────────────────────────────────────────────────────────────────
+// Two rounded-rectangle counters on one stem, the lower one wider, with the waist pinched
+// rather than mitred — the outer wall runs in and back out across the bar in one curve.
+// Constructed against the logotype's B (refs/logotype/logotype-01.svg, path 0). Measured at
+// s = 106: ink width 453, cap 715, stem 129 (a capital carries ~1.2 s), bar 72 thick centred
+// at 0.515 cap, upper bowl out to 427 and lower to the full 453, waist pinched to 312,
+// counters 189×236 over 213×249, top-left corner ~0.2 s and bottom-left ~0.47 s.
+// Widths are fixed to the artwork; every stroke thickness is a function of s and contrast.
+function buildCapB(s) {
+  const cap = 715, bot = 0, W = 453, k = contrastK(s);
+  const bs = 1.20 * s;                                   // the B's stem
+  const th = 0.68 * s * k;                               // the bar (horizontal: takes contrast)
+  const tTop = 0.75 * s * k, tBot = 0.77 * s * k;        // top and bottom walls
+  const yM = 0.515 * cap, yBT = yM + th / 2, yBB = yM - th / 2;
+  const W1 = 0.943 * W, Wn = 0.69 * W;                   // upper bowl reach, waist
+  const wr1 = 1.02 * s, wr2 = 1.04 * s;                  // right walls, upper / lower
+  const rcT = 0.20 * s, rcB = 0.47 * s;                  // outer stem corners, top / bottom
+  const r1 = Math.min(0.45 * (W1 - bs), 0.45 * (cap - yBT));
+  const r3 = Math.min(0.45 * (W - bs), 0.45 * (yBB - bot));
+  const cu = [bs, W1 - wr1, yBT, cap - tTop], cd = [bs, W - wr2, bot + tBot, yBB];
+  const box = ([xl, xr, yb, yt]) => {
+    const r = Math.min(0.38 * (xr - xl), 0.38 * (yt - yb));
+    return contour([
+      { p: [xl, yb + r], t: TVd }, { p: [xl + r, yb], t: THr },
+      { p: [xr - r, yb], t: THr }, { p: [xr, yb + r], t: TV },
+      { p: [xr, yt - r], t: TV }, { p: [xr - r, yt], t: THl },
+      { p: [xl + r, yt], t: THl }, { p: [xl, yt - r], t: TVd }]);
+  };
+  return contour([
+    { p: [0, cap - rcT], t: TV }, { p: [rcT, cap], t: THr },
+    { p: [W1 - r1, cap], t: THr }, { p: [W1, cap - r1], t: TVd },
+    { p: [W1, yBT + 0.62 * r1], t: TVd },
+    { p: [Wn, yM], t: TVd },                               // the waist, one smooth S in and out
+    { p: [W, yBB - 0.62 * r3], t: TVd },
+    { p: [W, bot + r3], t: TVd }, { p: [W - r3, bot], t: THl },
+    { p: [rcB, bot], t: THl }, { p: [0, bot + rcB], t: TV }])
+    + box(cu) + box(cd);
+}
+
+// ── Figures ───────────────────────────────────────────────────────────────────
+const FIG = 700;
+function figW(s, th) {
+  return (u, n) => (th + (s - th) * Math.abs(n[0])) * (0.80 + 0.20 * Math.min(1, Math.min(u, 1 - u) / 0.09));
+}
+function ell(cx, cy, a, b) {
+  return deg => {
+    const t = deg * Math.PI / 180;
+    return { p: [cx + a * Math.cos(t), cy + b * Math.sin(t)],
+             cw: nrm([a * Math.sin(t), -b * Math.cos(t)]),
+             ccw: nrm([-a * Math.sin(t), b * Math.cos(t)]) };
+  };
+}
+function build2(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k, cx = W / 2;
+  const a = cx - s / 2, yT = FIG - 195, b = FIG - th / 2 - yT, E = ell(cx, yT, a, b);
+  const p1 = E(198), p2 = E(90), p3 = E(-8), by = th / 2, xL = s / 2 + 6, xR = W - s / 2;
+  return strokePath([
+    { p: p1.p, t: p1.cw }, { p: p2.p, t: p2.cw }, { p: p3.p, t: p3.cw },
+    { p: [cx + 4, 0.40 * FIG], t: nrm([-0.62, -1]) },
+    { p: [xL + 40, by], t: THr, h1: 0.30 },
+    { p: [xR, by], t: THr }], figW(s, th));
+}
+function build3(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k, cx = W / 2;
+  const yU = FIG - 178, yL = 178, a = cx - s / 2 - 6;
+  const EU = ell(cx, yU, a, FIG - th / 2 - yU), EL = ell(cx, yL, a, yL - th / 2);
+  const u1 = EU(192), u2 = EU(90), u3 = EU(-34), l1 = EL(34), l2 = EL(-90), l3 = EL(188);
+  return strokePath([
+    { p: u1.p, t: u1.cw }, { p: u2.p, t: u2.cw }, { p: u3.p, t: u3.cw },
+    { p: [cx - 14, 0.50 * FIG], t: TVd, h0: 0.34, h1: 0.34 },
+    { p: l1.p, t: l1.cw }, { p: l2.p, t: l2.cw }, { p: l3.p, t: l3.cw }], figW(s, th));
+}
+function build4(s) {
+  const W = 360, k = contrastK(s), th = 0.72 * s * k;
+  const xs = 0.60 * W, yb = 0.25 * FIG, dW = 0.82 * s;
+  const fr3 = 0.22 * s, rb = 0.30 * th, r = 0.22 * s;
+  const dO = nrm([xs, FIG - (yb + th)]), dN = [-dO[0], -dO[1]];
+  const yStar = yb + th + ((xs - dW) / xs) * (FIG - yb - th);
+  return contour([
+    ...corner([xs + s, FIG], THr, TVd, rb),
+    { p: [xs + s, yb + th + fr3], t: TVd },
+    { p: [xs + s + fr3, yb + th], t: THr },
+    { p: [W - rb, yb + th], t: THr },
+    { p: [W, yb + th - rb], t: TVd },
+    { p: [W, yb + rb], t: TVd },
+    { p: [W - rb, yb], t: THl },
+    { p: [xs + s + fr3, yb], t: THl },
+    { p: [xs + s, yb - fr3], t: TVd },
+    ...foot(xs, s),
+    { p: [xs, yb - fr3], t: TV },
+    { p: [xs - fr3, yb], t: THl },
+    { p: [rb, yb], t: THl },
+    { p: [0, yb + rb], t: TV },
+    ...corner([0, yb + th], TV, dO, r),
+    ...corner([xs, FIG], dO, THr, rb)])
+    + contour([
+      ...corner([dW, yb + th], dN, THr, r),
+      ...corner([xs, yb + th], THr, TV, r),
+      ...corner([xs, yStar], TV, dN, r)]);
+}
+function build5(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k, cx = W / 2;
+  const xL = s / 2 + 8, xR = W - s / 2, topY = FIG - th / 2, yB = 186;
+  const E = ell(cx - 4, yB, cx - s / 2 - 4, yB - th / 2);
+  const b1 = E(24), b2 = E(-90), b3 = E(190);
+  return strokePath([
+    { p: [xR, topY], t: THl },
+    { p: [xL, topY], t: THl, h0: 0.20, h1: 0.14 },
+    { p: [xL + 6, 0.54 * FIG], t: TVd, h0: 0.30 },
+    { p: [cx - 26, yB + (yB - th / 2)], t: THr },
+    { p: b1.p, t: b1.cw }, { p: b2.p, t: b2.cw }, { p: b3.p, t: b3.cw }], figW(s, th));
+}
+// 6: the ring with its top-left corner drawn up into a stem. One outer contour, one
+// counter — the stem grows out of the bowl instead of being laid over it, so nothing
+// overlaps and nothing has to be unioned.
+function build6(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k, bot = -7;
+  const bT = 0.62 * FIG, xl = s, xr = W - s, yb = bot + th, yt = bT - th;
+  const cr = Math.min(0.42 * (xr - xl), 0.85 * (yt - yb));
+  const c2 = Math.min(0.42 * W, 0.42 * (bT - bot));
+  const xT = 0.92 * W, fr2 = 0.28 * s;
+  return contour([
+    ...cutTop(xT - s, s, FIG),
+    { p: [xT, FIG - fr2], t: TVd },
+    { p: [0.62 * W, bT + 0.34 * (FIG - bT)], t: nrm([-0.5, -0.87]) },
+    ...corner([0.46 * W, bT], nrm([-0.5, -0.87]), THr, 0.26 * s),
+    { p: [W - c2, bT], t: THr },
+    { p: [W, bT - c2], t: TVd }, { p: [W, bot + c2], t: TVd },
+    { p: [W - c2, bot], t: THl }, { p: [c2, bot], t: THl },
+    { p: [0, bot + c2], t: TV }, { p: [0, 0.40 * FIG], t: TV }])
+    + contour([
+      { p: [xl, yb + cr], t: TVd }, { p: [xl + cr, yb], t: THr },
+      { p: [xr - cr, yb], t: THr }, { p: [xr, yb + cr], t: TV },
+      { p: [xr, yt - cr], t: TV }, { p: [xr - cr, yt], t: THl },
+      { p: [xl + cr, yt], t: THl }, { p: [xl, yt - cr], t: TVd }]);
+}
+function build9(s) { return flipPath(build6(s), 330, 693); }
+function build7(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k;
+  const rb = 0.30 * th, xb = 0.30 * W, wd = 1.02 * s;
+  const dD = nrm([xb + wd - W, -FIG]), dU = [-dD[0], -dD[1]];
+  const lTop = isect([xb, 0], dU, [0, FIG - th], THr);
+  return contour([
+    { p: [0, FIG - rb], t: TV }, { p: [rb, FIG], t: THr },
+    { p: [W - rb, FIG], t: THr }, { p: [W, FIG - rb], t: TVd },
+    ...corner([xb + wd, 0], dD, THl, 0.26 * s),
+    ...corner([xb, 0], THl, dU, 0.26 * s),
+    ...corner(lTop, dU, THl, 0.26 * s),
+    { p: [rb, FIG - th], t: THl },
+    { p: [0, FIG - th - rb], t: TVd }]);
+}
+// 8: one silhouette with a pinched waist rather than two rings stacked — stacking them
+// makes the waist twice as heavy and leaves a seam where the two outlines meet.
+function build8(s) {
+  const W = 330, k = contrastK(s), th = 0.72 * s * k, bot = -7, cx = W / 2;
+  const au = 0.365 * W, al = 0.44 * W, an = 0.255 * W;
+  const yU = FIG - 0.235 * FIG, yM = 0.48 * FIG, yL = 0.185 * FIG;
+  const box = (xl, xr, yb, yt) => {
+    const r = Math.min(0.46 * (xr - xl), 0.46 * (yt - yb));
+    return contour([
+      { p: [xl, yb + r], t: TVd }, { p: [xl + r, yb], t: THr },
+      { p: [xr - r, yb], t: THr }, { p: [xr, yb + r], t: TV },
+      { p: [xr, yt - r], t: TV }, { p: [xr - r, yt], t: THl },
+      { p: [xl + r, yt], t: THl }, { p: [xl, yt - r], t: TVd }]);
+  };
+  return contour([
+    { p: [cx, FIG], t: THr },
+    { p: [cx + au, yU], t: TVd }, { p: [cx + an, yM], t: TVd }, { p: [cx + al, yL], t: TVd },
+    { p: [cx, bot], t: THl },
+    { p: [cx - al, yL], t: TV }, { p: [cx - an, yM], t: TV }, { p: [cx - au, yU], t: TV }])
+    + box(cx - au + s, cx + au - s, yM + th / 2, FIG - th)
+    + box(cx - al + s, cx + al - s, bot + th, yM - th / 2);
+}
+
+// ── Spacing ───────────────────────────────────────────────────────────────────
+// Sidebearings are set by what the edge DOES, not by the letter: a flat edge takes the full
+// bearing, a round one 0.80 of it, an open or diagonal one 0.62. That alone fixes most of
+// the colour; the kern table below only handles pairs where the two shapes lean apart.
+const SHAPE = { h:'ff', a:'rf', n:'ff', b:'fr', u:'ff', m:'ff', w:'oo', o:'rr', e:'rr',
+                s:'rr', v:'oo', r:'fo', t:'ff', f:'ff', i:'ff', g:'rr', '!':'ff',
+                '0':'rr', '1':'of', c:'ro', j:'of', k:'fo', p:'fr', q:'rf', d:'rf',
+                l:'ff', x:'oo', y:'oo', z:'ff', B:'ff', '.':'oo', ',':'oo',
+                '2':'rf', '3':'rr', '4':'or', '5':'fr', '6':'rr', '7':'or', '8':'rr', '9':'rr' };
+// The three classes were spread too far apart: flat|flat opened to 94u while open|open
+// closed to 59u, so the same word held two different rhythms. Narrowed to 64–85u at the
+// same average colour, which lets the kern table shrink correspondingly (see kS).
+const SBK = { f: 0.90, r: 0.82, o: 0.68 };
+const KERN = {
+  ma:-24, na:-18, ua:-16, ha:-14, ba:-10, oa:-10, ea:-12, ra:-26, va:-30, wa:-30, ta:-14, ga:-10, sa:-10,
+  av:-24, aw:-24, an:-4, ab:-4,
+  ro:-18, rs:-14, rt:-20, rv:-30, rg:-14, rn:-8, ru:-8, re:-16, rm:-8, rf:-14,
+  fo:-14, fi:-8, ft:-20, fs:-10, fe:-12, fa:-14, fu:-8,
+  ov:-16, ow:-16, of:-10, os:-8, on:-4,
+  to:-12, ts:-8, te:-10, tv:-14, tw:-14,
+  si:-6, se:-6, so:-6, st:-6, iv:-12, ib:-4,
+  ge:-8, be:-10, ee:-6, eo:-4, ef:-6, es:-6, nt:-6, ur:-6, mb:-4, br:-6, bu:-4, hu:-2, um:-2, we:-14, wo:-14,
+  ya:-30, yo:-16, ye:-16, ys:-12, xa:-10, xe:-8, za:-14, ze:-8, ka:-16, ke:-14, ko:-12, ky:-20,
+  ca:-4, ce:-4, ck:-6, co:-4, ct:-8, pa:-8, pe:-6, po:-4, py:-16, qu:-6, jo:-6, ju:-6,
+  ax:-8, ay:-20, ey:-14, oy:-14, ny:-14, my:-14, ty:-14, ry:-24, iy:-8, uy:-8, gy:-10, by:-14,
+  ap:-6, aq:-6, oc:-4, ec:-4, sc:-6, tc:-6,
+  // pairs the shape classes can't see: a diagonal or a stem set deep inside its own advance
+  vc:-16, vo:-14, ve:-14, vs:-10, et:-14, st:-14, gl:-12, gt:-10, da:-14, de:-8, do:-8,
+  tz:-16, az:-10, oz:-10, ez:-10, ol:-10, al:-10, ul:-8, il:-6,
+  oj:-8, aj:-8, ej:-8, uj:-6, ja:-6
+};
+function glyphWidth(ch, s) {
+  if (ch === 'f') return Math.max(158 + s, 62 + (150 + 0.24 * s) + 9);
+  const W = { h:379, a:370, n:379, b:379, u:379, m:2*330-s, w:2*330-s, o:379, e:379,
+              s:340, v:340, r:300, t:158+s, i:s, '0':330, '1':164+s,
+              l:s, c:379, j:100+s, k:380, p:379, q:379, d:379, x:340, y:379, z:340,
+              B:400, '.':1.12*s, ',':1.12*s,
+              '2':330, '3':330, '4':360, '5':330, '6':330, '7':330, '8':330, '9':330 };
+  return W[ch];
+}
+const BUILD = { h: buildH, a: buildA, n: buildN, b: buildB, u: buildU, m: buildM, w: buildW,
+                o: buildO, e: buildE, s: buildS, v: buildV, r: buildR, t: buildT, f: buildF,
+                i: buildI, l: buildL, '!': buildExcl, '0': buildZero, '1': buildOne,
+                c: buildC, j: buildJ, k: buildK, p: buildP, q: buildQ, d: buildD,
+                x: buildX, y: buildY, z: buildZ, B: buildCapB,
+                '.': buildPeriod, ',': buildComma,
+                '2': build2, '3': build3, '4': build4, '5': build5,
+                '6': build6, '7': build7, '8': build8, '9': build9 };
+// ── Drawn masters ────────────────────────────────────────────────────────────
+// Outlines that came back redrawn from Illustrator. These glyphs stop being parametric:
+// the axis interpolates them point-for-point between the two drawn weights, the way the
+// g already interpolates by offset. Everything else is still built from parameters.
+const MASTERS = {
+  'c': { ch: 'c', black: "M360.3 350.4C371.5 354.2 379 364.7 379 376.5C379 460.2 294.2 528 189.5 528C84.8 528 0 451.4 0 356.8C0 292.6 0 228.4 0 164.2C0 69.6 84.8 -7 189.5 -7C294.2 -7 379 52.4 379 125.7C379 144.6 360.4 157.9 342.6 151.8C325.6 146 308.6 140.3 291.7 134.5C280.5 130.7 273 120.2 273 108.4C273 108.4 273 108.4 273 108.4C273 86.8 255.5 69.3 233.9 69.3C215.5 69.3 197 69.3 178.6 69.3C138.5 69.3 106 101.8 106 141.9C106 221.8 106 301.6 106 381.5C106 420.3 137.4 451.7 176.1 451.7C185 451.7 194 451.7 202.9 451.7C241.6 451.7 273 420.3 273 381.5C273 374.1 273 366.7 273 359.2C273 340.4 291.6 327.1 309.4 333.1C326.4 338.9 343.4 344.7 360.3 350.4Z", regular: "M369.7 353.6C375.2 355.5 379 360.8 379 366.7C379 455.8 294.2 528 189.5 528C84.8 528 0 451.4 0 356.8C0 292.6 0 228.4 0 164.2C0 69.6 84.8 -7 189.5 -7C294.2 -7 379 61 379 145C379 154.4 369.7 161 360.8 158C352.3 155.1 343.8 152.2 335.3 149.4C329.8 147.5 326 142.2 326 136.3C326 138 326 139.6 326 141.2C326 74.4 271.9 20.3 205.1 20.3C205.9 20.3 206.6 20.3 207.4 20.3C122.1 20.3 53 89.4 53 174.7C53 245.2 53 315.5 53 386C53 449.3 104.3 500.7 167.7 500.7C182.2 500.7 196.8 500.7 211.3 500.7C274.7 500.7 326 449.3 326 386C326 376.7 326 367.4 326 358C326 348.6 335.3 341.9 344.2 345C352.7 347.9 361.2 350.7 369.7 353.6Z" },
+  'e': { ch: 'e', black: "M357.8 230.2C369.5 230.2 379 239.7 379 251.4C379 286.5 379 321.7 379 356.8C379 451.4 294.2 528 189.5 528C84.8 528 0 451.4 0 356.8C0 292.6 0 228.4 0 164.2C0 69.6 84.8 -7 189.5 -7C294.2 -7 379 52.4 379 125.7C379 144.6 360.4 157.9 342.6 151.8C325.6 146 308.6 140.3 291.7 134.5C280.5 130.7 273 120.2 273 108.4C273 108.4 273 108.4 273 108.4C273 86.8 255.5 69.3 233.9 69.3C214.6 69.3 195.4 69.3 176.1 69.3C137.4 69.3 106 100.7 106 139.5C106 162.7 106 185.8 106 209C106 220.7 115.5 230.2 127.2 230.2C204.1 230.2 280.9 230.2 357.8 230.2ZM106 327.7C106 345.6 106 363.6 106 381.5C106 420.3 137.4 451.7 176.1 451.7C185 451.7 194 451.7 202.9 451.7C241.6 451.7 273 420.3 273 381.5C273 363.6 273 345.6 273 327.7C273 316 263.5 306.5 251.8 306.5C210.3 306.5 168.7 306.5 127.2 306.5C115.5 306.5 106 316 106 327.7Z", regular: "M368.4 279.2C374.3 279.2 379 283.9 379 289.8C379 312.1 379 334.5 379 356.8C379 451.4 294.2 528 189.5 528C84.8 528 0 451.4 0 356.8C0 292.6 0 228.4 0 164.2C0 69.6 84.8 -7 189.5 -7C294.2 -7 379 61 379 145C379 154.4 369.7 161 360.8 158C352.3 155.1 343.8 152.2 335.3 149.4C329.8 147.5 326 142.2 326 136.3C326 138 326 139.6 326 141.2C326 74.4 271.9 20.3 205.1 20.3C192.5 20.3 180.1 20.3 167.7 20.3C104.3 20.3 53 71.7 53 135C53 179.6 53 224 53 268.6C53 274.4 57.7 279.2 63.6 279.2C165.2 279.2 266.8 279.2 368.4 279.2ZM53 317.1C53 340.1 53 363 53 386C53 449.3 104.3 500.7 167.7 500.7C182.2 500.7 196.8 500.7 211.3 500.7C274.7 500.7 326 449.3 326 386C326 363 326 340.1 326 317.1C326 311.2 321.3 306.5 315.4 306.5C231.5 306.5 147.5 306.5 63.6 306.5C57.7 306.5 53 311.2 53 317.1Z" },
+  'y': { ch: 'y', black: "M106 491.3C106 378.5 106 265.7 106 152.8C106 106.7 143.4 69.3 189.5 69.3C235.6 69.3 273 106.7 273 152.8C273 251.5 273 350.2 273 448.9C273 475.2 289.3 490.5 307.1 496.6C321.7 501.5 336.3 506.5 350.9 511.4C365.6 516.4 379 502.4 379 491.3C379 309.2 379 127.1 379 -55C379 -151.7 290.8 -230 182.1 -230C169.4 -230 159.2 -219.7 159.2 -207.1C159.2 -196.9 159.2 -186.8 159.2 -176.6C159.2 -163.9 169.4 -153.7 182.1 -153.7C232.3 -153.7 273 -125.2 273 -90C273 -81.8 273 -37.3 273 -29.1C273 37.2 225.4 -7 166.8 -7C74.7 -7 0 67.7 0 159.8C0 256.1 0 352.5 0 448.9C0 475.2 16.3 490.5 34.1 496.6C48.7 501.5 63.3 506.5 77.9 511.4C92.6 516.4 106 502.4 106 491.3Z", regular: "M53 506.2C53 389.7 53 273.3 53 156.8C53 81.4 114.1 20.3 189.5 20.3C264.9 20.3 326 81.4 326 156.8C326 266.2 326 375.6 326 485C326 498.1 334.1 505.7 343.1 508.8C350.4 511.3 357.7 513.7 364.9 516.2C372.3 518.7 379 511.7 379 506.2C379 319.1 379 132.1 379 -55C379 -151.7 284.3 -230 167.4 -230C162.9 -230 159.2 -226.3 159.2 -221.8C159.2 -218.2 159.2 -214.5 159.2 -210.9C159.2 -206.3 162.9 -202.7 167.4 -202.7C255 -202.7 326 -152.2 326 -90C326 -72 326 -17.9 326 0C326 58.4 254.7 -7 166.8 -7C74.7 -7 0 67.7 0 159.8C0 268.2 0 376.6 0 485C0 498.1 8.1 505.7 17.1 508.8C24.4 511.3 31.7 513.7 38.9 516.2C46.3 518.7 53 511.7 53 506.2Z" },
+  'k': { ch: 'k', black: "M106 721.3C106 590.3 106 459.2 106 328.2C106 307.3 131.4 297 146 311.9C201.9 369.2 257.8 426.5 313.6 483.7C326.9 497.3 350 487.9 350 468.9C350 453.1 350 437.3 350 421.5C350 416 347.8 410.7 344 406.7C301.2 362.9 258.5 319.1 215.8 275.3C206.7 266 207 251 216.5 242C258.8 202.3 329.5 134.1 371.8 94.4C376.1 90.4 378.5 84.8 378.5 78.9C378.5 59.5 378.5 40 378.5 20.5C378.5 1.9 356.3 -7.7 342.8 5.1C286.5 58 201.6 139.4 145.3 192.3C130.4 206.3 106 195.8 106 175.3C106 127.5 106 79.6 106 31.8C106 14.2 91.8 0 74.2 0C60.1 0 45.9 0 31.8 0C14.2 0 0 14.2 0 31.8C0 247.5 0 463.2 0 678.9C0 705.2 16.3 720.5 34.1 726.6C48.7 731.5 63.3 736.5 77.9 741.4C92.6 746.4 106 732.4 106 721.3Z", regular: "M53 736.2C53 589.4 53 442.7 53 296C53 286.1 64.6 280.7 72.2 287.1C159 360.1 245.8 433.2 332.6 506.3C339.5 512.1 350 507.2 350 498.2C350 489.4 350 480.7 350 471.9C350 468.7 348.6 465.8 346.2 463.8C266.8 396.9 187.3 330 107.9 263.1C102.2 258.3 102.4 249.4 108.2 244.9C187.5 183.8 280.8 108.5 360 47.4C362.6 45.4 364.1 42.3 364.1 39C364.1 28.5 364.1 18 364.1 7.5C364.1 -1.3 354 -6.3 347 -0.9C260 66.3 158.8 147.6 71.8 214.7C64.1 220.7 53 215.2 53 205.5C53 142.3 53 79.1 53 15.9C53 7.1 45.9 0 37.1 0C30 0 23 0 15.9 0C7.1 0 0 7.1 0 15.9C0 248.9 0 481.9 0 715C0 728.1 8.1 735.7 17.1 738.8C24.4 741.3 31.7 743.7 38.9 746.2C46.3 748.7 53 741.7 53 736.2Z" },
+  'comma': { ch: ',', black: "M0 73.6C0 112.9 20.7 144.8 46.3 144.8C86.3 144.8 118.7 110.8 118.7 68.9C118.7 -12.8 100.3 -79.5 52.2 -79.5C3.4 -67.4 0 37.2 0 73.6Z", regular: "M0 36.8C0 56.5 10.4 72.4 23.2 72.4C43.1 72.4 59.4 55.4 59.4 34.4C59.4 -6.4 43.4 -40.5 26.1 -39.8C8.9 -37.9 0 18.6 0 36.8Z" },
+  'r': { ch: 'r', black: "M219 528C263.7 528 300 491.7 300 447C300 432.5 300 418 300 403.4C300 377.1 283.7 361.9 265.9 355.8C251.3 350.8 236.7 345.9 222.1 340.9C207.4 335.9 194 349.9 194 361C194 376.6 194 392.1 194 407.7C194 432 174.3 451.7 150 451.7C125.7 451.7 106 432 106 407.7C106 282.4 106 157.1 106 31.8C106 14.2 91.8 0 74.2 0C60.1 0 45.9 0 31.8 0C14.2 0 0 14.2 0 31.8C0 170.8 0 338.9 0 477.9C0 504.2 28.5 489 46.3 495.1C60.9 500 63.3 506.5 77.9 511.4C118 525.1 155.5 528 219 528Z", regular: "M192.5 528C251.9 528 300 479.9 300 420.5C300 414.2 300 407.9 300 401.6C300 388.4 291.9 380.8 282.9 377.7C275.6 375.3 268.3 372.8 261.1 370.3C253.7 367.8 247 374.8 247 380.4C247 388.1 247 395.9 247 403.7C247 457.2 203.6 500.7 150 500.7C96.4 500.7 53 457.2 53 403.7C53 274.4 53 145.2 53 15.9C53 7.1 45.9 0 37.1 0C30 0 23 0 15.9 0C7.1 0 0 7.1 0 15.9C0 172.3 0 341.1 0 497.5C0 510.6 13.7 504.1 22.7 507.2C30 509.7 31.7 513.7 38.9 516.2C82.6 531.1 123.4 528 192.5 528Z" },
+  'a': { ch: 'a', black: "M84.4 486.7C168.2 527.1 187.9 528 264 528C322.5 528 370 480.5 370 422C370 309.3 370 196.7 370 84C370 61.9 352.1 44 330 44C305.8 44 305 11.7 286 6C243.5 -6.8 214.2 -7 155.4 -7C69.6 -7 0 63.3 0 150C0 224.6 52.8 285 118 285C198.6 285 264 310.9 264 342.8C264 348.8 264 354.8 264 360.7C264 402.8 229.9 436.8 187.9 436.8C156.9 436.8 133.5 433 103.9 423.8C86.5 418.4 68.1 428.2 62.7 445.5C57.4 462.8 68 478.8 84.4 486.7ZM106 143.2C106 96.6 144.5 58.7 191.9 58.7C239.3 58.7 277.8 96.6 277.8 143.2C277.8 189.9 239.3 227.8 191.9 227.8C144.5 227.8 106 189.9 106 143.2Z", regular: "M70.9 498.5C186.5 532.9 194.4 528 293.2 528C335.6 528 370 493.6 370 451.2C370 328.8 370 206.4 370 84C370 61.9 352.1 44 330 44C305.8 44 305 11.7 286 6C243.5 -6.8 214.2 -7 155.4 -7C69.6 -7 0 63.3 0 150C0 224.6 52.8 285 118 285C227.9 285 317 296.4 317 326.9C317 345.4 317 363.8 317 382.3C317 442.7 268 491.7 207.5 491.7C163 491.7 119.8 485.7 76.3 475.5C70 474 63.6 477.9 62.2 484.3C60.7 490.6 64.7 496.6 70.9 498.5ZM58.3 142.1C58.3 74.5 115.6 19.7 186.3 19.7C257 19.7 314.3 74.5 314.3 142.1C314.3 209.7 257 264.5 186.3 264.5C115.6 264.5 58.3 209.7 58.3 142.1Z" },
+  'b': { ch: 'b', black: "M106 721.3C106 669.5 106 617.7 106 565.8C106 528.3 163.8 528 181.7 528C203.8 528 225.9 528 248 528C320.3 528 379 469.3 379 397C379 306 379 215 379 124C379 51.7 320.3 -7 248 -7C212.7 -7 227.3 -7 192 -7C139.7 -7 122.2 29 106 29C86.2 29 86.2 -7 70 -7C57.2 -7 44.5 -7 31.8 -7C14.2 -7 0 7.2 0 24.8C0 242.8 0 460.9 0 678.9C0 705.2 16.3 720.5 34.1 726.6C48.7 731.5 63.3 736.5 77.9 741.4C92.6 746.4 106 732.4 106 721.3ZM106 152.8C106 106.7 143.4 69.3 189.5 69.3C189.5 69.3 189.5 69.3 189.5 69.3C235.6 69.3 273 106.7 273 152.8C273 224.6 273 296.4 273 368.2C273 414.3 235.6 451.7 189.5 451.7C189.5 451.7 189.5 451.7 189.5 451.7C143.4 451.7 106 414.3 106 368.2C106 296.4 106 224.6 106 152.8Z", regular: "M53 736.2C53 673.1 53 610 53 546.9C53 524.3 81.9 528 90.8 528C134.7 528 178.6 528 222.5 528C308.9 528 379 457.9 379 371.5C379 297.5 379 223.5 379 149.5C379 63.1 308.9 -7 222.5 -7C172 -7 171.5 -7 121 -7C80.2 -7 61.1 11 53 11C43.1 11 43.1 -7 35 -7C28.6 -7 22.3 -7 15.9 -7C7.1 -7 0 0.1 0 8.9C0 244.3 0 479.6 0 715C0 728.1 8.1 735.7 17.1 738.8C24.4 741.3 31.7 743.7 38.9 746.2C46.3 748.7 53 741.7 53 736.2ZM53 156.8C53 81.4 114.1 20.3 189.5 20.3C189.5 20.3 189.5 20.3 189.5 20.3C264.9 20.3 326 81.4 326 156.8C326 225.9 326 295.1 326 364.2C326 439.6 264.9 500.7 189.5 500.7C189.5 500.7 189.5 500.7 189.5 500.7C114.1 500.7 53 439.6 53 364.2C53 295.1 53 225.9 53 156.8Z" },
+  'h': { ch: 'h', black: "M106 721.3C106 667.6 106 613.9 106 560.2C106 510.5 120.3 470.1 138 470.1C173.9 470.1 178.4 528 258.5 528C325.1 528 379 474.1 379 407.5C379 282.3 379 157 379 31.8C379 14.2 364.8 0 347.2 0C333.1 0 318.9 0 304.8 0C287.2 0 273 14.2 273 31.8C273 143.9 273 256.1 273 368.2C273 414.3 235.6 451.7 189.5 451.7C143.4 451.7 106 414.3 106 368.2C106 256.1 106 143.9 106 31.8C106 14.2 91.8 0 74.2 0C60.1 0 45.9 0 31.8 0C14.2 0 0 14.2 0 31.8C0 247.5 0 463.2 0 678.9C0 705.2 16.3 720.5 34.1 726.6C48.7 731.5 63.3 736.5 77.9 741.4C92.6 746.4 106 732.4 106 721.3Z", regular: "M53 736.2C53 671 53 605.8 53 540.6C53 515.7 67.3 495.6 85 495.6C135.5 495.6 140 528 232 528C313.2 528 379 462.2 379 381C379 259.3 379 137.6 379 15.9C379 7.1 371.9 0 363.1 0C356 0 349 0 341.9 0C333.1 0 326 7.1 326 15.9C326 132 326 248.1 326 364.2C326 439.6 264.9 500.7 189.5 500.7C114.1 500.7 53 439.6 53 364.2C53 248.1 53 132 53 15.9C53 7.1 45.9 0 37.1 0C30 0 23 0 15.9 0C7.1 0 0 7.1 0 15.9C0 248.9 0 481.9 0 715C0 728.1 8.1 735.7 17.1 738.8C24.4 741.3 31.7 743.7 38.9 746.2C46.3 748.7 53 741.7 53 736.2Z" },
+  'p': { ch: 'p', black: "M106 -200.3C106 -148.5 106 -96.7 106 -44.8C106 -3.5 163.8 -7 181.7 -7C203.8 -7 225.9 -7 248 -7C320.3 -7 379 51.7 379 124C379 215 379 306 379 397C379 469.3 320.3 528 248 528C212.7 528 227.3 528 192 528C128.6 528 122.2 492 106 492C86.2 492 86.2 528 70 528C57.2 528 44.5 528 31.8 528C14.2 528 0 513.8 0 496.2C0 278.2 0 60.1 0 -157.9C0 -184.2 16.3 -199.5 34.1 -205.6C48.7 -210.5 63.3 -215.5 77.9 -220.4C92.6 -225.4 106 -211.4 106 -200.3ZM106 368.2C106 414.3 143.4 451.7 189.5 451.7C189.5 451.7 189.5 451.7 189.5 451.7C235.6 451.7 273 414.3 273 368.2C273 296.4 273 224.6 273 152.8C273 106.7 235.6 69.3 189.5 69.3C189.5 69.3 189.5 69.3 189.5 69.3C143.4 69.3 106 106.7 106 152.8C106 224.6 106 296.4 106 368.2Z", regular: "M53 -215.2C53 -152.1 53 -89 53 -25.9C53 -7.6 81.9 -7 90.8 -7C134.7 -7 178.6 -7 222.5 -7C308.9 -7 379 63.1 379 149.5C379 223.5 379 297.5 379 371.5C379 457.9 308.9 528 222.5 528C172 528 171.5 528 121 528C81.1 528 61.1 510 53 510C43.1 510 43.1 528 35 528C28.6 528 22.3 528 15.9 528C7.1 528 0 520.9 0 512.1C0 276.7 0 41.4 0 -194C0 -207.1 8.1 -214.7 17.1 -217.8C24.4 -220.3 31.7 -222.7 38.9 -225.2C46.3 -227.7 53 -220.7 53 -215.2ZM53 364.2C53 439.6 114.1 500.7 189.5 500.7C189.5 500.7 189.5 500.7 189.5 500.7C264.9 500.7 326 439.6 326 364.2C326 295.1 326 225.9 326 156.8C326 81.4 264.9 20.3 189.5 20.3C189.5 20.3 189.5 20.3 189.5 20.3C114.1 20.3 53 81.4 53 156.8C53 225.9 53 295.1 53 364.2Z" },
+  'd': { ch: 'd', black: "M273 721.3C273 669.5 273 617.7 273 565.8C273 528 215.2 528 197.3 528C175.2 528 153.1 528 131 528C58.7 528 0 469.3 0 397C0 306 0 215 0 124C0 51.7 58.7 -7 131 -7C166.3 -7 151.7 -7 187 -7C241.4 -7 256.8 29 273 29C292.8 29 292.8 -7 309 -7C321.8 -7 334.5 -7 347.2 -7C364.8 -7 379 7.2 379 24.8C379 242.8 379 460.9 379 678.9C379 705.2 362.7 720.5 344.9 726.6C330.3 731.5 315.7 736.5 301.1 741.4C286.4 746.4 273 732.4 273 721.3ZM273 152.8C273 106.7 235.6 69.3 189.5 69.3C189.5 69.3 189.5 69.3 189.5 69.3C143.4 69.3 106 106.7 106 152.8C106 224.6 106 296.4 106 368.2C106 414.3 143.4 451.7 189.5 451.7C189.5 451.7 189.5 451.7 189.5 451.7C235.6 451.7 273 414.3 273 368.2C273 296.4 273 224.6 273 152.8Z", regular: "M326 736.2C326 673.1 326 610 326 546.9C326 541.2 319.2 528 288.2 528C244.3 528 200.4 528 156.5 528C70.1 528 0 457.9 0 371.5C0 297.5 0 223.5 0 149.5C0 63.1 70.1 -7 156.5 -7C207 -7 207.5 -7 258 -7C304 -7 317.9 11 326 11C335.9 11 335.9 -7 344 -7C350.4 -7 356.7 -7 363.1 -7C371.9 -7 379 0.1 379 8.9C379 244.3 379 479.6 379 715C379 728.1 370.9 735.7 361.9 738.8C354.6 741.3 347.3 743.7 340.1 746.2C332.7 748.7 326 741.7 326 736.2ZM326 156.8C326 81.4 264.9 20.3 189.5 20.3C189.5 20.3 189.5 20.3 189.5 20.3C114.1 20.3 53 81.4 53 156.8C53 225.9 53 295.1 53 364.2C53 439.6 114.1 500.7 189.5 500.7C189.5 500.7 189.5 500.7 189.5 500.7C264.9 500.7 326 439.6 326 364.2C326 295.1 326 225.9 326 156.8Z" },
+  'q': { ch: 'q', black: "M273 -200.3C273 -148.5 273 -96.7 273 -44.8C273 -9.8 215.2 -7 197.3 -7C175.2 -7 153.1 -7 131 -7C58.7 -7 0 51.7 0 124C0 215 0 306 0 397C0 469.3 58.7 528 131 528C166.3 528 151.7 528 187 528C241.4 528 256.8 492 273 492C292.8 492 292.8 528 309 528C321.8 528 334.5 528 347.2 528C364.8 528 379 513.8 379 496.2C379 278.2 379 60.1 379 -157.9C379 -184.2 362.7 -199.5 344.9 -205.6C330.3 -210.5 315.7 -215.5 301.1 -220.4C286.4 -225.4 273 -211.4 273 -200.3ZM273 368.2C273 414.3 235.6 451.7 189.5 451.7C189.5 451.7 189.5 451.7 189.5 451.7C143.4 451.7 106 414.3 106 368.2C106 296.4 106 224.6 106 152.8C106 106.7 143.4 69.3 189.5 69.3C189.5 69.3 189.5 69.3 189.5 69.3C235.6 69.3 273 106.7 273 152.8C273 224.6 273 296.4 273 368.2Z", regular: "M326 -215.2C326 -152.1 326 -89 326 -25.9C326 -5.9 297.1 -7 288.2 -7C244.3 -7 200.4 -7 156.5 -7C70.1 -7 0 63.1 0 149.5C0 223.5 0 297.5 0 371.5C0 457.9 70.1 528 156.5 528C207 528 207.5 528 258 528C301.7 528 317.9 510 326 510C335.9 510 335.9 528 344 528C350.4 528 356.7 528 363.1 528C371.9 528 379 520.9 379 512.1C379 276.7 379 41.4 379 -194C379 -207.1 370.9 -214.7 361.9 -217.8C354.6 -220.3 347.3 -222.7 340.1 -225.2C332.7 -227.7 326 -220.7 326 -215.2ZM326 364.2C326 439.6 264.9 500.7 189.5 500.7C189.5 500.7 189.5 500.7 189.5 500.7C114.1 500.7 53 439.6 53 364.2C53 295.1 53 225.9 53 156.8C53 81.4 114.1 20.3 189.5 20.3C189.5 20.3 189.5 20.3 189.5 20.3C264.9 20.3 326 81.4 326 156.8C326 225.9 326 295.1 326 364.2Z" },
+  'f': { ch: 'f', black: "M62 575.6C62 672.5 130.3 751 214.5 751C227.2 751 237.4 740.7 237.4 728.1C237.4 717.9 237.4 707.8 237.4 697.6C237.4 684.9 227.2 674.7 214.5 674.7C188.8 674.7 168 641.9 168 601.6C168 582.5 168 563.4 168 544.3C168 531.4 178.4 521 191.3 521C207.4 521 213.5 521 229.6 521C243.1 521 254 510.1 254 496.6C254 487.4 254 478.3 254 469.1C254 455.6 243.1 444.7 229.6 444.7C213.5 444.7 207.4 444.7 191.3 444.7C178.4 444.7 168 434.2 168 421.4C168 291.5 168 161.7 168 31.8C168 14.2 153.8 0 136.2 0C122.1 0 107.9 0 93.8 0C76.2 0 62 14.2 62 31.8C62 161.7 62 291.5 62 421.4C62 434.2 51.6 444.7 38.7 444.7C33.9 444.7 29.2 444.7 24.4 444.7C10.9 444.7 0 455.6 0 469.1C0 478.3 0 487.4 0 496.6C0 510.1 10.9 521 24.4 521C29.2 521 33.9 521 38.7 521C51.6 521 62 531.4 62 544.3C62 554.7 62 565.1 62 575.6Z", regular: "M62 588.3C62 678.2 131.2 751 216.5 751C221 751 224.7 747.3 224.7 742.8C224.7 739.2 224.7 735.5 224.7 731.9C224.7 727.3 221 723.7 216.5 723.7C160.5 723.7 115 674.7 115 614.3C115 587.1 115 559.9 115 532.7C115 526.2 120.2 521 126.7 521C159.4 521 182.2 521 215 521C219.8 521 223.7 517.1 223.7 512.3C223.7 509 223.7 505.7 223.7 502.4C223.7 497.6 219.8 493.7 215 493.7C182.2 493.7 159.4 493.7 126.7 493.7C120.2 493.7 115 488.5 115 482C115 326.6 115 171.3 115 15.9C115 7.1 107.9 0 99.1 0C92 0 85 0 77.9 0C69.1 0 62 7.1 62 15.9C62 171.3 62 326.6 62 482C62 488.5 56.8 493.7 50.3 493.7C36.5 493.7 22.6 493.7 8.7 493.7C3.9 493.7 0 497.6 0 502.4C0 505.7 0 509 0 512.3C0 517.1 3.9 521 8.7 521C22.6 521 36.5 521 50.3 521C56.8 521 62 526.2 62 532.7C62 551.2 62 569.7 62 588.3Z" },
+  'i': { ch: 'i', black: "M106 491.3C106 338.1 106 185 106 31.8C106 14.2 91.8 0 74.2 0C60.1 0 45.9 0 31.8 0C14.2 0 0 14.2 0 31.8C0 170.8 0 309.9 0 448.9C0 475.2 16.3 490.5 34.1 496.6C48.7 501.5 63.3 506.5 77.9 511.4C92.6 516.4 106 502.4 106 491.3ZM-11.6 643.2C-11.6 678.9 17.3 707.8 53 707.8C88.7 707.8 117.6 678.8 117.6 643.2C117.6 607.5 88.7 578.6 53 578.6C17.3 578.6 -11.6 607.6 -11.6 643.2Z", regular: "M53 506.2C53 342.7 53 179.3 53 15.9C53 7.1 45.9 0 37.1 0C30 0 23 0 15.9 0C7.1 0 0 7.1 0 15.9C0 172.3 0 328.6 0 485C0 498.1 8.1 505.7 17.1 508.8C24.4 511.3 31.7 513.7 38.9 516.2C46.3 518.7 53 511.7 53 506.2ZM-5.8 615.1C-5.8 632.9 8.7 647.4 26.5 647.4C44.3 647.4 58.8 632.9 58.8 615.1C58.8 597.3 44.3 582.8 26.5 582.8C8.7 582.8 -5.8 597.3 -5.8 615.1Z" },
+  'j': { ch: 'j', black: "M202 491.3C202 314.2 202 137.1 202 -40C202 -144.9 121.8 -230 22.9 -230C10.3 -230 0 -219.7 0 -207.1C0 -196.9 0 -186.8 0 -176.6C0 -163.9 10.3 -153.7 22.9 -153.7C63.3 -153.7 96 -121.5 96 -81.8C96 95.1 96 272 96 448.9C96 475.2 112.3 490.5 130.1 496.6C144.7 501.5 159.3 506.5 173.9 511.4C188.6 516.4 202 502.4 202 491.3ZM84.4 643.2C84.4 678.9 113.3 707.8 149 707.8C184.7 707.8 213.6 678.8 213.6 643.2C213.6 607.5 184.7 578.6 149 578.6C113.3 578.6 84.4 607.6 84.4 643.2Z", regular: "M149 506.2C149 324.1 149 142.1 149 -40C149 -144.9 86 -230 8.2 -230C3.7 -230 0 -226.3 0 -221.8C0 -218.2 0 -214.5 0 -210.9C0 -206.3 3.7 -202.7 8.2 -202.7C56.7 -202.7 96 -148.6 96 -81.8C96 107.1 96 296 96 485C96 498.1 104.1 505.7 113.1 508.8C120.4 511.3 127.7 513.7 134.9 516.2C142.3 518.7 149 511.7 149 506.2ZM90.2 615.1C90.2 632.9 104.7 647.4 122.5 647.4C140.3 647.4 154.8 632.9 154.8 615.1C154.8 597.3 140.3 582.8 122.5 582.8C104.7 582.8 90.2 597.3 90.2 615.1Z" }
+};
+function makeMaster(bd, rd) {
+  const lit = bd.split(/-?[\d.]+/), bn = bd.match(/-?[\d.]+/g).map(Number), rn = rd.match(/-?[\d.]+/g).map(Number);
+  return s => {
+    const t = Math.max(0, Math.min(1, (s - 53) / 53));
+    let out = lit[0];
+    for (let i = 0; i < bn.length; i++) out += fx(rn[i] + (bn[i] - rn[i]) * t) + lit[i + 1];
+    return out;
+  };
+}
+Object.keys(MASTERS).forEach(n => { BUILD[MASTERS[n].ch] = makeMaster(MASTERS[n].black, MASTERS[n].regular); });
+const CHARSET = 'a b c d e f g h i j k l m n o p q r s t u v w x y z · B · ! . ,';
+const ORDER = 'abcdefghijklmnopqrstuvwxyzB!.,';
+// the grid the returned SVGs were drawn on — section 08 still maps their cells
+const ORDER_V1 = 'abcdefghijkmnopqrstuvwxyzB0123456789!.,';
+function layout(str, s, noKern) {
+  const d = Math.max(0, (107.4 - s) / 2.09), sb = 47 + 0.28 * d;
+  const kS = 0.40 + 0.32 * s / 106;
+  let cur = 0, prev = null;
+  const glyphs = [], pairs = [];
+  for (const ch of str) {
+    if (ch === ' ') { cur += 4.0 * sb; prev = null; continue; }
+    if (ch !== 'g' && !BUILD[ch]) continue;
+    let dPath, w, minX;
+    if (ch === 'g') {
+      const c = neckComp(d);
+      dPath = offsetPath(REF22, d, true); minX = 42.5 + d * c; w = 427.5 - d - d * c;
+    } else {
+      dPath = BUILD[ch](s);
+      minX = ch === '!' ? 4 - 0.03 * s : 0;
+      w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
+    }
+    const cl = SHAPE[ch] || 'ff';
+    const lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+    const kv = prev && !noKern ? (KERN[prev + ch] || 0) * kS : 0;
+    if (prev) { cur += kv; pairs.push({ p: prev + ch, k: Math.round(kv) }); }
+    glyphs.push({ key: ch, d: dPath, tf: `translate(${(cur + lsb - minX).toFixed(1)},0)` });
+    cur += lsb + w + rsb;
+    prev = ch;
+  }
+  return { glyphs, w: Math.round(cur), pairs };
+}
+
+
+// ── Comparing a returned SVG against the generator ───────────────────────────
+// Flattens both outlines to point sets and measures the largest distance from either
+// curve to the other, so a glyph Illustrator merely re-serialised reads as unchanged.
+function flatPath(d) {
+  const tk = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) || [];
+  let i = 0, cx = 0, cy = 0, sx = 0, sy = 0, px = 0, py = 0, cmd = '';
+  const P = [], num = () => parseFloat(tk[i++]), push = (x, y) => P.push([x, y]);
+  const cub = (x1, y1, x2, y2, x, y) => {
+    for (let t = 1; t <= 10; t++) {
+      const u = t / 10, m = 1 - u;
+      push(m*m*m*cx + 3*m*m*u*x1 + 3*m*u*u*x2 + u*u*u*x,
+           m*m*m*cy + 3*m*m*u*y1 + 3*m*u*u*y2 + u*u*u*y);
+    }
+    px = x2; py = y2; cx = x; cy = y;
+  };
+  while (i < tk.length) {
+    if (/[a-zA-Z]/.test(tk[i])) cmd = tk[i++];
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase();
+    if (C === 'M') { const x = num(), y = num(); cx = rel ? cx + x : x; cy = rel ? cy + y : y; sx = cx; sy = cy; px = cx; py = cy; push(cx, cy); cmd = rel ? 'l' : 'L'; }
+    else if (C === 'L') { const x = num(), y = num(); cx = rel ? cx + x : x; cy = rel ? cy + y : y; px = cx; py = cy; push(cx, cy); }
+    else if (C === 'H') { const x = num(); cx = rel ? cx + x : x; px = cx; py = cy; push(cx, cy); }
+    else if (C === 'V') { const y = num(); cy = rel ? cy + y : y; px = cx; py = cy; push(cx, cy); }
+    else if (C === 'C') { const a = num(), b = num(), c = num(), e = num(), f = num(), g = num();
+      cub(rel ? cx + a : a, rel ? cy + b : b, rel ? cx + c : c, rel ? cy + e : e, rel ? cx + f : f, rel ? cy + g : g); }
+    else if (C === 'S') { const c = num(), e = num(), f = num(), g = num();
+      cub(2*cx - px, 2*cy - py, rel ? cx + c : c, rel ? cy + e : e, rel ? cx + f : f, rel ? cy + g : g); }
+    else if (C === 'Q') { const a = num(), b = num(), c = num(), e = num();
+      const qx = rel ? cx + a : a, qy = rel ? cy + b : b, ex = rel ? cx + c : c, ey = rel ? cy + e : e;
+      cub(cx + 2/3*(qx - cx), cy + 2/3*(qy - cy), ex + 2/3*(qx - ex), ey + 2/3*(qy - ey), ex, ey); }
+    else if (C === 'Z') { cx = sx; cy = sy; px = cx; py = cy; }
+    else i++;
+  }
+  return P;
+}
+// Sampling through the browser's own path engine rather than a hand-rolled flattener:
+// the returned files are Illustrator's relative-command output and the engine reads them exactly.
+function samplePath(d, dx, dy) {
+  const ns = 'http://www.w3.org/2000/svg';
+  let host = document.getElementById('aqua-measure');
+  if (!host) {
+    host = document.createElementNS(ns, 'svg');
+    host.id = 'aqua-measure';
+    host.setAttribute('width', '0'); host.setAttribute('height', '0');
+    host.style.position = 'absolute'; host.style.opacity = '0'; host.style.pointerEvents = 'none';
+    document.body.appendChild(host);
+  }
+  const p = document.createElementNS(ns, 'path');
+  p.setAttribute('d', d); host.appendChild(p);
+  const L = p.getTotalLength(), N = 320, out = [];
+  for (let i = 0; i < N; i++) { const pt = p.getPointAtLength(L * i / N); out.push([pt.x + dx, pt.y + dy]); }
+  p.remove();
+  return out;
+}
+function devOneWay(A, B) {
+  let mx = 0;
+  for (let i = 0; i < A.length; i += 2) {
+    const a = A[i]; let best = Infinity;
+    for (let j = 0; j < B.length; j++) {
+      const dx = a[0] - B[j][0], dy = a[1] - B[j][1], d2 = dx*dx + dy*dy;
+      if (d2 < best) best = d2;
+    }
+    if (best > mx) mx = best;
+  }
+  return Math.sqrt(mx);
+}
+function parseExport(stem) {
+  const re = /<path id="glyph\.([A-Za-z.]+)" d="([^"]*)"/g, svg = exportSVG(stem), o = {};
+  let m; while ((m = re.exec(svg))) o[m[1]] = m[2];
+  return o;
+}
+function cellOrigins(order) {
+  const cols = 6, cw = 1150, chh = 1300, o = {};
+  order.split('').forEach((ch, i) => {
+    o[GNAME[ch] || ch] = { ox: (i % cols) * cw + 90, oy: ((i / cols) | 0) * chh + 1000 };
+  });
+  return o;
+}
+// Glyphs you drew in one weight only: the same point-for-point move was carried onto the
+// other master, so that weight no longer matches the file it came back in — by design.
+const MIRRORED = { c: 'regular', e: 'regular', h: 'regular', y: 'black' };
+function buildDiffs(ed) {
+  const gen = { black: parseExport(106), regular: parseExport(53) };
+  const cells = cellOrigins(ORDER), was = cellOrigins(ORDER_V1), out = [];
+  for (const name of Object.keys(ed.black.glyphs)) {
+    const cl = cells[name];
+    if (!cl) continue; // dropped from the set since that export — the digits
+    const w0 = was[name], dx = cl.ox - w0.ox, dy = cl.oy - w0.oy;
+    const it = { name, shift: 'translate(' + dx + ',' + dy + ')' };
+    let worst = 0;
+    for (const k of ['black', 'regular']) {
+      const mine = gen[k][name], theirs = ed[k].glyphs[name].d;
+      if (!mine) { it[k + 'Mine'] = ''; it[k + 'Theirs'] = theirs; it[k + 'DevLabel'] = 'new glyph'; worst = 999; continue; }
+      const A = samplePath(mine, 0, 0), B = samplePath(theirs, dx, dy);
+      const dv = Math.max(devOneWay(A, B), devOneWay(B, A));
+      it[k + 'Mine'] = mine; it[k + 'Theirs'] = theirs;
+      if (MIRRORED[name] === k) { it[k + 'DevLabel'] = 'carried over from the weight you drew'; continue; }
+      it[k + 'DevLabel'] = dv < 2 ? 'unchanged' : Math.round(dv) + 'u moved';
+      worst = Math.max(worst, dv);
+    }
+    it.dev = Math.round(worst);
+    it.devLabel = worst < 2 ? 'identical' : Math.round(worst) + 'u';
+    it.vb = (cl.ox - 150) + ' ' + (cl.oy - 830) + ' 780 1130';
+    if (worst >= 2 || MIRRORED[name]) out.push(it);
+  }
+  out.sort((a, b) => b.dev - a.dev);
+  return out;
+}
+
+return {
+  SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,
+  TUCK, NECK_TABLE, neckComp, inNeck, offsetPath, H_PATH, A_PATH, EXCL_PATH,
+  WORD, KC, fx, TV, TVd, THr, THl, contour,
+  cutTop, foot, arch, buildH, buildA, buildExcl, buildN, buildB,
+  buildD, buildU, buildM, buildW, cutBot, corner, isect, nrm,
+  strokePath, buildRing, buildO, buildZero, buildOne, buildE, buildS, buildR,
+  buildT, buildF, buildI, buildL, buildV, DESC, flipPath, GNAME,
+  mapPath, exportSVG, buildP, buildQ, buildC, buildK, buildX, buildY,
+  buildJ, buildZ, buildPeriod, buildComma, buildCapB, FIG, figW, ell,
+  build2, build3, build4, build5, build6, build9, build7, build8,
+  SHAPE, SBK, KERN, glyphWidth, BUILD, MASTERS, makeMaster, CHARSET,
+  ORDER, ORDER_V1, layout, flatPath, samplePath, devOneWay, parseExport, cellOrigins,
+  MIRRORED, buildDiffs
+};
+});
