@@ -39,6 +39,18 @@ await p.waitForTimeout(150);
 await p.screenshot({ path: `${out}/glyphs-compare-light.png` });
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log('editing scenes');
+
+// the New-glyph room: an L from drops, then a traced anchor-like shape
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=78', { waitUntil: 'networkidle' });
+await p.waitForFunction(() => window.studioReady === true);
+await p.evaluate(() => { window.AquaDoc.clearAll(); window.AquaDoc.addNewGlyph('L', { ch: 'L', name: 'L', height: 'caps', use: true, strokes: [[[40, 680], [40, 520], [40, 360], [40, 200], [40, 40], [40, 0], [200, 0], [360, 0]]] }); window.AquaStudio.S.newKey = 'L'; window.AquaStudio.renderRoom(); });
+await p.waitForTimeout(200);
+await p.screenshot({ path: `${out}/newglyph-light.png` });
+await p.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); window.AquaStudio.renderTop(); window.AquaStudio.renderRoom(); });
+await p.waitForTimeout(200);
+await p.screenshot({ path: `${out}/newglyph-dark.png` });
+await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
+console.log('new glyph scenes');
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();
 process.exit(errors.length ? 1 : 0);

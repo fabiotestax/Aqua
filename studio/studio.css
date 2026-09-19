@@ -235,3 +235,11 @@ td.bad { color: var(--bad); }
 .canvas .guide.mid { stroke-dasharray: 6 8; }
 .pill.faint { opacity: .7; }
 .canvas .darkhalo { fill: var(--bad); fill-opacity: .16; stroke: var(--bad); stroke-opacity: .5; stroke-width: 1; pointer-events: none; }
+
+/* ── new glyph ── */
+.c.gen { border: 1.5px dashed var(--blue); background: var(--blue2); color: var(--blue); }
+.c.gen b { font-size: 15px; }
+.c.gen.plus { font-size: 20px; font-weight: 500; background: transparent; }
+.canvas .hovertile { fill: var(--blue); fill-opacity: .10; stroke: var(--blue); stroke-width: 1.5; pointer-events: none; }
+.canvas .node.from { fill: var(--warn); }
+.canvas #bones path { fill: none; }

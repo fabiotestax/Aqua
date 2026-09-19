@@ -46,8 +46,10 @@ function room(root) {
       <div class="matrix" id="matrix">${E.ORDER.split('').map(c => {
         const h = S.health[c].colour, hide = S.search && !c.toLowerCase().includes(S.search.toLowerCase()) && !(E.GNAME[c] || '').includes(S.search.toLowerCase());
         const mark = D.hasEdits(c) || D.hasMaster(c) ? '<i class="edited" title="changed in this session"></i>' : '';
-        return `<div class="c h-${h} ${c === ch ? 'on' : ''} ${hide ? 'hide' : ''}" data-ch="${esc(c)}" title="${shown(c)} · ${window.AquaHealth.LABEL[h]}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}${mark}</div>`; }).join('')}</div>
-      <div class="key"><i style="background:var(--ok)"></i>looks good &nbsp; <i style="background:var(--warn)"></i>needs a look &nbsp; <i style="background:var(--bad)"></i>not Aqua &nbsp; <i style="background:var(--blue)"></i>changed</div>
+        return `<div class="c h-${h} ${c === ch ? 'on' : ''} ${hide ? 'hide' : ''}" data-ch="${esc(c)}" title="${shown(c)} · ${window.AquaHealth.LABEL[h]}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}${mark}</div>`; }).join('')}
+        ${Object.keys(D.newGlyphs()).map(k => { const g = D.newGlyphs()[k]; return `<div class="c gen" data-new="${esc(k)}" title="${esc(g.name)} · from drops${g.use === false ? ' · draft' : ''}">${g.strokes.length ? glyphSVG(g.ch, s, { box: 'metrics', pad: 4, d: E.dropsOutline(g, s), fill: 'nonzero' }) : `<b>${esc(g.ch || '?')}</b>`}</div>`; }).join('')}
+        <div class="c gen plus" data-act="newletter" title="Start a new letter from drops">+</div></div>
+      <div class="key"><i style="background:var(--ok)"></i>looks good &nbsp; <i style="background:var(--warn)"></i>needs a look &nbsp; <i style="background:var(--bad)"></i>not Aqua &nbsp; <i style="background:var(--blue)"></i>changed &nbsp; <i style="border:1.5px dashed var(--blue)"></i>from drops</div>
       <h6>Variations of ${shown(ch)}</h6>
       <div id="vars">${vars.map((v, i) => `<div class="var ${i === ed.variant ? 'on' : ''}" data-var="${i}"><span>${esc(v.name)}</span><span>${i === D.used(ch) ? 'in text' : ''}</span></div>`).join('')}
       <div class="var new" data-act="newvar"><span>+ New variation</span><span></span></div></div>
@@ -79,7 +81,9 @@ function room(root) {
     </div>`;
   renderInspector();
   // sidebar
-  root.querySelector('#matrix').onclick = e => { const c = e.target.closest('[data-ch]'); if (c) setGlyph(c.dataset.ch); };
+  root.querySelector('#matrix').onclick = e => { const c = e.target.closest('[data-ch]'); if (c) { setGlyph(c.dataset.ch); return; }
+    const n = e.target.closest('[data-new]'); if (n) { S.newKey = n.dataset.new; A().renderRoom(); return; }
+    if (e.target.closest('[data-act="newletter"]')) window.AquaNew.startNew(); };
   root.querySelector('#search').oninput = e => { S.search = e.target.value; root.querySelectorAll('#matrix .c').forEach(c => {
     const k = c.dataset.ch, hit = !S.search || k.toLowerCase().includes(S.search.toLowerCase()) || (E.GNAME[k] || '').includes(S.search.toLowerCase());
     c.classList.toggle('hide', !hit); }); };

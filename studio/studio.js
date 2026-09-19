@@ -31,7 +31,7 @@ const S = {
   view: q.get('view') || 'final',            // Test room: final | negative | squint | flip | mirror | heat
   guide: q.get('guide') || 'GUIDE.md',
   search: '',
-  hand: null, health: null, diffs: null, docs: {}, edited: null, build: null, realFont: q.get('real') === '1'
+  hand: null, health: null, diffs: null, docs: {}, edited: null, build: null, realFont: q.get('real') === '1', newKey: q.get('new') || null
 };
 const applyTheme = () => {
   if (S.theme === 'dark' || S.theme === 'light') document.documentElement.setAttribute('data-theme', S.theme);
@@ -50,7 +50,7 @@ function glyphSVG(ch, s, o = {}) {
   const x0 = b.xmin - pad, x1 = b.xmax + pad;
   const y0 = o.box === 'metrics' ? -250 : b.ymin - pad, y1 = o.box === 'metrics' ? 780 : b.ymax + pad;
   const style = o.h ? ` style="height:${o.h}px"` : '';
-  return `<svg viewBox="${r1(x0)} ${r1(-y1)} ${r1(x1 - x0)} ${r1(y1 - y0)}"${style} ${o.attrs || ''}><g transform="scale(1,-1)"><path d="${dd}" fill-rule="evenodd"/></g></svg>`;
+  return `<svg viewBox="${r1(x0)} ${r1(-y1)} ${r1(x1 - x0)} ${r1(y1 - y0)}"${style} ${o.attrs || ''}><g transform="scale(1,-1)"><path d="${dd}" fill-rule="${o.fill || g.fill || 'evenodd'}"/></g></svg>`;
 }
 // A line of text, laid out by the engine with its own spacing and pairs.
 function lineSVG(text, s, o = {}) {
@@ -58,7 +58,7 @@ function lineSVG(text, s, o = {}) {
   const w = Math.max(L.w, 1), h = 1015;
   const style = o.h ? `height:${o.h}px;width:auto;max-width:100%` : 'width:100%;height:auto';
   return `<svg viewBox="0 -771 ${w} ${h}" preserveAspectRatio="xMinYMid meet" style="${style};display:block"><g transform="scale(1,-1)"${o.filter ? ` filter="url(#${o.filter})"` : ''}>` +
-    L.glyphs.map(g => `<g transform="${g.tf}"><path d="${g.d}" fill-rule="evenodd"/></g>`).join('') + `</g></svg>`;
+    L.glyphs.map(g => `<g transform="${g.tf}"><path d="${g.d}" fill-rule="${E.fillRule(g.key)}"/></g>`).join('') + `</g></svg>`;
 }
 function bearingsAt(s) { return E.bearing(s); }
 
@@ -80,7 +80,7 @@ function renderTop() {
     <div class="brand">Aqua<span>Studio</span></div>
     <div class="seg" id="rooms">${ROOMS.map(r => `<b class="${r === S.room ? 'on' : ''}" data-room="${r}">${r}</b>`).join('')}</div>
     <div class="meta">
-      <span>${E.ORDER.length} letters · ${drawn} drawn by you</span>
+      <span>${E.allChars().length} letters · ${drawn} drawn by you</span>
       <span>offline</span>
       <span><i class="dot ${o.cls}"></i>${o.text}</span>
       <span id="docstate" title="${esc(D.lastLabel())}">${D.changeCount() ? `${D.changeCount()} change${D.changeCount() > 1 ? 's' : ''}${D.dirty() ? ' · not saved to a file' : ' · saved'}` : 'no changes'}</span>
@@ -102,7 +102,7 @@ function renderTop() {
 }
 function go(room) { S.room = room; save('room', room); renderTop(); renderRoom(); }
 function setStem(s) { S.stem = Math.max(53, Math.min(106, Math.round(s))); save('stem', S.stem); renderRoom(); }
-function setGlyph(ch) { S.glyph = ch; save('glyph', ch); if (S.room !== 'Glyphs') S.room = 'Glyphs'; renderTop(); renderRoom(); }
+function setGlyph(ch) { S.glyph = ch; S.newKey = null; save('glyph', ch); if (S.room !== 'Glyphs') S.room = 'Glyphs'; renderTop(); renderRoom(); }
 
 // shared: the weight picker (segment + slider)
 function weightPicker() {
@@ -128,7 +128,7 @@ function renderRoom() {
 }
 
 // Glyphs — the editor (studio/editor.js).
-function Glyphs(root) { window.AquaEditor.room(root); }
+function Glyphs(root) { if (S.newKey && D.newGlyphs()[S.newKey]) { window.AquaNew.open(S.newKey); window.AquaNew.room(root); } else { S.newKey = null; window.AquaEditor.room(root); } }
 
 // Weights — the family, the axis, and whether every letter survives it.
 function Weights(root) {
@@ -176,7 +176,7 @@ function Spacing(root) {
       cells.push({ ch: gl.key, d: gl.d, tx, x0, x1, inkL, inkR, gap, space });
     }
     return `<div class="strip">${cells.map((c, i) => `<div class="cell">
-        <svg viewBox="${r1(c.x0)} -771 ${r1(c.x1 - c.x0)} 1015"><g transform="scale(1,-1)"><rect class="box" x="${r1(c.x0)}" y="-240" width="${r1(c.x1 - c.x0)}" height="1000"/><g transform="translate(${r1(c.tx)},0)"><path d="${c.d}" fill-rule="evenodd"/></g></g></svg>
+        <svg viewBox="${r1(c.x0)} -771 ${r1(c.x1 - c.x0)} 1015"><g transform="scale(1,-1)"><rect class="box" x="${r1(c.x0)}" y="-240" width="${r1(c.x1 - c.x0)}" height="1000"/><g transform="translate(${r1(c.tx)},0)"><path d="${c.d}" fill-rule="${E.fillRule(c.ch)}"/></g></g></svg>
         <div class="gap ${c.gap != null && !c.space && (c.gap < 70 || c.gap > 85) ? 'out' : ''}">${c.gap == null ? '&nbsp;' : c.space ? 'word space' : c.gap + ' before'}</div></div>`).join('')}</div>`;
   };
   const seg = (ch, side, cur) => `<span class="seg s" data-edge="${esc(ch)}" data-side="${side}">${['f', 'r', 'o'].map(k => `<b class="${cur === k ? 'on' : ''}" data-k="${k}">${CLS[k]}</b>`).join('')}</span>`;
@@ -238,7 +238,7 @@ function Test(root) {
   const wght = s <= 78 ? 300 + (s - 53) / 25 * 100 : 400 + (s - 78) / 28 * 500;
   const real = S.realFont && S.build;
   const rf = (text, px) => `<div class="realfont" style="font-variation-settings:'wght' ${wght.toFixed(0)};font-size:${px ? px + 'px' : 'min(11vw, 150px)'}">${esc(text)}</div>`;
-  const avail = E.ORDER.split('').map(shown).join(' ');
+  const avail = E.allChars().map(shown).join(' ');
   root.innerHTML = `
     <aside class="side">
       <h6>Type anything</h6>
@@ -487,6 +487,7 @@ addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey;
   if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) D.redo(); else D.undo(); return; }
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); D.download(); return; }
+  if (window.AquaNew && window.AquaNew.keydown(e)) { e.preventDefault(); return; }
   if (window.AquaEditor && window.AquaEditor.keydown(e)) e.preventDefault();
 });
 addEventListener('beforeunload', e => { if (D.dirty() && D.changeCount()) { e.preventDefault(); e.returnValue = ''; } });

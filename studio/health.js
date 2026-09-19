@@ -107,7 +107,7 @@ function scoreGlyph(perStem, compatible) {
     else if (m.minRadius < 0.10 * st) { s -= 5; f.push(say('tight', 'A corner is very tight')); }
     if (m.nonmono) { s -= Math.min(12, 2 * m.nonmono); f.push(say('extreme', `${m.nonmono} curve${m.nonmono > 1 ? 's have' : ' has'} no point at the outermost edge`)); }
     if (m.squashed) { s -= Math.min(24, 8 * m.squashed); f.push(say('squashed', `${m.squashed} curve handle${m.squashed > 1 ? 's are' : ' is'} squashed flat`)); }
-    if (m.segs > 80) { s -= 25; f.push(say('trace', `Too many points (${m.segs}) — this is a trace, not a drawing`)); }
+    if (m.segs > 80 && !m.drops) { s -= 25; f.push(say('trace', `Too many points (${m.segs}) — this is a trace, not a drawing`)); }
     if (m.lsb < 0 || m.rsb < 0) {
       s -= 20;
       const side = m.lsb < 0 && m.rsb < 0 ? 'both sides' : m.lsb < 0 ? 'the left' : 'the right';
@@ -130,6 +130,7 @@ function assess(ch, hand) {
     const g = E.glyph(ch, s); if (!g) return null;
     const subs = E.parsePath(g.d);
     const m = analyse(subs, s);
+    m.drops = g.kind === 'drops';   // a letter from drops is sampled, not traced: its point count is by design
     // the export places the ink at (ox − minX); the box runs from ox − lsb to ox + w + rsb
     m.lsb = Math.round((m.xmin - g.minX + g.lsb) * 10) / 10;
     m.rsb = Math.round((g.w + g.rsb + g.minX - m.xmax) * 10) / 10;
@@ -174,7 +175,7 @@ function lines(rep) {
 
 function assessAll(hand) {
   const out = {};
-  for (const ch of E.ORDER) out[ch] = assess(ch, hand);
+  for (const ch of E.allChars()) out[ch] = assess(ch, hand);
   return out;
 }
 const LABEL = { green: 'Looks good', amber: 'Needs a look', red: 'Not Aqua yet' };

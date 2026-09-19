@@ -53,8 +53,30 @@ verdicts and `../aqua/masters/edited-paths.json` for the Import room's diff. Ser
 root, not `aqua/`, so those relative paths resolve. `node tools/shoot_studio.mjs` screenshots
 every room in light and dark into `studio/shots/` — that is how the app is shown to Fabio.
 
-Milestones 1 (shell), 2 (editing) and 3 (font build, Spacing, health gate) are built. The
-six optical audits and the New-glyph room are Milestone 4.
+All four milestones of `studio/SPEC.md` are built: 1 shell, 2 editing, 3 font build /
+Spacing / health gate, 4 the six optical audits, the New-glyph room with image tracing, and
+the manual (`studio/GUIDE.md`, first tab of the Guide room).
+
+**The six optical audits** live in `studio/audit.js` (`audit(ch, s)` → findings per law:
+overshoot, weight illusion, gravity, irradiation, crowding at joins, rhythm; ~100 ms for the
+whole set). They are advisory only: the Health room's "Six optical checks" table, the
+inspector's "Optical" lines, and red haloes on the canvas for dark joins. The canvas also
+shows the Middle guide at 0.515 of the x-height (of the cap height for B).
+
+**New letters from drops** (`studio/newglyph.js`, engine `strokeDrops` / `dropsOutline`).
+A new letter is `doc.newGlyphs[key] = { ch, name, height, thick, ends, round, strokes, use }`:
+strokes of drop centres on the 40-unit tile grid. The engine draws a Catmull-Rom spine
+through each stroke, thickens it with the family's contrast (full stem standing up, thinner
+lying down, eased along the stroke), ends it in a round cap or a flat cut, and gathers any
+self-crossing loop at a sharp corner onto the crossing point so the outline never crosses
+itself and keeps the same point count at every weight. Strokes overlap where they meet, so a
+drops letter fills **nonzero** (`fillRule(ch)`); the Studio's renderers and the export sheet
+honour that, and the font build keeps the overlaps (TrueType fills by winding) with every
+stroke oriented as an outer contour. `allChars()` is the thirty plus the new letters in use;
+health, layout, export and the font build all go through it. The tracer
+(`traceImage`) thresholds a reference image, thins it (Zhang–Suen), walks the skeleton into
+polylines, simplifies, snaps to tiles and joins the pieces end to end — a first pass to edit,
+not a drawing. The density rule of the health score does not apply to drops letters.
 
 **The font build.** `node tools/export_masters.mjs [edits.json]` writes `build/masters.json`
 straight from the engine (no browser): every glyph at the three master stems 53 / 78 / 106,

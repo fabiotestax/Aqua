@@ -710,7 +710,7 @@ function mapPath(d, ox, oy) {
   return out;
 }
 function exportSVG(stem) {
-  const cols = 6, cw = 1150, chh = 1300, chars = ORDER.split('');
+  const cols = 6, cw = 1150, chh = 1300, chars = allChars();
   const rows = Math.ceil(chars.length / cols);
   let glyphs = '', guides = '';
   chars.forEach((ch, i) => {
@@ -718,7 +718,7 @@ function exportSVG(stem) {
     const ox = c * cw + 90, oy = r * chh + 1000;
     const g = glyph(ch, stem), dd = g.d, w = g.w, minX = g.minX, lsb = g.lsb, rsb = g.rsb;
     const name = GNAME[ch] || ch;
-    glyphs += `  <path id="glyph.${name}" d="${mapPath(dd, ox - minX, oy)}"/>\n`;
+    glyphs += `  <path id="glyph.${name}"${g.fill === 'nonzero' ? ' fill-rule="nonzero"' : ''} d="${mapPath(dd, ox - minX, oy)}"/>\n`;
     const L = ox - lsb, R = ox + w + rsb;
     guides +=
       `  <g opacity="0.5"><rect x="${fx(L)}" y="${fx(oy - 751)}" width="${fx(R - L)}" height="981" fill="none" stroke="#c8c8c8"/>` +
@@ -1273,8 +1273,8 @@ function buildDiffs(ed) {
 // between blends them, so an edit made "in both weights" holds across the axis.
 // tools/bake_edits.mjs writes a document into this file for good.
 const BAKED = { glyphs: {}, masters: {}, spacing: {} };
-let DOC = { glyphs: {}, masters: {}, spacing: null };
-function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {}, spacing: (doc && doc.spacing) || null }; }
+let DOC = { glyphs: {}, masters: {}, spacing: null, newGlyphs: null };
+function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {}, spacing: (doc && doc.spacing) || null, newGlyphs: (doc && doc.newGlyphs) || null }; }
 function getDoc() { return DOC; }
 const fxp = v => fx(v);
 function serializePath(subs) {
@@ -1303,6 +1303,7 @@ function masterPair(ch) {
 }
 const masterFns = {};
 function basePath(ch, s) {
+  const ng = newGlyphFor(ch); if (ng) return dropsOutline(ng, s);
   const m = DOC.masters[ch] || BAKED.masters[ch];
   if (m) {
     const key = m.black + '\u0000' + m.regular;
@@ -1349,6 +1350,7 @@ function applyEdits(d, light, black, t) {
 function outline(ch, s, variant) {
   const d = basePath(ch, s);
   if (!d) return null;
+  if (newGlyphFor(ch)) return d;
   const v = nodeEdits(ch, variant);
   if (!v) return d;
   return applyEdits(d, v.light, v.black, Math.max(0, Math.min(1, (s - 53) / 53)));
@@ -1403,6 +1405,110 @@ function sameSkeleton(a, b) {
   return { ok: true, why: 'ok' };
 }
 
+// ── New letters from drops ────────────────────────────────────────────────────
+// A new letter is strokes of drops: each stroke a run of points on the tile grid. The engine
+// draws a smooth spine through the drops (Catmull-Rom, tension = roundness) and thickens it
+// with the family's contrast — full stem where the stroke stands up, thinner where it lies
+// down — ending in a round cap (a drop) or a flat cut. Strokes overlap where they meet, so a
+// drops letter fills nonzero; the font build unions them.
+//   doc.newGlyphs[key] = { ch, name, height: 'small'|'caps'|'tall', thick: 1, ends: 'round'|'flat',
+//                          round: 0.5, strokes: [[[x, y], ...], ...], use: true }
+const TILE = 40;
+function spine(pts, tension) {
+  // A smooth spine through the drops: at each drop the tangent runs along the bisector of
+  // the two chords and is no longer than the shorter of them (scaled by the roundness), so
+  // a sharp corner with unequal drop spacing turns tightly instead of curling into a hook.
+  // tension 0 = straight lines, 1 = full curves.
+  const n = pts.length; if (n < 2) return [];
+  const unit = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+  const T = pts.map((p, i) => {
+    const prev = i > 0 ? pts[i - 1] : null, next = i < n - 1 ? pts[i + 1] : null;
+    const lp = prev ? Math.hypot(p[0] - prev[0], p[1] - prev[1]) : 0, ln = next ? Math.hypot(next[0] - p[0], next[1] - p[1]) : 0;
+    if (prev && next) { const a = unit([p[0] - prev[0], p[1] - prev[1]]), b = unit([next[0] - p[0], next[1] - p[1]]); const bis = unit([a[0] + b[0], a[1] + b[1]]); const m = 1.5 * tension * Math.min(lp, ln); return Math.hypot(a[0] + b[0], a[1] + b[1]) < 1e-6 ? [0, 0] : [bis[0] * m, bis[1] * m]; }
+    if (next) { const b = unit([next[0] - p[0], next[1] - p[1]]); return [b[0] * 1.5 * tension * ln, b[1] * 1.5 * tension * ln]; }
+    const a = unit([p[0] - prev[0], p[1] - prev[1]]); return [a[0] * 1.5 * tension * lp, a[1] * 1.5 * tension * lp];
+  });
+  const segs = [];
+  for (let i = 0; i < n - 1; i++) segs.push([pts[i], [pts[i][0] + T[i][0] / 3, pts[i][1] + T[i][1] / 3], [pts[i + 1][0] - T[i + 1][0] / 3, pts[i + 1][1] - T[i + 1][1] / 3], pts[i + 1]]);
+  return segs;
+}
+function spinePath(pts, tension) {
+  const f = v => Math.round(v * 10) / 10, segs = spine(pts, tension); if (!segs.length) return '';
+  return `M${f(segs[0][0][0])} ${f(segs[0][0][1])}` + segs.map(sg => `C${f(sg[1][0])} ${f(sg[1][1])} ${f(sg[2][0])} ${f(sg[2][1])} ${f(sg[3][0])} ${f(sg[3][1])}`).join('');
+}
+function strokeDrops(pts, s, opt) {
+  const w = s * (opt.thick || 1), th = 0.72 * w * contrastK(s), N = 6;
+  const segs = spine(pts, opt.round == null ? 0.5 : opt.round);
+  if (!segs.length) {
+    // a single drop: a circle of the stem's width
+    const [cx, cy] = pts[0], r = w / 2, kc = 0.5523 * r, f = v => Math.round(v * 10) / 10;
+    return `M${f(cx - r)} ${f(cy)}C${f(cx - r)} ${f(cy + kc)} ${f(cx - kc)} ${f(cy + r)} ${f(cx)} ${f(cy + r)}C${f(cx + kc)} ${f(cy + r)} ${f(cx + r)} ${f(cy + kc)} ${f(cx + r)} ${f(cy)}C${f(cx + r)} ${f(cy - kc)} ${f(cx + kc)} ${f(cy - r)} ${f(cx)} ${f(cy - r)}C${f(cx - kc)} ${f(cy - r)} ${f(cx - r)} ${f(cy - kc)} ${f(cx - r)} ${f(cy)}Z`;
+  }
+  const B = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
+  const Dv = (p0, p1, p2, p3, t) => { const u = 1 - t; return [3*u*u*(p1[0]-p0[0]) + 6*u*t*(p2[0]-p1[0]) + 3*t*t*(p3[0]-p2[0]), 3*u*u*(p1[1]-p0[1]) + 6*u*t*(p2[1]-p1[1]) + 3*t*t*(p3[1]-p2[1])]; };
+  const S = [];
+  segs.forEach((sg, i) => { for (let j = i ? 1 : 0; j <= N; j++) { const t = j / N; let d = Dv(...sg, t); if (Math.hypot(d[0], d[1]) < 1e-6) d = [sg[3][0] - sg[0][0], sg[3][1] - sg[0][1]]; S.push({ p: B(...sg, t), d }); } });
+  const width = n => th + (w - th) * Math.abs(n[0]);
+  const L = [], R = [];
+  const norms = S.map(sm => { const l = Math.hypot(sm.d[0], sm.d[1]) || 1; return [-sm.d[1] / l, sm.d[0] / l]; });
+  // the width follows the contrast law, eased along the stroke so a corner does not step
+  // from stem to thin in one sample
+  const raw = norms.map(n => width(n) / 2), half = raw.map((h, i) => { let sum = 0, k = 0; for (let j = Math.max(0, i - 6); j <= Math.min(raw.length - 1, i + 6); j++) { sum += raw[j]; k++; } return sum / k; });
+  S.forEach((sm, i) => { const n = norms[i], h = half[i]; L.push([sm.p[0] + n[0] * h, sm.p[1] + n[1] * h]); R.push([sm.p[0] - n[0] * h, sm.p[1] - n[1] * h]); });
+  const f = v => Math.round(v * 10) / 10;
+  const cap = (centre, from, to, dir) => {
+    // a half circle from `from` round to `to`, bulging in direction dir (unit, along the stroke)
+    if (opt.ends === 'flat') return [];
+    const r = Math.hypot(to[0] - from[0], to[1] - from[1]) / 2, out = [];
+    const a0 = Math.atan2(from[1] - centre[1], from[0] - centre[0]);
+    // sweep the short way that passes through centre + dir*r
+    const mid = [centre[0] + dir[0] * r, centre[1] + dir[1] * r];
+    const a1 = Math.atan2(to[1] - centre[1], to[0] - centre[0]), am = Math.atan2(mid[1] - centre[1], mid[0] - centre[0]);
+    let sweep = a1 - a0; while (sweep <= -Math.PI) sweep += 2 * Math.PI; while (sweep > Math.PI) sweep -= 2 * Math.PI;
+    let test = am - a0; while (test <= -Math.PI) test += 2 * Math.PI; while (test > Math.PI) test -= 2 * Math.PI;
+    if (Math.sign(test) !== Math.sign(sweep)) sweep = sweep - Math.sign(sweep) * 2 * Math.PI;
+    for (let i = 1; i < 8; i++) { const a = a0 + sweep * i / 8; out.push([centre[0] + r * Math.cos(a), centre[1] + r * Math.sin(a)]); }
+    return out;
+  };
+  const first = S[0], last = S[S.length - 1];
+  const dEnd = (() => { const l = Math.hypot(last.d[0], last.d[1]) || 1; return [last.d[0] / l, last.d[1] / l]; })();
+  const dStart = (() => { const l = Math.hypot(first.d[0], first.d[1]) || 1; return [-first.d[0] / l, -first.d[1] / l]; })();
+  const ring = [...L, ...cap(last.p, L[L.length - 1], R[R.length - 1], dEnd), ...R.slice().reverse(), ...cap(first.p, R[0], L[0], dStart)];
+  // At a sharp turn the inner side folds over itself and the ring crosses. Where it does,
+  // the smaller loop is gathered onto the crossing point — the true corner — so the outline
+  // never crosses itself and every weight keeps the same number of points.
+  const n = ring.length;
+  for (let pass = 0; pass < 12; pass++) {
+    let found = null;
+    for (let i = 0; i < n && !found; i++) {
+      const a = ring[i], b = ring[(i + 1) % n];
+      for (let j = i + 2; j < n; j++) {
+        if (i === 0 && j === n - 1) continue;
+        const c = ring[j], d = ring[(j + 1) % n];
+        const den = (b[0] - a[0]) * (d[1] - c[1]) - (b[1] - a[1]) * (d[0] - c[0]); if (Math.abs(den) < 1e-9) continue;
+        const t = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, u = ((c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0])) / den;
+        if (t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6) { found = { i, j, x: [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] }; break; }
+      }
+    }
+    if (!found) break;
+    const { i, j, x } = found, inner = j - i, outer = n - inner;
+    if (inner <= outer) { for (let k = i + 1; k <= j; k++) ring[k] = x; }
+    else { for (let k = j + 1; k < n; k++) ring[k] = x; for (let k = 0; k <= i; k++) ring[k] = x; }
+  }
+  let d = `M${f(ring[0][0])} ${f(ring[0][1])}`;
+  for (let i = 1; i < ring.length; i++) d += `L${f(ring[i][0])} ${f(ring[i][1])}`;
+  return d + 'Z';
+}
+function newGlyphs() { return DOC.newGlyphs || {}; }
+function newGlyphFor(ch) { const all = newGlyphs(); for (const k in all) if (all[k].ch === ch && all[k].use !== false) return all[k]; return null; }
+function dropsOutline(g, s) {
+  const parts = (g.strokes || []).filter(st => st.length).map(st => strokeDrops(st, s, g));
+  return parts.length ? parts.join('') : null;
+}
+// Every character the set can draw: the thirty, then the new letters in use.
+function allChars() { const out = ORDER.split(''); for (const k in newGlyphs()) { const g = newGlyphs()[k]; if (g.use !== false && g.ch && !out.includes(g.ch)) out.push(g.ch); } return out; }
+function fillRule(ch) { return newGlyphFor(ch) ? 'nonzero' : 'evenodd'; }
+
 // ── Studio-facing helpers ─────────────────────────────────────────────────────
 // One entry point per question the Studio asks, so the g / exclam special cases in
 // layout() and exportSVG() are stated once more here and nowhere else.
@@ -1422,6 +1528,7 @@ function weightName(s) {
 }
 function bearing(s) { const d = Math.max(0, (107.4 - s) / 2.09); return 47 + 0.28 * d; }
 function kindOf(ch) {
+  if (newGlyphFor(ch)) return 'drops';
   if (DOC.masters[ch]) return 'drawn';
   if (ch === 'g') return 'offset';
   for (const n in MASTERS) if (MASTERS[n].ch === ch) return 'drawn';
@@ -1430,10 +1537,12 @@ function kindOf(ch) {
 // The glyph as the page lays it out: outline in font units, its left ink edge, its advance
 // (w) and both sidebearings at this stem. adv is the full box, lsb + w + rsb.
 function glyph(ch, s) {
-  if (ch !== 'g' && !BUILD[ch]) return null;
+  const ng = newGlyphFor(ch);
+  if (ch !== 'g' && !BUILD[ch] && !ng) return null;
   let w, minX = 0;
   const d = outline(ch, s);
-  if (spacing().fromInk) {
+  if (!d) return null;
+  if (ng || spacing().fromInk) {
     // room from ink: the box is the drawing's own bounds, whatever the old table said
     const b = bbox(d); minX = b.xmin; w = b.xmax - b.xmin;
   } else if (ch === 'g') {
@@ -1443,8 +1552,8 @@ function glyph(ch, s) {
     minX = ch === '!' ? 4 - 0.03 * s : 0;
     w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
   }
-  const sb = bearing(s), cl = shapeOf(ch), lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
-  return { ch, name: GNAME[ch] || ch, kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s };
+  const sb = bearing(s), cl = ng ? (ng.shape || 'rr') : shapeOf(ch), lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+  return { ch, name: ng ? (ng.name || ch) : (GNAME[ch] || ch), kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s, fill: ng ? 'nonzero' : 'evenodd' };
 }
 // ── Spacing, with the document's say ──────────────────────────────────────────
 // doc.spacing = { fromInk: bool, shape: { [ch]: 'rf' }, kern: { [pair]: units at Black } }.
@@ -1504,6 +1613,7 @@ function nodes(d) {
 
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
+  TILE, strokeDrops, dropsOutline, spinePath, newGlyphs, newGlyphFor, allChars, fillRule,
   BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, outline,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,

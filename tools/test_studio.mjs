@@ -139,6 +139,40 @@ await p.waitForFunction(() => document.querySelector('.realfont'), null, { timeo
 ok(await p.evaluate(() => document.fonts.check("40px AquaVF")), 'the built font loads in the Test room');
 await p.screenshot({ path: 'studio/shots/test-realfont-light.png' });
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
+
+// ── Milestone 4: a new letter from drops, and a traced image ──
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.evaluate(() => { window.AquaDoc.clearAll(); });
+p.removeAllListeners('dialog'); p.on('dialog', d => d.accept(d.type() === 'prompt' ? 'L' : undefined));
+await p.click('[data-act="newletter"]'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaStudio.S.newKey === 'L' && !!document.querySelector('#tiles')), 'a new letter opens the drops room');
+const tileClient = (ux, uy) => p.evaluate(([ux, uy]) => { const svg = document.getElementById('cv'), flip = document.getElementById('flip'); const pt = svg.createSVGPoint(); pt.x = ux; pt.y = uy; const c = pt.matrixTransform(flip.getScreenCTM()); return [c.x, c.y]; }, [ux, uy]);
+for (const [x, y] of [[40, 680], [40, 520], [40, 360], [40, 200], [40, 40], [40, 0], [200, 0], [360, 0]]) { const [cx, cy] = await tileClient(x, y); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
+let strokes = await p.evaluate(() => window.AquaDoc.newGlyphs().L.strokes);
+ok(strokes.length === 1 && strokes[0].length === 8, `eight taps make one stroke of eight drops (${strokes.map(s => s.length).join('+')})`);
+ok(await p.evaluate(() => !!document.querySelector('#skin')), 'the stroked outline draws on the canvas');
+await p.click('[data-act="use"]'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaEngine.allChars().includes('L') && window.AquaEngine.kindOf('L') === 'drops'), 'Add to Aqua puts the L in the set');
+ok(await p.evaluate(() => window.AquaEngine.layout('aLa', 78).glyphs.length === 3), 'the L lays out in text');
+ok(await p.evaluate(() => window.AquaStudio.S.health.L && window.AquaStudio.S.health.L.compatible), 'the L has a health score and blends across weights');
+// erase the corner drop: the stroke splits in two
+await p.click('#tools [data-tool="erase"]'); await p.waitForTimeout(100);
+let [ex, ey] = await tileClient(40, 200); await p.mouse.click(ex, ey); await p.waitForTimeout(150);
+strokes = await p.evaluate(() => window.AquaDoc.newGlyphs().L.strokes);
+ok(strokes.length === 2, `erasing a middle drop splits the stroke (${strokes.map(s => s.length).join('+')})`);
+await p.keyboard.press('Control+z'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaDoc.newGlyphs().L.strokes.length === 1), 'undo joins it back');
+await p.screenshot({ path: 'studio/shots/newglyph-light.png' });
+// trace: render the engine's own "a" at Black to a PNG and hand it to the tracer
+const traced = await p.evaluate(async () => {
+  const E = window.AquaEngine; const g = E.glyph('a', 106); const b = E.bbox(g.d);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${b.xmin} ${-b.ymax} ${b.xmax - b.xmin} ${b.ymax - b.ymin}" width="${Math.round(b.xmax - b.xmin)}" height="${Math.round(b.ymax - b.ymin)}"><g transform="scale(1,-1)"><path d="${g.d}" fill="#000" fill-rule="evenodd"/></g></svg>`;
+  const im = new Image(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); await im.decode();
+  const strokes = window.AquaNew.traceImage(im, { x: 0, y: b.ymin, w: b.xmax - b.xmin, h: b.ymax - b.ymin });
+  return { n: strokes.length, drops: strokes.reduce((k, s) => k + s.length, 0), first: strokes[0] };
+});
+ok(traced.n >= 1 && traced.drops >= 6, `tracing an image of the a gives ${traced.n} stroke(s), ${traced.drops} drops`);
+await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();
 process.exit(errors.length ? 1 : 0);

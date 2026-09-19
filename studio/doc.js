@@ -116,8 +116,15 @@ function setKern(pair, v) { const sp = spacingDoc(); v = Math.round(v || 0); if 
 function resetSpacing() { delete doc.spacing; commit('Spacing back to the tables'); }
 function spacingChanges() { const sp = doc.spacing; if (!sp) return 0; return (sp.fromInk ? 1 : 0) + Object.keys(sp.shape || {}).length + Object.keys(sp.kern || {}).length; }
 
+// ── new letters from drops ──
+function newGlyphs() { return doc.newGlyphs || {}; }
+function addNewGlyph(key, init) { if (!doc.newGlyphs) doc.newGlyphs = {}; doc.newGlyphs[key] = Object.assign({ ch: key[0], name: key, height: 'small', thick: 1, ends: 'round', round: 0.5, strokes: [], use: false, shape: 'rr' }, init || {}); commit(`New letter ${key}`); }
+function updateNewGlyph(key, patch, settle = true, label) { const g = doc.newGlyphs && doc.newGlyphs[key]; if (!g) return; Object.assign(g, patch); if (settle) commit(label || `Change ${key}`); else live(); }
+function setStrokes(key, strokes, settle = true, label) { const g = doc.newGlyphs && doc.newGlyphs[key]; if (!g) return; g.strokes = clone(strokes); if (settle) commit(label || `Change the drops of ${key}`); else live(); }
+function removeNewGlyph(key) { if (doc.newGlyphs) delete doc.newGlyphs[key]; commit(`Delete the letter ${key}`); }
+
 // ── files ──
-function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length; return n + Object.keys(doc.masters).length + spacingChanges(); }
+function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length; return n + Object.keys(doc.masters).length + spacingChanges() + Object.keys(doc.newGlyphs || {}).length; }
 function toJSON() { doc.saved = new Date().toISOString(); return JSON.stringify(doc, null, 1); }
 function download() {
   const a = document.createElement('a');
@@ -138,5 +145,6 @@ return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty
          variants, variant, used, hasEdits, nudge, setNode, resetNode, nodeState, applyToAll, weightsDiffer, resetGlyph,
          addVariant, useVariant, renameVariant, removeVariant,
          importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange,
-         setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc };
+         setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc,
+         newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph };
 });

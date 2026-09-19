@@ -128,9 +128,40 @@ def reverse(sub):
             rev.append(("curve", s[2], s[1], target))
     return rev
 
-def draw(glyph, subs):
+def union(subs):
+    """A letter from drops is overlapping strokes filled nonzero: merge them into one clean
+    outline with skia-pathops before it goes into the font."""
+    import pathops
+    path = pathops.Path()
+    path.fillType = pathops.FillType.WINDING
+    for sub in subs:
+        path.moveTo(*sub[0][1])
+        for s_ in sub[1:]:
+            if s_[0] == "line": path.lineTo(*s_[1])
+            else: path.cubicTo(*s_[1], *s_[2], *s_[3])
+        path.close()
+    path.simplify()
+    out, cur = [], None
+    for verb, pts in path.segments:
+        if verb == "moveTo": cur = [("move", tuple(pts[0]))]; out.append(cur)
+        elif verb == "lineTo": cur.append(("line", tuple(pts[0])))
+        elif verb == "curveTo": cur.append(("curve", tuple(pts[0]), tuple(pts[1]), tuple(pts[2])))
+        elif verb == "qCurveTo":
+            p0 = cur[-1][-1]
+            for j in range(len(pts) - 1):
+                q, e = pts[j], pts[j + 1]
+                cur.append(("curve", (p0[0] + 2/3*(q[0]-p0[0]), p0[1] + 2/3*(q[1]-p0[1])), (e[0] + 2/3*(q[0]-e[0]), e[1] + 2/3*(q[1]-e[1])), tuple(e))); p0 = e
+        elif verb == "closePath": pass
+    return out
+
+def structure(subs):
+    return [len(s_) for s_ in subs]
+
+def draw(glyph, subs, overlapping=False):
     pen = glyph.getPen()
-    for sub in oriented(subs):
+    # overlapping strokes: every contour is an outer one (counter-clockwise in the UFO)
+    subs = [s_ if area(flatten(s_)) > 0 else reverse(s_) for s_ in subs] if overlapping else oriented(subs)
+    for sub in subs:
         pen.moveTo(sub[0][1])
         for s in sub[1:]:
             if s[0] == "line": pen.lineTo(s[1])
@@ -145,6 +176,18 @@ BUILD.mkdir(exist_ok=True)
 family = "Aqua Draft" if draft else "Aqua"
 m = src["metrics"]
 order = ["space"] + list(src["glyphs"].keys())
+# letters from drops are overlapping strokes: TrueType fills them by winding, so they go in
+# as they are (fontmake keeps overlaps in a variable font); each stroke is an outer contour.
+prepared, skipped = {}, []
+for name, gd in src["glyphs"].items():
+    if gd.get("fill") != "nonzero": continue
+    per = {s: parse(gd["masters"][str(s)]["d"]) for s in stems}
+    shapes = {s: structure(per[s]) for s in stems}
+    if len({str(v) for v in shapes.values()}) > 1:
+        skipped.append(name); continue
+    prepared[name] = per
+for n in skipped: del src["glyphs"][n]
+if skipped: print("left out (drops letters whose strokes differ per weight): " + ", ".join(skipped))
 ufos = {}
 for s in stems:
     style = weights[s]
@@ -166,7 +209,7 @@ for s in stems:
     for name, gd in src["glyphs"].items():
         mm = gd["masters"][str(s)]
         g = f.newGlyph(name); g.width = round(mm["adv"]); g.unicodes = [gd["unicode"]]
-        draw(g, parse(mm["d"]))
+        draw(g, prepared[name][s], True) if name in prepared else draw(g, parse(mm["d"]))
     for pair, v in src["kern"][str(s)].items():
         a, b = pair.split(","); f.kerning[(a, b)] = v
     f.lib["public.glyphOrder"] = [".notdef"] + order
@@ -237,6 +280,7 @@ info = {
     "glyphs": len(src["glyphs"]) + 1,
     "gate": {"open": not reds, "red": reds, "amber": ambers},
     "interpolatable": interp_ok,
+    "left_out": skipped,
     "file": "Aqua-VF.woff2", "size_kb": woff2.stat().st_size // 1024,
 }
 shutil.copy(woff2, FONTS / "Aqua-VF.woff2")

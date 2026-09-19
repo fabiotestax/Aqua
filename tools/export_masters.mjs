@@ -32,21 +32,21 @@ for (const s of STEMS) {
   const pairs = E.kernPairs();
   for (const p of Object.keys(pairs)) {
     const a = p[0], b = p[1];
-    if (!E.ORDER.includes(a) || !E.ORDER.includes(b)) continue;
+    if (!E.allChars().includes(a) || !E.allChars().includes(b)) continue;
     const v = Math.round(pairs[p] * kS);
     if (v) kern[s][`${prod(a)},${prod(b)}`] = v;
   }
 }
-for (const ch of E.ORDER) {
+for (const ch of E.allChars()) {
   const name = prod(ch);
-  glyphs[name] = { ch, unicode: UNI[ch] ?? ch.codePointAt(0), kind: E.kindOf(ch), masters: {} };
+  glyphs[name] = { ch, unicode: UNI[ch] ?? ch.codePointAt(0), kind: E.kindOf(ch), fill: E.fillRule(ch), masters: {} };
   for (const s of STEMS) {
     const g = E.glyph(ch, s);
     glyphs[name].masters[s] = { d: E.translatePath(g.d, g.lsb - g.minX, 0), adv: Math.round(g.adv * 10) / 10 };
   }
 }
 const health = {};
-for (const ch of E.ORDER) { const r = H.assess(ch, hand); health[prod(ch)] = { score: r.score, colour: r.colour, compatible: r.compatible, flags: r.flags.map(f => f.text) }; }
+for (const ch of E.allChars()) { const r = H.assess(ch, hand); health[prod(ch)] = { score: r.score, colour: r.colour, compatible: r.compatible, flags: r.flags.map(f => f.text) }; }
 let commit = 'unknown'; try { commit = execSync('git rev-parse --short HEAD').toString().trim(); } catch {}
 const data = {
   family: 'Aqua', date: new Date().toISOString(), commit, edits: editsFile || null,
