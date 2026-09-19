@@ -230,3 +230,8 @@ td.bad { color: var(--bad); }
 .dotc { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); vertical-align: 2px; }
 @font-face { font-family: AquaVF; src: url(fonts/Aqua-VF.woff2) format('woff2'); font-weight: 300 900; font-display: block; }
 .realfont { font-family: AquaVF, sans-serif; line-height: 1.05; white-space: nowrap; overflow: hidden; }
+
+/* ── audits ── */
+.canvas .guide.mid { stroke-dasharray: 6 8; }
+.pill.faint { opacity: .7; }
+.canvas .darkhalo { fill: var(--bad); fill-opacity: .16; stroke: var(--bad); stroke-opacity: .5; stroke-width: 1; pointer-events: none; }

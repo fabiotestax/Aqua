@@ -3,7 +3,7 @@
 // window.AquaEngine draws, window.AquaHealth judges, this file only shows.
 (() => {
 'use strict';
-const E = window.AquaEngine, H = window.AquaHealth, D = window.AquaDoc;
+const E = window.AquaEngine, H = window.AquaHealth, D = window.AquaDoc, AU = window.AquaAudit;
 const $ = (sel, el = document) => el.querySelector(sel);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const r1 = v => Math.round(v * 10) / 10, r0 = v => Math.round(v);
@@ -29,7 +29,7 @@ const S = {
   theme: q.get('theme') || store('theme', 'auto'),
   text: q.get('text') || store('text', 'aqua bonefish'),
   view: q.get('view') || 'final',            // Test room: final | negative | squint | flip | mirror | heat
-  guide: q.get('guide') || 'CLAUDE.md',
+  guide: q.get('guide') || 'GUIDE.md',
   search: '',
   hand: null, health: null, diffs: null, docs: {}, edited: null, build: null, realFont: q.get('real') === '1'
 };
@@ -406,13 +406,13 @@ function Export(root) {
 }
 
 // Guide — the project's own notes, rendered in the app.
-const DOCS = [['CLAUDE.md', 'How to work here', '../CLAUDE.md'], ['AQUA-STATUS.md', 'Where things stand', '../AQUA-STATUS.md'], ['SPEC.md', 'The Studio plan', '../studio/SPEC.md']];
+const DOCS = [['GUIDE.md', 'How to use the Studio', 'GUIDE.md'], ['AQUA-STATUS.md', 'Where things stand', '../AQUA-STATUS.md'], ['CLAUDE.md', 'How to work in the repository', '../CLAUDE.md'], ['SPEC.md', 'The Studio plan', '../studio/SPEC.md']];
 function Guide(root) {
   root.classList.add('one');
   const cur = DOCS.find(d => d[0] === S.guide) || DOCS[0];
   root.innerHTML = `<div class="main">
     <h1 class="title">Guide</h1>
-    <p class="lead">The notes this project runs on, as they are in the repository. Read "Where things stand" first.</p>
+    <p class="lead">How to use the Studio, and the notes the project runs on, as they are in the repository.</p>
     <div class="tabs" id="tabs">${DOCS.map(d => `<b class="${d[0] === cur[0] ? 'on' : ''}" data-doc="${d[0]}">${d[1]}</b>`).join('')}</div>
     <div class="panel md" id="doc">${S.docs[cur[0]] ? md(S.docs[cur[0]]) : '<p class="sub">Loading…</p>'}</div>
   </div>`;
@@ -461,10 +461,19 @@ function Health(root) {
     <div class="panel" style="margin-top:18px"><h6>What needs work</h6>
       ${broken.length ? `<table><thead><tr><th></th><th>Letter</th><th class="num">Score</th><th>Findings</th></tr></thead><tbody>${broken.map(r => `<tr><td><span class="g">${glyphSVG(r.ch, 106, { box: 'metrics' })}</span></td><td><b>${shown(r.ch)}</b><br><span class="sub small">${KIND[E.kindOf(r.ch)]}</span></td><td class="num" style="color:var(--${r.colour === 'red' ? 'bad' : 'warn'})">${r.score}</td><td>${r.flags.map(f => esc(f.text)).join('<br>')}</td></tr>`).join('')}</tbody></table>` : '<p class="small sub" style="margin:0">Nothing. Every letter is green.</p>'}
     </div>
+    <div class="panel" style="margin-top:18px"><h6>Six optical checks · at thickness ${S.stem}</h6>
+      <p class="small sub" style="margin:0 0 12px">What a trained eye would notice, letter by letter. They never change a drawing; they say where to look. Click a letter to open it.</p>
+      ${(() => { const all = AU.auditAll(S.stem); const laws = AU.LAWS;
+        const perLaw = laws.map(([k, n, d]) => ({ k, n, d, bad: E.ORDER.split('').filter(c => all[c].findings.some(f => f.law === k && !f.ok)) }));
+        return `<div class="chips" style="margin-bottom:14px">${perLaw.map(l => `<span class="chip ${l.bad.length ? 'amber' : 'green'}" title="${esc(l.d)}">${l.n} · ${l.bad.length ? l.bad.length + ' to look at' : 'all clear'}</span>`).join('')}</div>
+        <table><thead><tr><th>Letter</th>${laws.map(l => `<th title="${esc(l[2])}">${l[1]}</th>`).join('')}<th>First thing to look at</th></tr></thead><tbody>
+        ${E.ORDER.split('').map(c => { const r = all[c]; const first = r.findings.find(f => !f.ok);
+          return `<tr data-ch="${esc(c)}" style="cursor:pointer"><td><b>${shown(c)}</b></td>${laws.map(l => { const fs = r.findings.filter(f => f.law === l[0]); const bad = fs.some(f => !f.ok); return `<td title="${esc(fs.map(f => f.text).join(' '))}" style="color:var(--${!fs.length ? 'faint' : bad ? 'warn' : 'ok'})">${!fs.length ? '·' : bad ? '!' : '✓'}</td>`; }).join('')}<td class="small">${first ? esc(first.text) : '<span class="sub">nothing</span>'}</td></tr>`; }).join('')}</tbody></table>`; })()}
+    </div>
     ${S.build ? `<div class="panel tight" style="margin-top:18px"><h6>Last font build</h6><p class="small" style="margin:0">${esc(S.build.family)} ${esc(S.build.version)}${S.build.draft ? ' (draft)' : ''} · ${esc(S.build.date)} · gate ${S.build.gate.open ? 'open' : 'closed'} · every letter blends: ${S.build.interpolatable ? 'yes' : 'no'}.</p></div>` : ''}
     <p class="small sub">Scores are computed live from the outlines at thicknesses 53, 78 and 106; the worst weight governs. Your verdicts come from tools/hand.json.</p>
   </div>`;
-  root.querySelectorAll('.tile').forEach(t => t.onclick = () => setGlyph(t.dataset.ch));
+  root.querySelectorAll('.tile, tr[data-ch]').forEach(t => t.onclick = () => setGlyph(t.dataset.ch));
 }
 
 // ── boot ──────────────────────────────────────────────────────────────────────

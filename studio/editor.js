@@ -4,9 +4,11 @@
 // the document (AquaDoc), and shows in the text everywhere else in the Studio.
 (() => {
 'use strict';
-const E = window.AquaEngine, D = window.AquaDoc;
+const E = window.AquaEngine, D = window.AquaDoc, AU = window.AquaAudit;
 const A = () => window.AquaStudio;
-const GUIDES = [['Tall letters', 751], ['Capitals', 715], ['Small letters', 521], ['Baseline', 0], ['Tails', -230]];
+const GUIDES = [['Tall letters', 751], ['Capitals', 715], ['Small letters', 521], ['Middle', 268], ['Baseline', 0], ['Tails', -230]];
+// the visual middle sits a little above the true middle (0.515); for the capital it is on the cap height
+const guidesFor = ch => GUIDES.map(([n, y]) => n === 'Middle' ? [n, Math.round(0.515 * (ch === 'B' ? 715 : 521))] : [n, y]);
 const SNAP_Y = [751, 715, 528, 521, 7, 0, -7, -230];
 const ed = { tool: 'select', sel: null, linked: true, compare: false, variant: 0, zoom: 1, pan: [0, 0], glyph: null, view: null };
 const r1 = v => Math.round(v * 10) / 10, r0 = v => Math.round(v);
@@ -54,7 +56,7 @@ function room(root) {
     </aside>
     <div class="canvas" id="canvas">${canvasSVG(ch, s, d, nodes, g)}
       <div class="crumb"><b>${shown(ch)}</b>${ed.variant ? ' · ' + esc(vars[ed.variant].name) : ''} &nbsp;·&nbsp; ${E.weightName(s)} &nbsp;·&nbsp; ${nodes.length} points &nbsp;·&nbsp; ${KIND[g.kind].toLowerCase()}${D.hasMaster(ch) ? ' · drawing brought in' : ''}</div>
-      ${GUIDES.map(([n, y]) => `<div class="pill" data-y="${y}">${n}</div>`).join('')}
+      ${guidesFor(ch).map(([n, y]) => `<div class="pill ${n === 'Middle' ? 'faint' : ''}" data-y="${y}">${n}</div>`).join('')}
       <div class="hint" id="hint"></div>
       <div class="tools" id="tools">
         ${tool('select', 'Select', false, 'Drag a point; drag the background to look around; scroll to zoom')}
@@ -117,13 +119,14 @@ function canvasSVG(ch, s, d, nodes, g) {
     <defs><pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="${r1(1.1 / v.k)}" fill="var(--dots)"/></pattern></defs>
     <g transform="scale(1,-1)" id="flip">
       <rect x="${r1(v.x - far)}" y="${r1(v.y - far)}" width="${r1(v.w + 2 * far)}" height="${r1(v.h + 2 * far)}" fill="url(#dots)"/>
-      ${GUIDES.map(([n, y]) => `<line class="guide ${y === 0 ? 'base' : ''}" x1="${r1(v.x - far)}" x2="${r1(v.x + v.w + far)}" y1="${y}" y2="${y}" style="stroke-width:${r1((y === 0 ? 1.5 : 1) / v.k)}"/>`).join('')}
+      ${guidesFor(ch).map(([n, y]) => `<line class="guide ${y === 0 ? 'base' : ''} ${n === 'Middle' ? 'mid' : ''}" x1="${r1(v.x - far)}" x2="${r1(v.x + v.w + far)}" y1="${y}" y2="${y}" style="stroke-width:${r1((y === 0 ? 1.5 : 1) / v.k)}"/>`).join('')}
       <line class="boxline" x1="${r1(-g.lsb)}" x2="${r1(-g.lsb)}" y1="-260" y2="790" style="stroke-width:${r1(1 / v.k)}"/>
       <line class="boxline" x1="${r1(g.w + g.rsb)}" x2="${r1(g.w + g.rsb)}" y1="-260" y2="790" style="stroke-width:${r1(1 / v.k)}"/>
       ${before ? `<path class="before" d="${before}" fill-rule="evenodd" style="stroke-width:${r1(1.4 / v.k)}"/>` : ''}
       <path class="skin" id="skin" d="${d}" fill-rule="evenodd" style="stroke-width:${r1(1.1 / v.k)}"/>
       <g id="snaps"></g>
       <circle id="halo" r="${r1(big)}" class="halo" style="display:${ed.sel == null ? 'none' : ''}" cx="${ed.sel == null ? 0 : r1(nodes[ed.sel].p[0])}" cy="${ed.sel == null ? 0 : r1(nodes[ed.sel].p[1])}"/>
+      <g id="dark">${(() => { try { const f = AU.audit(ch, s).findings.find(x => x.law === 'crowding' && !x.ok); return f && f.nodes ? f.nodes.map(i => nodes[i] ? `<circle class="darkhalo" cx="${r1(nodes[i].p[0])}" cy="${r1(nodes[i].p[1])}" r="${r1(0.9 * s)}"/>` : '').join('') : ''; } catch { return ''; } })()}</g>
       <g id="nodes">${nodes.map((n, i) => `<circle class="node ${n.first ? 'start' : ''} ${i === ed.sel ? 'sel' : ''}" data-i="${i}" cx="${r1(n.p[0])}" cy="${r1(n.p[1])}" r="${r1(i === ed.sel ? R * 1.2 : R)}" style="stroke-width:${r1(SW)}"/>`).join('')}</g>
     </g>
   </svg>`;
@@ -287,7 +290,8 @@ function renderInspector() {
     <div class="btn" data-act="savevar">Save as a variation</div>
     <div class="btn ${edited ? '' : 'off'}" data-act="reset">Start this letter over</div>
     ${D.hasMaster(ch) ? `<div class="btn" data-act="forget" title="Go back to the drawing the Studio had before you brought this one in">Forget the imported drawing</div>` : ''}
-    ${healthLines(S.health[ch])}`;
+    ${healthLines(S.health[ch])}
+    ${(() => { const r = AU.audit(ch, s); if (!r) return ''; return `<h6 style="margin-top:14px">Optical · at thickness ${s}</h6><div class="health">${r.findings.map(f => `<b class="${f.ok ? '' : 'w'}">${f.ok ? '✓' : '!'}</b>${esc(f.text)}<br>`).join('')}</div>`; })()}`;
   bindWeightPicker(insp);
   insp.querySelector('#linked').onchange = e => { ed.linked = e.target.checked; if (!ed.linked && s !== 53 && s !== 106) A().setStem(s < 80 ? 53 : 106); else renderInspector(); };
   const round = insp.querySelector('#round');
