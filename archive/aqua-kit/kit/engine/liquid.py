@@ -158,7 +158,7 @@ def word_patch(word, ax, y_off=0, color="#141414"):
 if __name__ == "__main__":
     fig, ax = plt.subplots(figsize=(22, 7), dpi=110)
     ax.set_facecolor("#f5f3ef"); fig.patch.set_facecolor("#f5f3ef")
-    w = word_patch("the logotype", ax)
+    w = word_patch("Aqua", ax)
     ax.set_xlim(-80, w + 80)
     ax.set_ylim(-340, 840)
     ax.set_aspect("equal"); ax.axis("off")

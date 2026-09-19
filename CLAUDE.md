@@ -1,6 +1,6 @@
 # Aqua — working notes for Claude Code
 
-A variable typeface built from the the source logotype logotype. One weight axis, 30 characters.
+A variable typeface built from an existing logotype. One weight axis, 30 characters.
 Everything — generator, proofs, SVG export, SVG reimport — lives in a single HTML file.
 
 **Read `AQUA-STATUS.md` first.** It is the full project state: metrics, the weight law, the
@@ -112,7 +112,7 @@ aqua/                         THE TYPEFACE (canonical)
   sources/para.json           early parametric h/a/exclam paths, historical
 
 brief/                        the original handoff: README.md, measurements.json, sources/
-refs/logotype/                the the logotype artwork (ai / eps / svg / photos)
+refs/logotype/                (removed 2026-09-19 — the source artwork is no longer kept here)
 refs/sessions/                screenshots from the design sessions
 tools/                        the workshop: build, verify, health score (Python + Playwright)
 studio/blueprints/            Aqua Studio screen designs (HTML + PNG)

@@ -1,6 +1,6 @@
 # Aqua
 
-A variable typeface grown from the the source logotype logotype: one weight axis from Light to
+A variable typeface grown from an existing logotype: one weight axis from Light to
 Black, thirty characters so far, every letter built from the same few parts so the family
 holds together at every weight.
 
@@ -19,7 +19,7 @@ the whole set at a glance. Nothing to install; your edits save in the browser an
 | `aqua/Aqua.dc.html` | the proof page |
 | `studio/` | Aqua Studio |
 | `tools/` | the workshop: export, health score, screenshots, tests, baking edits |
-| `refs/` | the logotype and the design sessions |
+| `refs/` | screenshots from the design sessions |
 | `AQUA-STATUS.md` | where the project stands |
 | `CLAUDE.md` | how to work in the repository |
 | `studio/SPEC.md` | the Studio's build plan |
@@ -27,4 +27,3 @@ the whole set at a glance. Nothing to install; your edits save in the browser an
 To run it locally instead: `python3 -m http.server 8000` from this folder, then open
 `http://localhost:8000/studio/`.
 
-the logotype® is a registered mark. The logotype is included as reference artwork.

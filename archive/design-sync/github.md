@@ -1,6 +1,6 @@
 repo: fabiotestax/Aqua
 branch: main
-path: fabio-files
+path: aqua my files
 
 ## Last sync
 date: 2026-08-10T17:05:00Z
@@ -15,5 +15,5 @@ date: 2026-08-10T17:05:00Z
 | Screen | Built from |
 | --- | --- |
 | Aqua.dc.html 01–06 | parametric code in-project + MASTERS block |
-| Aqua.dc.html 07 · round trip | exports to `fabio-files/exported svgs/` |
+| Aqua.dc.html 07 · round trip | exports to `aqua my files/exported svgs/` |
 | Aqua.dc.html 08 · what came back | `edits/edited-paths.json`, parsed from the two returned SVGs |

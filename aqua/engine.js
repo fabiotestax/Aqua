@@ -627,7 +627,7 @@ function buildI(s) {
                { p: [s / 2 + r, cy], t: TVd }, { p: [s / 2, cy - r], t: THl }]);
 }
 
-// l: constructed against the logotype's own l (refs/logotype/logotype-01.svg, path 10).
+// l: constructed against the logotype's own l (the source logotype's vector, path 10; artwork no longer in the repo).
 // A straight stem of width s with the family foot and the family shoulder — but the top is
 // not a chisel cut. Measured off the artwork: the cut rises from the left shoulder, CRESTS
 // at ~0.72 s across, then rounds down to the right corner ~0.20 s below the crest. A drop
@@ -890,7 +890,7 @@ function buildComma(s) {
 // ── Capital B ─────────────────────────────────────────────────────────────────
 // Two rounded-rectangle counters on one stem, the lower one wider, with the waist pinched
 // rather than mitred — the outer wall runs in and back out across the bar in one curve.
-// Constructed against the logotype's B (refs/logotype/logotype-01.svg, path 0). Measured at
+// Constructed against the logotype's B (the source logotype's vector, path 0; artwork no longer in the repo). Measured at
 // s = 106: ink width 453, cap 715, stem 129 (a capital carries ~1.2 s), bar 72 thick centred
 // at 0.515 cap, upper bowl out to 427 and lower to the full 453, waist pinched to 312,
 // counters 189×236 over 213×249, top-left corner ~0.2 s and bottom-left ~0.47 s.

@@ -14,10 +14,10 @@ lab = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
 
 # wordmark with the embedded real g
 word = ImageFont.truetype(TTF, 230)
-bb = d.textbbox((0, 0), "the logotype", font=word)
-d.text(((W - (bb[2] - bb[0])) // 2 - bb[0], 120 - bb[1]), "the logotype",
+bb = d.textbbox((0, 0), "Aqua", font=word)
+d.text(((W - (bb[2] - bb[0])) // 2 - bb[0], 120 - bb[1]), "Aqua",
        font=word, fill=INK)
-d.text((60, 90), "AQUA — g is now the the source logotype drawing, embedded",
+d.text((60, 90), "AQUA — g is now the source drawing, embedded",
        font=lab, fill=INK)
 
 # g comparison

@@ -219,7 +219,7 @@ function Test(root) {
       <h6>Look at it</h6>
       <div class="seg w" id="views" style="flex-wrap:wrap">${views.map(([k, n]) => `<b class="${S.view === k ? 'on' : ''}" data-view="${k}" style="flex-basis:33%">${n}</b>`).join('')}</div>
       <p class="small sub">Squint and Darkness show where the weight sits. Upside down and Mirrored hide the words so only the shapes are left.</p>
-      <div class="card"><h6>Quick words</h6>${['hamburgefontsiv', 'aqua bonefish', 'nnonon', 'the source logotype', 'vixen wax', 'quick jazz'].map(w => `<div class="var" data-word="${w}" style="cursor:pointer"><span>${w}</span></div>`).join('')}</div>
+      <div class="card"><h6>Quick words</h6>${['hamburgefontsiv', 'aqua bonefish', 'nnonon', 'liquid glass', 'vixen wax', 'quick jazz'].map(w => `<div class="var" data-word="${w}" style="cursor:pointer"><span>${w}</span></div>`).join('')}</div>
     </aside>
     <div class="main">
       <svg width="0" height="0" style="position:absolute"><filter id="heat" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="-300" y="-400" width="30000" height="1300">

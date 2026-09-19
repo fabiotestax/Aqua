@@ -1,6 +1,6 @@
 """
 Stage-0 survival specimen: render the compiled AquaScript TTF as the
-the logotype wordmark, on the studio paper colour. This proves the crisp
+the source wordmark, on the studio paper colour. This proves the crisp
 substance (aquascript.py -> pathops -> fontTools -> TTF) survived the move.
 """
 from PIL import Image, ImageDraw, ImageFont
@@ -10,7 +10,7 @@ INK = (20, 20, 20)        # #141414
 FAINT = (150, 146, 140)
 
 TTF = "AquaScript-Regular.ttf"
-WORD = "the logotype"
+WORD = "Aqua"
 
 W, H = 1760, 620
 img = Image.new("RGB", (W, H), PAPER)
@@ -44,7 +44,7 @@ d.text(((W - (bbox2[2] - bbox2[0])) / 2 - bbox2[0], 490 - bbox2[1]),
 d.text((60, 40), "AQUA — AquaScript Regular v1.1", font=label, fill=INK)
 d.text((60, 70), "g repair · double-storey, crisp first · compiled TTF",
        font=label_i, fill=FAINT)
-d.text((W - 240, 40), "specimen: the logotype", font=label_i, fill=FAINT)
+d.text((W - 240, 40), "specimen: Aqua", font=label_i, fill=FAINT)
 
 img.save("specimen_stage0.png")
 print("saved specimen_stage0.png")

@@ -1,6 +1,6 @@
 # Aqua — full project export
 
-Variable typeface derived from the the source logotype logotype. One weight axis, 30 characters
+Variable typeface derived from an existing logotype. One weight axis, 30 characters
 drawn, built and proofed live in a single HTML file.
 
 Exported 19 September 2026.
@@ -64,15 +64,15 @@ design_handoff_variable_font/
     h-refit.svg                    constructed h, 16 points, stem 106
     a-refit.svg                    constructed a, 12 points, stem 106
     exclam.svg                     constructed exclam, 10 points
-    logotype-logotype-reference.jpg  4652 × 792 raster of the full lockup
+    (logotype raster — removed from the repository 2026-09-19)
     outline-audit.dc.html          the audit that produced the refit
     support.js
 
 uploads/                           screenshots and reference images from the sessions
 ```
 
-GitHub: `fabiotestax/Aqua`, branch `main`, path `fabio-files`. Last sync
-2026-08-10. Exported SVGs live in `fabio-files/exported svgs/`.
+GitHub: `fabiotestax/Aqua`, branch `main`, path `aqua my files`. Last sync
+2026-08-10. Exported SVGs live in `aqua my files/exported svgs/`.
 
 ---
 
@@ -438,9 +438,9 @@ Three things the brief could not settle and still cannot:
 1. **The custom axis is undefined.** "Roundness" and "bounce" were both floated. These are
    different fonts. Roundness moves terminals between blunt and circular; bounce moves
    baselines per glyph. Pick one before that stage.
-2. **Licensing.** the logotype® is a registered mark and the logotype is existing artwork.
-   Confirm the rights position covers extending it into a distributable typeface before
-   publishing anything.
+2. **Licensing.** The typeface grew from an existing logotype that is not ours to publish; its
+   artwork was removed from the repository on 2026-09-19. Confirm the rights position before
+   distributing a font.
 3. **Naming and OpenType metadata** — family name, style names, version, designer, vendor
    ID, license URL. None specified.
 

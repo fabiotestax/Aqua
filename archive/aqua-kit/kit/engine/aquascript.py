@@ -104,7 +104,7 @@ def skeletons():
     #         reads as one continuous rounded contour (like a mirrored B), while
     #         the LEFT gets a deep notch with a small spur. Eye is smaller and
     #         shifted right; the lower loop is larger. Counters sit left of the
-    #         weight — exactly the the logotype g. No open tail, no droplet.
+    #         weight — exactly the source logotype's g. No open tail, no droplet.
     g["g"] = [
         # eye — smaller upper bowl, centre (176, 372), right edge at x=266
         sub([("m", (176, 494)),
@@ -172,7 +172,7 @@ def skeleton_to_outline(subpaths):
 
 
 def draw_real_g(pen):
-    """The g is Fabio's own the source logotype drawing. Its outline was lifted from
+    """The g is Fabio's own drawing of the source logotype. Its outline was lifted from
     the source EPS (g_real_outline.json) then POLISHED with type-design
     principles (polish_g.py -> g_polished_outline.json): trace wobble removed,
     counters redrawn as clean ovals, curves re-laid at the extremes, spur kept.

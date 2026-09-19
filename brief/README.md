@@ -1,8 +1,8 @@
-# Handoff: the logotype variable font
+# Handoff: Aqua variable font
 
 ## Overview
 
-Build a variable font from the the source logotype logotype. The typeface is a soft, rounded, high-x-height sans with real stroke modulation — vertical stems around 105 units against horizontal thins around 60, at 1000 UPM.
+Build a variable font from the source logotype. The typeface is a soft, rounded, high-x-height sans with real stroke modulation — vertical stems around 105 units against horizontal thins around 60, at 1000 UPM.
 
 Target: **basic Latin lowercase + uppercase (52 glyphs)**, **Glyphs.app source format**, output as **WOFF2**, with axes for **weight, width, optical size, slant, and one custom axis**.
 
@@ -17,7 +17,7 @@ Four glyphs. That is the honest starting position.
 | `sources/a-refit.svg` | Lowercase **a**, 12 points. **Constructed**. Stem 106. |
 | `sources/exclam.svg` | **Exclam**, 10 points. Constructed. Bar width 106, dot radius 56. |
 | `sources/g-original-trace.svg` | The same g before refitting — 65 quadratic points from an image trace. Kept for reference only; do not build from it. |
-| `sources/logotype-logotype-reference.jpg` | 4652 × 792 raster of the full lockup. Contains **B D a e g h l o p u** and ®. This is the only reference for any letter other than g, and it is a raster. |
+| `sources/logotype-reference.jpg` (removed from the repository 2026-09-19) | 4652 × 792 raster of the full lockup. Contains **B D a e g h l o p u** and ®. This is the only reference for any letter other than g, and it is a raster. |
 | `measurements.json` | Every metric extracted from the above, in font units. |
 | `sources/outline-audit.dc.html` | The audit that produced the refit. Open in a browser to see point structure and silhouette drift. |
 
@@ -203,7 +203,7 @@ Ink widths in units, measured off the raster: B 453, D 453, a 373, e 389, g 440,
 Three things the brief cannot settle:
 
 1. **The custom axis is undefined.** "Roundness" and "bounce" were both floated. These are different fonts. Roundness would move terminals between blunt and circular; bounce would move baselines per glyph. Pick one before stage 5.
-2. **Licensing.** the logotype® is a registered mark and the logotype is existing artwork. Confirm the rights position covers extending it into a distributable typeface before publishing anything.
+2. **Licensing.** The typeface grew from an existing logotype that is not ours to publish; its artwork was removed from the repository on 2026-09-19. Confirm the rights position before distributing a font.
 3. **Naming and OpenType metadata** — family name, style names, version, designer, vendor ID, license URL. None of these are specified.
 
 ## Files
@@ -216,6 +216,6 @@ sources/g-original-trace.svg       pre-refit, reference only
 sources/h-refit.svg                the h, 25 points
 sources/a-refit.svg                the a, 21 points
 sources/exclam.svg                 the exclam, 10 points
-sources/logotype-logotype-reference.jpg   the raster lockup
+sources/logotype-reference.jpg          the raster lockup (removed 2026-09-19)
 sources/outline-audit.dc.html      point-structure audit, opens in a browser
 ```

@@ -1,8 +1,8 @@
 """
 Provenance / regeneration for the g outline.
 
-The g is Fabio's own drawing from the the source logotype master art
-(../refs/the source logotype.eps). This script lifts the g's outline out of that
+The g is Fabio's own drawing from the source logotype's master art
+(../refs/logotype.eps, removed from the repository). This script lifts the g's outline out of that
 EPS and writes g_real_outline.json (contours in AquaScript font units), which
 aquascript.py embeds directly as the g glyph.
 
@@ -12,8 +12,8 @@ import subprocess
 import json
 import pymupdf
 
-EPS = "../refs/the source logotype.eps"
-PDF = "the source logotype.pdf"
+EPS = "../refs/logotype.eps"
+PDF = "logotype.pdf"
 
 # EPS -> PDF (vector preserved)
 subprocess.run(["gs", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite",
@@ -23,7 +23,7 @@ subprocess.run(["gs", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite",
 doc = pymupdf.open(PDF)
 page = doc[0]
 
-# pick the drawing whose bbox matches the g (7th glyph of "the source logotype"),
+# pick the drawing whose bbox matches the g (7th glyph of the source word),
 # identified by x-range and the deepest descender
 draws = page.get_drawings()
 g = min(draws, key=lambda dr: abs(dr["rect"].x0 - 740.7))

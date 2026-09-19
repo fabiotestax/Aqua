@@ -7,8 +7,8 @@ Every agent working in this repo follows this file.
 ## The design language (locked — do not relitigate)
 
 - **Base anatomy:** crisp, semi-condensed humanist sans. Tall x-height,
-  tight fit, flat (butt-cut) terminals by default. Reference: the the logotype
-  wordmark anatomy (see /refs). Double-storey **a** and double-storey **g**.
+  tight fit, flat (butt-cut) terminals by default. Reference: the source
+  wordmark anatomy (artwork removed from the repo). Double-storey **a** and double-storey **g**.
 - **Liquidity is an accent, not the substance.** This was hard-won direction:
   an early build went too soft and was rejected. Liquid moves are deliberate,
   placed details: drip disconnections (the g's ear and link rendered as clean
@@ -42,7 +42,7 @@ Masters are built parametrically, then combined with fontTools `varLib`.
 ## Working rules (non-negotiable)
 
 1. **Fabio never reads code.** Every piece of work is presented as rendered
-   specimen PNGs: the wordmark test ("the logotype" + new strings), a glyph
+   specimen PNGs: the wordmark test (the source word + new strings), a glyph
    sheet, and — for variable work — an axis sweep strip. If it isn't
    rendered, it doesn't exist.
 2. **Small reviewable steps.** One concern per PR/handover: a glyph group,

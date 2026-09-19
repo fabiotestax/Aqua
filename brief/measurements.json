@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "logotype_raster": "logotype.jpg (4652 × 792) — the source logotype lockup, only reference for letters other than g",
+    "logotype_raster": "logotype raster (4652 × 792), removed from the repository 2026-09-19 — was the only reference for letters other than g",
     "vector_source": "20260809_g.svg — image-traced, 65 quadratic points",
     "vector_refit": "20260809_g_refit-22pt.svg — 22 cubic points, knots at extrema, max deviation 7.9 units from the trace",
     "scale_factor_note": "Logotype pixels × 1.439 = font units. Derived from the g, whose descender/bowl-top ratio (0.330) matches the logotype g exactly (0.330)."

@@ -5,7 +5,7 @@ No stage starts before the previous gate clears.
 
 ## Stage 0 — Foundation (mostly done)
 Seed repo with the existing engine (`aquascript.py`, `liquid.py`), the
-the logotype reference imagery, approved v1.1 proofs, and the rejected
+source reference imagery (removed), approved v1.1 proofs, and the rejected
 too-liquid v1.0 (kept as a boundary marker: this far, no further).
 **Gate:** Fabio confirms the design language section in CLAUDE.md reads true.
 
