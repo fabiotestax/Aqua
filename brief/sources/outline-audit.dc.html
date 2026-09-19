@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #F2F1EC; }
+  a { color: #A8492B; text-decoration: none; }
+  a:hover { color: #16150F; }
+</style>
+</helmet>
+
+<div style="background:#F2F1EC; color:#16150F; font-family:'IBM Plex Sans',system-ui,sans-serif; padding:72px 72px 96px; display:flex; flex-direction:column; gap:64px; width:100%; max-width:1560px; margin:0 auto; box-sizing:border-box;">
+
+  <header style="display:flex; justify-content:space-between; align-items:flex-end; gap:48px; border-bottom:1px solid #16150F; padding-bottom:22px;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">the source logotype · lowercase g · outline audit</div>
+      <h1 style="margin:0; font-size:44px; font-weight:600; letter-spacing:-0.022em; line-height:1.05;">The trace was carrying 65 points. It needs 21.</h1>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:1.7; color:#6E695F; text-align:right; white-space:nowrap;">
+      <div>20260809_g.svg</div>
+      <div>508 × 782 units</div>
+      <div>3 contours</div>
+    </div>
+  </header>
+
+  <section style="display:flex; flex-direction:column; gap:20px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">00 · specimen</div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6E695F;">stem {{ liveStem }} units · {{ liveLabel }} · drag the stem tweak to scrub the axis</div>
+    </div>
+    <div style="background:#EAE8E1; border:1px solid #DAD7CE; padding:64px 56px;">
+      <svg viewBox="{{ big.box }}" style="width:100%; height:auto; display:block;">
+        <g transform="scale(1,-1)">
+          <sc-for list="{{ big.glyphs }}" as="gl" hint-placeholder-count="4">
+            <g transform="{{ gl.tf }}"><path d="{{ gl.d }}" fill="{{ ink }}" fill-rule="evenodd"></path></g>
+          </sc-for>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:24px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">01 · point structure</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px;">
+
+      <div style="display:flex; flex-direction:column; gap:18px; background:#EAE8E1; padding:36px 36px 28px; border:1px solid #DAD7CE;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; font-family:'IBM Plex Mono',monospace; font-size:13px;">
+          <span style="font-weight:600; letter-spacing:0.06em;">SOURCE</span>
+          <span style="color:#A8492B;">65 points · quadratic</span>
+        </div>
+        <svg viewBox="2 -568 508 782" style="width:100%; height:auto; display:block;">
+          <g transform="scale(1,-1)">
+            <path d="{{ srcD }}" fill="{{ inkSoft }}" fill-rule="evenodd"></path>
+            <sc-if value="{{ showHandles }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ srcHandles }}" as="h" hint-placeholder-count="0">
+                <line x1="{{ h.x1 }}" y1="{{ h.y1 }}" x2="{{ h.x2 }}" y2="{{ h.y2 }}" stroke="#A8492B" stroke-width="1.6" opacity="0.55"></line>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ showPoints }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ srcPts }}" as="p" hint-placeholder-count="0">
+                <rect x="{{ p.rx }}" y="{{ p.ry }}" width="11" height="11" fill="#F2F1EC" stroke="#A8492B" stroke-width="3"></rect>
+              </sc-for>
+            </sc-if>
+          </g>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.75; color:#6E695F; border-top:1px solid #DAD7CE; padding-top:14px;">
+          <div>outer contour &nbsp;49 pts &nbsp;·&nbsp; 3 at an extremum</div>
+          <div>counters &nbsp;8 + 8 pts &nbsp;·&nbsp; 0 at an extremum</div>
+          <div>mean tangent break at junctions &nbsp;1.03°</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:18px; background:#EAE8E1; padding:36px 36px 28px; border:1px solid #DAD7CE;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; font-family:'IBM Plex Mono',monospace; font-size:13px;">
+          <span style="font-weight:600; letter-spacing:0.06em;">REFIT</span>
+          <span style="color:#2B6E7A;">{{ refCount }} points · cubic</span>
+        </div>
+        <svg viewBox="2 -568 508 782" style="width:100%; height:auto; display:block;">
+          <g transform="scale(1,-1)">
+            <path d="{{ refD }}" fill="{{ ink }}" fill-rule="evenodd"></path>
+            <sc-if value="{{ showHandles }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ refHandles }}" as="h" hint-placeholder-count="0">
+                <line x1="{{ h.x1 }}" y1="{{ h.y1 }}" x2="{{ h.x2 }}" y2="{{ h.y2 }}" stroke="#2B6E7A" stroke-width="1.8" opacity="0.7"></line>
+                <circle cx="{{ h.x2 }}" cy="{{ h.y2 }}" r="4.5" fill="#2B6E7A"></circle>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{ showPoints }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ refPts }}" as="p" hint-placeholder-count="0">
+                <rect x="{{ p.rx }}" y="{{ p.ry }}" width="13" height="13" fill="#F2F1EC" stroke="#2B6E7A" stroke-width="3.5"></rect>
+              </sc-for>
+            </sc-if>
+          </g>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.75; color:#6E695F; border-top:1px solid #DAD7CE; padding-top:14px;">
+          <div>outer contour &nbsp;{{ refOuter }} pts &nbsp;·&nbsp; every one at an extremum</div>
+          <div>counters &nbsp;4 + 4 pts &nbsp;·&nbsp; N/E/S/W only</div>
+          <div>mean tangent break at junctions &nbsp;0.00°</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid; grid-template-columns:minmax(300px,520px) minmax(0,1fr); gap:56px; align-items:start;">
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">02 · silhouette drift</div>
+      <div style="background:#EAE8E1; border:1px solid #DAD7CE; padding:32px;">
+        <svg viewBox="2 -568 508 782" style="width:100%; height:auto; display:block;">
+          <g transform="scale(1,-1)">
+            <path d="{{ refD }}" fill="{{ ink }}" fill-rule="evenodd"></path>
+            <path d="{{ srcD }}" fill="none" stroke="#A8492B" stroke-width="3" fill-rule="evenodd"></path>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:20px; padding-top:34px;">
+      <p style="margin:0; font-size:19px; line-height:1.55; max-width:56ch; text-wrap:pretty;">
+        The red line is the traced source; the solid shape is the refit. Maximum separation is <strong style="font-weight:600;">{{ drift }} units</strong> — {{ driftPct }}% of the glyph height, and all of it in places where the trace wobbled rather than turned.
+      </p>
+      <p style="margin:0; font-size:19px; line-height:1.55; max-width:56ch; color:#4A463D; text-wrap:pretty;">
+        The counters moved most. Both were eight-point rotated ovals with no point on an axis, which is what an autotracer produces when it follows an anti-aliased edge. Refit as four-point ovals they sit upright and hold their weight at small sizes.
+      </p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px; background:#DAD7CE; border:1px solid #DAD7CE; margin-top:8px;">
+        <div style="background:#F2F1EC; padding:20px 22px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:500; letter-spacing:-0.02em;">{{ refCount }}</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">points, from 65</div>
+        </div>
+        <div style="background:#F2F1EC; padding:20px 22px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:500; letter-spacing:-0.02em;">21</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">extrema, all held</div>
+        </div>
+        <div style="background:#F2F1EC; padding:20px 22px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:500; letter-spacing:-0.02em;">0</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">quadratics left</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:24px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">03 · what changed</div>
+    <div style="display:grid; grid-template-columns:220px 1fr 1fr; gap:1px; background:#DAD7CE; border:1px solid #DAD7CE; font-size:15.5px; line-height:1.5;">
+      <div style="background:#EAE8E1; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Item</div>
+      <div style="background:#EAE8E1; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Was</div>
+      <div style="background:#EAE8E1; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Now</div>
+
+      <div style="background:#F2F1EC; padding:16px 20px; font-weight:500;">Curve type</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">65 quadratic segments</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">{{ refCount }} cubic segments</div>
+
+      <div style="background:#F2F1EC; padding:16px 20px; font-weight:500;">Extrema</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">3 of 65 points sat on one</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">Every point sits on one; tangents locked to the axis</div>
+
+      <div style="background:#F2F1EC; padding:16px 20px; font-weight:500;">Counters</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">8-point rotated ovals, off-axis</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">4-point upright ovals</div>
+
+      <div style="background:#F2F1EC; padding:16px 20px; font-weight:500;">Junctions</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">1.03° average tangent break — visible faceting on the outer curves</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">Continuous; no breaks</div>
+
+      <div style="background:#F2F1EC; padding:16px 20px; font-weight:500;">Path data</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">1,178 characters</div>
+      <div style="background:#F2F1EC; padding:16px 20px; color:#4A463D;">{{ refChars }} characters</div>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:24px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">04 · size proof</div>
+    <div style="background:#EAE8E1; border:1px solid #DAD7CE; padding:44px 48px; display:flex; align-items:flex-end; gap:56px;">
+      <sc-for list="{{ sizes }}" as="s" hint-placeholder-count="5">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+          <svg viewBox="2 -568 508 782" style="height:{{ s.px }}; width:auto; display:block;">
+            <g transform="scale(1,-1)"><path d="{{ refD }}" fill="{{ ink }}" fill-rule="evenodd"></path></g>
+          </svg>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#57524A;">{{ s.label }}</div>
+        </div>
+      </sc-for>
+      <div style="flex:1; display:flex; flex-direction:column; gap:12px; padding-bottom:26px; border-left:1px solid #DAD7CE; padding-left:48px; align-self:stretch; justify-content:flex-end;">
+        <p style="margin:0; font-size:16px; line-height:1.55; color:#4A463D; max-width:38ch; text-wrap:pretty;">Ink traps aren't needed at these weights, but the two notches on the left spine are the first thing to close up. They hold to roughly 20px.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:24px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">05 · weight axis</div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,360px); gap:40px; align-items:stretch;">
+
+      <div style="background:#EAE8E1; border:1px solid #DAD7CE; padding:40px 40px 32px; display:flex; flex-direction:column; gap:32px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#A8492B;">offset alone — neck collapses</div>
+          <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:16px; align-items:end;">
+            <sc-for list="{{ rungs }}" as="w" hint-placeholder-count="6">
+              <svg viewBox="2 -568 508 782" style="width:100%; height:88px; display:block;">
+                <g transform="scale(1,-1)"><path d="{{ w.dRaw }}" fill="#A8492B" fill-rule="evenodd"></path></g>
+              </svg>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:#2B6E7A;">neck compensated</div>
+          <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:16px; align-items:end;">
+            <sc-for list="{{ rungs }}" as="w" hint-placeholder-count="6">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0;">
+                <svg viewBox="2 -568 508 782" style="width:100%; height:104px; display:block;">
+                  <g transform="scale(1,-1)"><path d="{{ w.d }}" fill="{{ ink }}" fill-rule="evenodd"></path></g>
+                </svg>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'IBM Plex Mono',monospace; white-space:nowrap; overflow:hidden;">
+                  <div style="font-size:11px; font-weight:500;">{{ w.label }}</div>
+                  <div style="font-size:10.5px; color:#57524A;">{{ w.stem }}/{{ w.neck }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; border-top:1px solid #DAD7CE; padding-top:24px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#A8492B; white-space:nowrap;">Light · neck 2u</div>
+            <svg viewBox="20 -300 260 290" style="width:100%; height:auto; display:block; background:#F2F1EC;">
+              <g transform="scale(1,-1)"><path d="{{ lightRaw }}" fill="#A8492B" fill-rule="evenodd"></path></g>
+            </svg>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#2B6E7A; white-space:nowrap;">Light · neck 25u</div>
+            <svg viewBox="20 -300 260 290" style="width:100%; height:auto; display:block; background:#F2F1EC;">
+              <g transform="scale(1,-1)"><path d="{{ lightFix }}" fill="{{ ink }}" fill-rule="evenodd"></path></g>
+            </svg>
+          </div>
+        </div>
+        <p style="margin:0; font-size:15.5px; line-height:1.55; color:#4A463D; max-width:70ch; text-wrap:pretty;">
+          The link between the two counters runs diagonally, so a straight offset eats it from both sides at once. It falls from 70 units to 8 by Regular and 2 by Light, and the glyph comes apart. Holding it means backing the offset off to 0.57 along those six points, flat from Bold down. Figures are stem / neck in units.
+        </p>
+      </div>
+
+      <div style="background:#16150F; color:#F2F1EC; padding:40px; display:flex; flex-direction:column; gap:24px; justify-content:space-between;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#A39C8E;">live axis</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:500; letter-spacing:-0.01em;">{{ liveLabel }}</div>
+        </div>
+        <svg viewBox="2 -568 508 782" style="width:auto; height:300px; max-width:100%; display:block; margin:0 auto;">
+          <g transform="scale(1,-1)"><path d="{{ liveD }}" fill="#F2F1EC" fill-rule="evenodd"></path></g>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.8; color:#A39C8E; border-top:1px solid #35322A; padding-top:16px;">
+          <div>stem &nbsp;{{ liveStem }} units</div>
+          <div>thin &nbsp;{{ liveThin }} units</div>
+          <div style="color:#8A8478;">drag the stem tweak to move it</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1px; background:#DAD7CE; border:1px solid #DAD7CE;">
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Holds</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">Point count and order are identical across all six — 21 points every time. That is what makes them interpolable as masters.</p>
+      </div>
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Needs a hand</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">The neck is held by backing off the offset on six points, which is a patch. Below Light it wants redrawing — the notches have nowhere left to go.</p>
+      </div>
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Spacing</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">The g narrows 428 → 366 across the ladder while the h and a hold their widths. Sidebearings have to open as it lightens or the colour goes patchy.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:24px;">
+    <div style="display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#6E695F;">06 · word test</div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#6E695F;">h, a and exclam constructed against your artwork</div>
+    </div>
+    <div style="background:#EAE8E1; border:1px solid #DAD7CE; padding:48px 52px; display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:44px 48px;">
+      <sc-for list="{{ words }}" as="wd" hint-placeholder-count="6">
+        <div style="display:flex; flex-direction:column; gap:10px; min-width:0;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#57524A;">{{ wd.label }}</div>
+          <svg viewBox="{{ wd.box }}" style="height:150px; width:{{ wd.wide }}; max-width:100%; display:block;">
+            <g transform="scale(1,-1)">
+              <sc-for list="{{ wd.glyphs }}" as="gl" hint-placeholder-count="4">
+                <g transform="{{ gl.tf }}"><path d="{{ gl.d }}" fill="{{ ink }}" fill-rule="evenodd"></path></g>
+              </sc-for>
+            </g>
+          </svg>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1px; background:#DAD7CE; border:1px solid #DAD7CE;">
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">New glyphs</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">h is 16 points, a is 15. Both constructed rather than traced — every point on an extremum, handles at the circle constant. No solver places a control point, so a lump cannot occur.</p>
+      </div>
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Built per weight</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">h, a and exclam are generated from the stem width rather than offset from the Black master, so their terminals stay round instead of collapsing to spikes. The g is still offset, which is why it narrows across the ladder.</p>
+      </div>
+      <div style="background:#F2F1EC; padding:22px 24px; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6E695F;">Spacing is provisional</div>
+        <p style="margin:0; font-size:15px; line-height:1.5; color:#4A463D; text-wrap:pretty;">Sidebearings are 47 units opening to 58 at Thin, taken from the logotype's average gap. Real spacing needs fitting by eye.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid #16150F; padding-top:20px; display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:#6E695F;">
+    <span>h, a, exclam constructed from parameters · g fitted at extrema with handles clamped to 0.20–0.90 of chord span</span>
+    <span>coordinates unchanged · same 508 × 782 box</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;stem&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:106,&quot;min&quot;:22,&quot;max&quot;:106,&quot;step&quot;:1,&quot;unit&quot;:&quot;units&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Weight axis&quot;},&quot;neckFix&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Weight axis&quot;},&quot;showPoints&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Overlay&quot;},&quot;showHandles&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Overlay&quot;},&quot;ink&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#16150F&quot;,&quot;options&quot;:[&quot;#16150F&quot;,&quot;#1B2A33&quot;,&quot;#2B1A14&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Overlay&quot;}}">
+const SRC = "M254 -174Q214 -173 176.0 -161.5Q138 -150 108.0 -131.0Q78 -112 62.5 -88.0Q47 -64 53 -39Q60 -10 95 15Q108 25 121.5 33.5Q135 42 134 50Q134 58 122.5 64.5Q111 71 99 79Q75 93 59.0 110.0Q43 127 42 145Q41 163 55.5 181.5Q70 200 92 215Q105 224 117.0 232.0Q129 240 129 249Q130 258 120.0 268.0Q110 278 100 289Q66 325 63 362Q61 391 76.0 420.0Q91 449 118.0 473.5Q145 498 179.0 512.5Q213 527 249 528Q285 529 319.5 515.0Q354 501 381.0 477.0Q408 453 423.0 423.5Q438 394 436 363Q434 327 409.0 294.0Q384 261 347.0 239.5Q310 218 273 217Q264 216 255.0 217.0Q246 218 237 220Q228 221 219.0 222.5Q210 224 201 223Q185 220 169.0 209.5Q153 199 142.5 184.0Q132 169 133 155Q133 138 148.0 124.0Q163 110 185.0 101.5Q207 93 227 91Q239 90 249.5 91.5Q260 93 271 94Q282 96 293.5 97.0Q305 98 316 97Q351 95 385.5 74.5Q420 54 443.5 24.5Q467 -5 470 -36Q473 -74 442.5 -106.0Q412 -138 361.5 -157.0Q311 -176 254 -174ZM250 465Q215 465 190.5 438.5Q166 412 166 375Q166 338 190.5 311.5Q215 285 250 285Q285 285 309.5 311.5Q334 338 334 375Q334 412 309.5 438.5Q285 465 250 465ZM261 28Q218 28 187.5 6.0Q157 -16 157 -47Q157 -78 187.5 -100.0Q218 -122 261 -122Q304 -122 334.5 -100.0Q365 -78 365 -47Q365 -16 334.5 6.0Q304 28 261 28Z";
+
+const REF22 = "M132.9 49.1C132.9 95 42.5 93.5 42.5 147.8C42.5 201.2 128.2 203.3 128.2 251.7C128.2 298.4 63.1 319.9 63.1 370.4C63.1 462.6 171.1 527.9 254.3 527.9C337.4 527.9 436 460 436 370.5C436 263.1 326 219.7 237.6 219.7C197.7 219.7 133.5 213.4 133.5 157.6C133.5 110.7 198.2 90.8 236 90.8C258.8 90.8 281.1 97.3 304 97.3C376.9 97.3 470 36.7 470 -42.9C470 -137.7 340.3 -174.1 264.7 -174.1C195.5 -174.1 51.8 -146 51.8 -54.3C51.8 -2 132.9 4.6 132.9 49.1ZM250 465C202.1 465 166 421.2 166 375C166 328.8 202.1 285 250 285C297.9 285 334 328.8 334 375C334 421.2 297.9 465 250 465ZM261 28C217.4 28 157 4.5 157 -47C157 -98.5 217.4 -122 261 -122C304.6 -122 365 -98.5 365 -47C365 4.5 304.6 28 261 28Z";
+
+const REF28 = "M82.5 -111.6C66.3 -96.3 51.3 -76.4 51.3 -53.1C51.3 -19.3 78.7 3.5 103.8 21.6C112.5 27.8 134.1 36.7 134.1 49.2C134.1 61.8 116.7 67.6 107.9 73.2C81.9 89.7 41.9 111.7 41.9 147.3C41.9 179.6 74.9 202.9 98.4 219.4C109.2 227 129.1 235 129.1 250.4C129.1 265.7 108.4 279.4 99.1 289.9C79.5 312.3 62.8 337.8 62.8 368.7C62.8 460.4 171.4 528.1 254.1 528.1C336.1 528.1 436.2 459 436.2 370.3C436.2 285.4 343.2 216.5 263.6 216.5C244.9 216.5 226.9 223.4 208.3 223.4C177.3 223.4 132.9 191.2 132.9 157.9C132.9 112.3 198.6 90.6 236 90.6C259.1 90.6 281.7 97.5 304.8 97.5C375.2 97.5 470.3 34.6 470.3 -42.7C470.3 -73.3 452.5 -98.3 430.2 -117.7C385.7 -156.3 323.5 -174.2 265.4 -174.2C202 -174.2 129.8 -156.2 82.5 -111.6ZM250 465C201.6 465 166 421.6 166 375C166 328.4 201.6 285 250 285C298.4 285 334 328.4 334 375C334 421.6 298.4 465 250 465ZM261 28C217.8 28 157 4.5 157 -47C157 -98.5 217.8 -122 261 -122C304.2 -122 365 -98.5 365 -47C365 4.5 304.2 28 261 28Z";
+
+const CONTRAST = 0.50;
+
+// Solved against the polished outline so the neck holds its 0.65 ratio to the stem.
+const NECK_TABLE = [[0, 1], [11, 0.573], [19, 0.571], [26, 0.575], [33, 0.574], [39, 0.576]];
+function neckComp(d) {
+  if (d <= 0) return 1;
+  for (let i = 1; i < NECK_TABLE.length; i++) {
+    const [x0, y0] = NECK_TABLE[i-1], [x1, y1] = NECK_TABLE[i];
+    if (d <= x1) return y0 + (y1 - y0) * (d - x0) / (x1 - x0);
+  }
+  return NECK_TABLE[NECK_TABLE.length - 1][1];
+}
+const inNeck = p => p[0] < 250 && p[1] > 20 && p[1] < 280;
+
+function offsetPath(d0, amount, fixNeck) {
+  const tk = d0.match(/[MCZ]|-?[\d.]+/g);
+  const cs = []; let cur = null, c = null, i = 0;
+  while (i < tk.length) {
+    const t = tk[i];
+    if (t === 'M') { cur = [+tk[i+1], +tk[i+2]]; c = { segs: [] }; cs.push(c); i += 3; }
+    else if (t === 'C') {
+      c.segs.push([cur, [+tk[i+1], +tk[i+2]], [+tk[i+3], +tk[i+4]], [+tk[i+5], +tk[i+6]]]);
+      cur = [+tk[i+5], +tk[i+6]]; i += 7;
+    } else i++;
+  }
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1]], add = (a, b) => [a[0]+b[0], a[1]+b[1]];
+  const mul = (a, s) => [a[0]*s, a[1]*s], len = a => Math.hypot(a[0], a[1]);
+  const unit = a => { const l = len(a) || 1; return [a[0]/l, a[1]/l]; };
+  const f = v => Math.round(v*10)/10;
+  let out = '';
+  cs.forEach(cc => {
+    const segs = cc.segs, n = segs.length;
+    const tan = segs.map(S => { let t = sub(S[1], S[0]); if (len(t) < 1e-6) t = sub(S[3], S[0]); return unit(t); });
+    const comp = fixNeck === false ? 1 : neckComp(amount);
+    const A = segs.map((S, k) => {
+      const t = tan[k];
+      let fac = CONTRAST + (1 - CONTRAST) * Math.abs(t[1]);
+      if (inNeck(S[0])) fac *= comp;
+      return add(S[0], mul([t[1], -t[0]], amount * fac));
+    });
+    const nu = segs.map((S, k) => {
+      const a = A[k], b = A[(k+1) % n];
+      const ratio = len(sub(b, a)) / (len(sub(S[3], S[0])) || 1);
+      const t1 = unit(sub(S[1], S[0])), t2 = unit(sub(S[2], S[3]));
+      return [a, add(a, mul(t1, len(sub(S[1], S[0])) * ratio)), add(b, mul(t2, len(sub(S[2], S[3])) * ratio)), b];
+    });
+    out += `M${f(nu[0][0][0])} ${f(nu[0][0][1])}`;
+    nu.forEach(S => { out += `C${f(S[1][0])} ${f(S[1][1])} ${f(S[2][0])} ${f(S[2][1])} ${f(S[3][0])} ${f(S[3][1])}`; });
+    out += 'Z';
+  });
+  return out;
+}
+
+const H_PATH = "M106 698C106 652.1 106 606.1 106 560.2C106 510.5 120.3 470.1 138 470.1C204.3 470.1 204.3 528 258.5 528C325.1 528 379 474.1 379 407.5C379 289.3 379 171.2 379 53C379 23.7 355.3 0 326 0C296.7 0 273 23.7 273 53C273 158.1 273 263.1 273 368.2C273 414.3 235.6 451.7 189.5 451.7C143.4 451.7 106 414.3 106 368.2C106 263.1 106 158.1 106 53C106 23.7 82.3 0 53 0C23.7 0 0 23.7 0 53C0 268 0 483 0 698C0 727.3 23.7 751 53 751C82.3 751 106 727.3 106 698Z";
+
+const A_PATH = "M192 528C290.3 528 370 480.5 370 422C370 321.3 370 220.7 370 120C370 49.9 273.9 -7 155.4 -7C69.6 -7 0 59.7 0 142C0 223.7 86.6 289.8 193.4 289.8C230.7 289.8 261 341.9 261 406.1C261 430.2 190.9 443.2 104.4 443.2C81 443.2 62 462.2 62 485.6C62 509 81 528 104.4 528C133.6 528 162.8 528 192 528ZM109 141.4C109 95.7 146.8 58.7 193.4 58.7C240 58.7 277.8 96.5 277.8 143.1C277.8 150.8 277.8 158.5 277.8 166.2C277.8 198.2 240 224.1 193.4 224.1C146.8 224.1 109 187.1 109 141.4Z";
+
+const EXCL_PATH = "M4 698C4 727.3 27.7 751 57 751C86.3 751 110 727.3 110 698C110 551.3 110 404.7 110 258C110 228.7 86.3 205 57 205C27.7 205 4 228.7 4 258C4 404.7 4 551.3 4 698ZM0.8 56.2C0.8 87.2 26 112.4 57 112.4C88 112.4 113.2 87.2 113.2 56.2C113.2 25.2 88 0 57 0C26 0 0.8 25.2 0.8 56.2Z";
+
+// ink width and left edge shrink predictably: every horizontal extreme has a vertical
+// tangent, so it moves by exactly the offset — except the g's left edge, which is inside
+// the compensated neck band.
+const WORD = [
+  { key: 'h', p: H_PATH, w0: 379.1, minX0: 0, neck: false, extra: 0 },
+  { key: 'a', p: A_PATH, w0: 370.4, minX0: 0, neck: false, extra: 0 },
+  { key: 'g', p: null,   w0: 427.5, minX0: 42.5, neck: true, extra: 0 },
+  { key: '!', p: EXCL_PATH, w0: 112, minX0: 0, neck: false, extra: 10 }
+];
+
+// Glyphs are CONSTRUCTED at each weight, not offset from the Black master. Terminals are
+// true semicircular caps of radius s/2, so they stay round all the way down instead of
+// shrinking to spikes. Every point sits on an extremum; every handle is the circle
+// constant on quarter turns, so a lump cannot occur.
+const KC = 0.5523, fx = v => Math.round(v * 10) / 10;
+const TV = [0, 1], TVd = [0, -1], THr = [1, 0], THl = [-1, 0];
+function contour(P) {
+  let out = `M${fx(P[0].p[0])} ${fx(P[0].p[1])}`;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length];
+    const t0 = a.t, t1 = [-b.t[0], -b.t[1]];
+    const dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1];
+    const collinear = Math.abs(t0[0] * (-t1[0]) + t0[1] * (-t1[1]) - 1) < 1e-6;
+    const chordPar = Math.abs(t0[0] * dy - t0[1] * dx) < 0.01;
+    const perp = Math.abs(t0[0] * t1[0] + t0[1] * t1[1]) < 0.5;
+    let h0, h1;
+    if (collinear && chordPar) { h0 = h1 = Math.hypot(dx, dy) / 3; }
+    else if (perp) { h0 = KC * Math.abs(t0[0] ? dx : dy); h1 = KC * Math.abs(t1[0] ? dx : dy); }
+    // (floor applied below — a zero-length handle has an undefined tangent and breaks
+    //  interpolation, so no handle may fall under 15% of its own chord)
+    else {
+      // S-curve. Scale off the tangent axis, but never below half the chord — otherwise a
+      // chord running perpendicular to its own tangents collapses the handles to a cusp.
+      const sp = Math.max(Math.abs(t0[0] ? dx : dy), Math.hypot(dx, dy) * 0.5);
+      h0 = (a.k0 ?? 0.55) * sp; h1 = (b.k1 ?? 0.45) * sp;
+    }
+    const floor = Math.hypot(dx, dy) * 0.15;
+    h0 = Math.max(h0, floor); h1 = Math.max(h1, floor);
+    out += `C${fx(a.p[0] + t0[0] * h0)} ${fx(a.p[1] + t0[1] * h0)} ${fx(b.p[0] + t1[0] * h1)} ${fx(b.p[1] + t1[1] * h1)} ${fx(b.p[0])} ${fx(b.p[1])}`;
+  }
+  return out + 'Z';
+}
+function buildH(s) {
+  const asc = 751, xh = 521, ov = 7, W = 379, R = s / 2;
+  const armY = xh - 0.48 * s, armX = s + 32, rise = 0.85 * s;
+  const oaY = xh + ov, oaX = (armX + W) / 2, iaY = oaY - 0.72 * s, iaX = W / 2;
+  const spring = iaY - (W - 2 * s) / 2;
+  return contour([
+    { p: [s, asc - R], t: TVd }, { p: [s, Math.min(armY + rise, asc - R - 1)], t: TVd },
+    { p: [armX, armY], t: THr, k0: 0.55 }, { p: [oaX, oaY], t: THr, k1: 0.45 },
+    { p: [W, oaY - (W - oaX)], t: TVd }, { p: [W, R], t: TVd }, { p: [W - R, 0], t: THl },
+    { p: [W - s, R], t: TV }, { p: [W - s, spring], t: TV },
+    { p: [iaX, iaY], t: THl }, { p: [s, spring], t: TVd },
+    { p: [s, R], t: TVd }, { p: [R, 0], t: THl }, { p: [0, R], t: TV },
+    { p: [0, asc - R], t: TV }, { p: [R, asc], t: THr }]);
+}
+function buildA(s) {
+  const xh = 521, ov = 7, W = 370;
+  // arm join and terminal both ease down as the stroke thins, so the arm keeps an even
+  // taper instead of blobbing where it turns into the stem
+  // arm runs at near-constant thickness and ends in a real semicircular cap
+  // join sits a fixed fraction of the stroke below the shoulder turn, so the arm's
+  // underside can never rise above its own top edge as the weight lightens
+  const armT = 0.80 * s, capR = armT / 2, bt = 0.62 * s;
+
+  const tx = 62 + (106 - s) * 0.25, ty = xh + ov - armT;
+  // Counter walls measured off the reference artwork: left = s, right = 0.87s, bottom = bt.
+  // Counter has a FLAT right side running parallel to the stem's inner edge. A pure
+  // ellipse recedes from that edge as it climbs, and the gap between counter and
+  // aperture fills with ink — that was the wedge.
+  const cl = s + 3, crF = W - 0.87 * s, cb = -ov + bt;
+  // Height is TIED TO WIDTH, not to the aperture. The reference counter is round
+  // (168.8 × 165.3, aspect 1.02); driving it from jy let it stretch to 0.68.
+  // ...but capped: unclamped it grows as 1/s and at Thin it reached the arm and broke the
+  // aperture. The ceiling leaves a constant band for the arm at every weight.
+  const ct = Math.min(cb + 0.98 * (crF - cl), 300);
+  // Aperture now follows the counter rather than setting it, so the two edges stay
+  // parallel at every weight without dictating the counter's proportions.
+  // The arm's underside tracks the ARM's own thickness, not the counter. Anchoring it to
+  // the counter kept it low as the stroke thinned, so the wedge between the arm and the
+  // stem filled with ink and the a read as high-contrast. Floor keeps it clear of the bowl.
+  const jy = Math.max(xh + ov - armT - 0.35 * s, ct + 1.2 * bt);
+  const cmx = (cl + crF) / 2, cyMid = (cb + ct) / 2;
+  const rr = Math.min(0.9 * bt + 0.25 * s, 0.35 * (crF - cl), 0.35 * (ct - cb));
+  // bottom-right is a full quarter turn, so the counter climbs away with the outer bowl
+  // edge instead of running flat underneath it and crossing it
+  const rrB = crF - cmx;
+
+  return contour([
+    { p: [192, xh + ov], t: THr }, { p: [W, xh + ov - 1.0 * s], t: TVd }, { p: [W, 120], t: TVd },
+    { p: [0.42 * W, -ov], t: THl }, { p: [0, 142], t: TV },
+    { p: [cmx, ct + bt], t: THr },
+    // aperture's lower edge follows the counter's own 45° point, offset by the bowl
+    // stroke, so the gap between them stays constant instead of filling with ink
+    { p: [W - s - 3, jy], t: TV, k1: 0.45, k0: 0.55 },
+    { p: [tx + capR, ty], t: THl }, { p: [tx, ty + capR], t: TV },
+    { p: [tx + capR, xh + ov], t: THr }])
+    + contour([{ p: [cl, cyMid], t: TVd }, { p: [cmx, cb], t: THr },
+               { p: [crF, cb + rrB], t: TV }, { p: [crF, ct - rr], t: TV },
+               { p: [cmx, ct], t: THl }]);
+}
+function buildExcl(s) {
+  const asc = 751, w = s / 2, cx = w + 4, yB = 205, r = 0.53 * s;
+  return contour([
+    { p: [cx - w, asc - w], t: TV }, { p: [cx, asc], t: THr }, { p: [cx + w, asc - w], t: TVd },
+    { p: [cx + w, yB + w], t: TVd }, { p: [cx, yB], t: THl }, { p: [cx - w, yB + w], t: TV }])
+    + contour([{ p: [cx - r, r], t: TV }, { p: [cx, 2 * r], t: THr },
+               { p: [cx + r, r], t: TVd }, { p: [cx, 0], t: THl }]);
+}
+
+const H_BLACK = buildH(106), A_BLACK = buildA(106), X_BLACK = buildExcl(106);
+
+class Component extends DCLogic {
+  buildWord(s, fixNeck) {
+    const d = Math.max(0, (107.4 - s) / 2.09);
+    const comp = fixNeck ? neckComp(d) : 1;
+    const sb = 47 + 0.28 * d;
+    const parts = [
+      { key: 'h', d: buildH(s), minX: 0, w: 379, extra: 0 },
+      { key: 'a', d: buildA(s), minX: 0, w: 370, extra: 0 },
+      { key: 'g', d: offsetPath(REF22, d, fixNeck), minX: 42.5 + d * comp, w: 427.5 - d - d * comp, extra: 0 },
+      { key: '!', d: buildExcl(s), minX: 4 - 0.03 * s, w: 1.06 * s, extra: 10 }
+    ];
+    let cur = 0;
+    const glyphs = parts.map(g => {
+      const lsb = sb + g.extra;
+      const tx = cur + lsb - g.minX;
+      cur += lsb + g.w + lsb;
+      return { key: g.key, d: g.d, tf: `translate(${tx.toFixed(1)},0)` };
+    });
+    return { glyphs, w: Math.round(cur) };
+  }
+
+  parse(d) {
+    const toks = d.match(/[MCQZ]|-?[\d.]+/g);
+    const pts = [], handles = [];
+    let i = 0, cur = null, start = null;
+    while (i < toks.length) {
+      const t = toks[i];
+      if (t === 'M') { cur = [+toks[i+1], +toks[i+2]]; start = cur; pts.push(cur); i += 3; }
+      else if (t === 'Q') {
+        const c = [+toks[i+1], +toks[i+2]], e = [+toks[i+3], +toks[i+4]];
+        handles.push({ x1: cur[0], y1: cur[1], x2: c[0], y2: c[1] });
+        handles.push({ x1: e[0], y1: e[1], x2: c[0], y2: c[1] });
+        cur = e; if (!(e[0] === start[0] && e[1] === start[1])) pts.push(e);
+        i += 5;
+      } else if (t === 'C') {
+        const a = [+toks[i+1], +toks[i+2]], b = [+toks[i+3], +toks[i+4]], e = [+toks[i+5], +toks[i+6]];
+        handles.push({ x1: cur[0], y1: cur[1], x2: a[0], y2: a[1] });
+        handles.push({ x1: e[0], y1: e[1], x2: b[0], y2: b[1] });
+        cur = e; if (!(e[0] === start[0] && e[1] === start[1])) pts.push(e);
+        i += 7;
+      } else i++;
+    }
+    return { pts, handles };
+  }
+
+  renderVals() {
+    const tight = false;
+    const refD = REF22;
+    const src = this.parse(SRC), ref = this.parse(refD);
+    const mark = (arr, r) => arr.map(p => ({ rx: p[0] - r, ry: p[1] - r }));
+    const ink = this.props.ink ?? '#16150F';
+
+    const fixNeck = this.props.neckFix ?? true;
+    const rungs = [
+      { label: 'Black', off: 0,  stem: 107, thin: 52, neck: 70 },
+      { label: 'Bold', off: 11,  stem: 84,  thin: 41, neck: 55 },
+      { label: 'Medium', off: 19, stem: 68, thin: 33, neck: 44 },
+      { label: 'Regular', off: 26, stem: 53, thin: 26, neck: 35 },
+      { label: 'Light', off: 33, stem: 38, thin: 19, neck: 25 },
+      { label: 'Thin', off: 39,  stem: 26, thin: 13, neck: 17 }
+    ].map(r => ({
+      ...r,
+      d: offsetPath(REF22, r.off, fixNeck),
+      dRaw: offsetPath(REF22, r.off, false),
+      neckShown: fixNeck ? r.neck : [70, 44, 25, 8, 2, 2][[0,11,19,26,33,39].indexOf(r.off)],
+      ratio: fixNeck ? '0.65' : ['0.65','0.52','0.36','0.16','0.04','0.08'][[0,11,19,26,33,39].indexOf(r.off)]
+    }));
+
+    const liveStem = this.props.stem ?? 106;
+    const liveOff = Math.max(0, (106.2 - liveStem) / 2.097);
+
+    return {
+      rungs, fixNeck,
+      big: (() => {
+        const b = this.buildWord(this.props.stem ?? 106, fixNeck);
+        return { glyphs: b.glyphs, box: `0 -771 ${b.w} 969` };
+      })(),
+      words: [
+        { label: 'Black', off: 106 }, { label: 'Bold', off: 84 }, { label: 'Medium', off: 68 },
+        { label: 'Regular', off: 53 }, { label: 'Light', off: 38 }, { label: 'Thin', off: 26 }
+      ].map(w => {
+        const b = this.buildWord(w.off, fixNeck);
+        return { ...w, glyphs: b.glyphs, box: `0 -771 ${b.w} 969`, wide: `${(b.w / 969 * 150).toFixed(0)}px` };
+      }),
+      lightRaw: offsetPath(REF22, 33, false),
+      lightFix: offsetPath(REF22, 33, true),
+      liveD: offsetPath(REF22, liveOff, fixNeck),
+      liveStem: Math.round(liveStem),
+      liveThin: Math.round(liveStem * 0.492),
+      liveLabel: liveStem > 95 ? 'Black' : liveStem > 75 ? 'Bold' : liveStem > 59 ? 'Medium' : liveStem > 44 ? 'Regular' : liveStem > 30 ? 'Light' : 'Thin',
+      srcD: SRC, refD, ink,
+      inkSoft: '#3A362E',
+      srcPts: mark(src.pts, 5.5), srcHandles: src.handles,
+      refPts: mark(ref.pts, 6.5), refHandles: ref.handles,
+      refCount: ref.pts.length,
+      refOuter: ref.pts.length - 8,
+      refChars: refD.length.toLocaleString(),
+      drift: '11.0',
+      driftPct: '1.6',
+      showPoints: this.props.showPoints ?? true,
+      showHandles: this.props.showHandles ?? false,
+      sizes: [
+        { px: '16px', label: '16 px' },
+        { px: '24px', label: '24 px' },
+        { px: '40px', label: '40 px' },
+        { px: '72px', label: '72 px' },
+        { px: '120px', label: '120 px' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

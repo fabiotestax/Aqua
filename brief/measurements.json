@@ -1,0 +1,122 @@
+{
+  "provenance": {
+    "logotype_raster": "logotype.jpg (4652 × 792) — the source logotype lockup, only reference for letters other than g",
+    "vector_source": "20260809_g.svg — image-traced, 65 quadratic points",
+    "vector_refit": "20260809_g_refit-22pt.svg — 22 cubic points, knots at extrema, max deviation 7.9 units from the trace",
+    "scale_factor_note": "Logotype pixels × 1.439 = font units. Derived from the g, whose descender/bowl-top ratio (0.330) matches the logotype g exactly (0.330)."
+  },
+  "upm": 1000,
+  "vertical_metrics": {
+    "baseline": 0,
+    "xHeight": 521,
+    "capHeight": 715,
+    "ascender": 751,
+    "descender": -178,
+    "overshoot_round": 7,
+    "note": "The refit g needs no scaling — its existing coordinates already sit correctly on these metrics. Bowl top 528.1 = xHeight 521 + 7 overshoot. Tail bottom -174.2 sits just inside descender -178."
+  },
+  "weight": {
+    "vertical_stem": 105,
+    "horizontal_thin": 60,
+    "contrast_ratio": 0.57,
+    "stem_over_xheight": 0.202,
+    "note": "Measured by scanline across the refit g. Bowl sides 106.2 / 106.9 at y=440; loop sides 105.7 / 105.1 at y=-50. Bowl top 63.1, loop bottom 52.2. This is a Bold-to-Black master, NOT monolinear — any weight axis must preserve the 105:60 ratio."
+  },
+  "letters_in_logotype": [
+    {
+      "g": "B",
+      "ink_px": 315,
+      "ink_units": 453,
+      "top_px": 133,
+      "bottom_px": 632
+    },
+    {
+      "g": "l",
+      "ink_px": 77,
+      "ink_units": 111,
+      "top_px": 105,
+      "bottom_px": 628
+    },
+    {
+      "g": "e",
+      "ink_px": 270,
+      "ink_units": 389,
+      "top_px": 264,
+      "bottom_px": 633
+    },
+    {
+      "g": "p",
+      "ink_px": 282,
+      "ink_units": 406,
+      "top_px": 259,
+      "bottom_px": 753
+    },
+    {
+      "g": "h",
+      "ink_px": 265,
+      "ink_units": 381,
+      "top_px": 96,
+      "bottom_px": 619
+    },
+    {
+      "g": "a",
+      "ink_px": 259,
+      "ink_units": 373,
+      "top_px": 252,
+      "bottom_px": 625
+    },
+    {
+      "g": "g",
+      "ink_px": 306,
+      "ink_units": 440,
+      "top_px": 249,
+      "bottom_px": 737
+    },
+    {
+      "g": "D",
+      "ink_px": 315,
+      "ink_units": 453,
+      "top_px": 103,
+      "bottom_px": 598
+    },
+    {
+      "g": "u",
+      "ink_px": 265,
+      "ink_units": 381,
+      "top_px": 246,
+      "bottom_px": 606
+    },
+    {
+      "g": "o",
+      "ink_px": 283,
+      "ink_units": 407,
+      "top_px": 233,
+      "bottom_px": 606
+    }
+  ],
+  "spacing": {
+    "measured_gaps_px": [
+      56,
+      72,
+      69,
+      71,
+      64,
+      74,
+      47,
+      70,
+      55,
+      63,
+      69
+    ],
+    "mean_gap_px": 65,
+    "mean_gap_units": 94,
+    "suggested_round_sidebearing": 47,
+    "suggested_advance_o": 501,
+    "note": "Gaps measured between letter ink bounds in the logotype. Generous for the weight, consistent with the soft rounded drawing."
+  },
+  "caveats": [
+    "The logotype baseline is not level — it rises ~34px across 4190px (0.46°). Measure each letter against its own local baseline, not a global one.",
+    "'u' is the only flat-topped lowercase, so it gives true x-height (360px). Round letters e/a/o read 361–374px because they overshoot.",
+    "Cap height differs slightly between B (499px) and D (495px) — scan noise, not design intent. Use 715 units for both."
+  ]
+}
