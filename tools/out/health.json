@@ -1,0 +1,2642 @@
+{
+ "a": {
+  "score": 70,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "lumpy curve (jump 0.024) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 18,
+    "segs_per_sub": [
+     14,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.02443,
+    "min_radius": 11.2,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 370.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 44.5,
+    "rsb": 48.9,
+    "advance": 463.4,
+    "stem_score": 70,
+    "flags": [
+     "lumpy curve (jump 0.024)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 18,
+    "segs_per_sub": [
+     14,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01102,
+    "min_radius": 18.7,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 370.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 41.8,
+    "rsb": 45.8,
+    "advance": 457.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.011)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 18,
+    "segs_per_sub": [
+     14,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01283,
+    "min_radius": 19.2,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 370.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 38.7,
+    "rsb": 42.5,
+    "advance": 451.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.013)"
+    ]
+   }
+  }
+ },
+ "b": {
+  "score": 70,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "lumpy curve (jump 0.031) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.03114,
+    "min_radius": 5.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 746.2,
+    "lsb": 48.9,
+    "rsb": 44.5,
+    "advance": 472.4,
+    "stem_score": 70,
+    "flags": [
+     "lumpy curve (jump 0.031)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00877,
+    "min_radius": 8.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 743.9,
+    "lsb": 45.8,
+    "rsb": 41.8,
+    "advance": 466.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 10.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 741.4,
+    "lsb": 42.5,
+    "rsb": 38.7,
+    "advance": 460.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "c": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00854,
+    "min_radius": 13.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 44.5,
+    "rsb": 36.9,
+    "advance": 460.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01185,
+    "min_radius": 19.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 41.8,
+    "rsb": 34.6,
+    "advance": 455.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.012)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01398,
+    "min_radius": 27.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 38.7,
+    "rsb": 32.1,
+    "advance": 449.8,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.014)"
+    ]
+   }
+  }
+ },
+ "d": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00916,
+    "min_radius": 5.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 746.2,
+    "lsb": 44.5,
+    "rsb": 48.9,
+    "advance": 472.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00877,
+    "min_radius": 8.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 743.9,
+    "lsb": 41.8,
+    "rsb": 45.8,
+    "advance": 466.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 10.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 741.4,
+    "lsb": 38.7,
+    "rsb": 42.5,
+    "advance": 460.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "e": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 25,
+    "segs_per_sub": [
+     17,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00854,
+    "min_radius": 10.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 44.5,
+    "rsb": 44.5,
+    "advance": 468.0,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 25,
+    "segs_per_sub": [
+     17,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01185,
+    "min_radius": 15.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 41.8,
+    "rsb": 41.7,
+    "advance": 462.5,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.012)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 25,
+    "segs_per_sub": [
+     17,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01398,
+    "min_radius": 21.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 38.7,
+    "rsb": 38.7,
+    "advance": 456.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.014)"
+    ]
+   }
+  }
+ },
+ "f": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.008) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00831,
+    "min_radius": 8.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 224.7,
+    "ymin": 0.0,
+    "ymax": 751.0,
+    "lsb": 48.9,
+    "rsb": 57.8,
+    "advance": 331.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.008)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0087,
+    "min_radius": 15.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 238.0,
+    "ymin": 0.0,
+    "ymax": 751.0,
+    "lsb": 45.8,
+    "rsb": 47.6,
+    "advance": 331.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00854,
+    "min_radius": 22.7,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 254.0,
+    "ymin": 0.0,
+    "ymax": 751.0,
+    "lsb": 42.5,
+    "rsb": 52.4,
+    "advance": 348.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   }
+  }
+ },
+ "g": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.013) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 3,
+    "segs": 21,
+    "segs_per_sub": [
+     13,
+     4,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCC",
+     "CCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01308,
+    "min_radius": 35.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 386.5,
+    "ymin": -157.2,
+    "ymax": 511.0,
+    "lsb": 44.5,
+    "rsb": 44.5,
+    "advance": 475.5,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.013)"
+    ]
+   },
+   "78": {
+    "subpaths": 3,
+    "segs": 21,
+    "segs_per_sub": [
+     13,
+     4,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCC",
+     "CCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.0079,
+    "min_radius": 35.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 405.4,
+    "ymin": -164.0,
+    "ymax": 517.8,
+    "lsb": 41.8,
+    "rsb": 41.7,
+    "advance": 488.9,
+    "stem_score": 100,
+    "flags": []
+   },
+   "106": {
+    "subpaths": 3,
+    "segs": 21,
+    "segs_per_sub": [
+     13,
+     4,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCCCCC",
+     "CCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.00634,
+    "min_radius": 35.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 426.1,
+    "ymin": -173.6,
+    "ymax": 527.4,
+    "lsb": 38.7,
+    "rsb": 38.8,
+    "advance": 503.6,
+    "stem_score": 100,
+    "flags": []
+   }
+  }
+ },
+ "h": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.015) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 19,
+    "segs_per_sub": [
+     19
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01538,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 746.2,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 476.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.015)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 19,
+    "segs_per_sub": [
+     19
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00877,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 743.9,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 470.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 19,
+    "segs_per_sub": [
+     19
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 11.6,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 741.4,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 463.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "i": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "106",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.016) at stem 106"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": -5.8,
+    "xmax": 58.8,
+    "ymin": 0.0,
+    "ymax": 647.4,
+    "lsb": 43.1,
+    "rsb": 43.0,
+    "advance": 150.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.00016,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": -8.5,
+    "xmax": 86.5,
+    "ymin": 0.0,
+    "ymax": 675.9,
+    "lsb": 37.3,
+    "rsb": 37.4,
+    "advance": 169.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": -11.6,
+    "xmax": 117.6,
+    "ymin": 0.0,
+    "ymax": 707.8,
+    "lsb": 30.9,
+    "rsb": 30.8,
+    "advance": 190.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "j": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "78",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.008) at stem 78"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     10,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.00587,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 154.8,
+    "ymin": -230.0,
+    "ymax": 647.4,
+    "lsb": 36.9,
+    "rsb": 47.1,
+    "advance": 238.8,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     10,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.00828,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 182.5,
+    "ymin": -230.0,
+    "ymax": 675.9,
+    "lsb": 34.6,
+    "rsb": 41.4,
+    "advance": 258.5,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.008)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     10,
+     4
+    ],
+    "signature": [
+     "CCCCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 213.6,
+    "ymin": -230.0,
+    "ymax": 707.8,
+    "lsb": 32.1,
+    "rsb": 34.9,
+    "advance": 280.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "k": {
+  "score": 75,
+  "colour": "amber",
+  "worst_stem": "106",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.016) at stem 106",
+   "5 curve(s) miss their extreme point at stem 106"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 22,
+    "segs_per_sub": [
+     22
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 6.8,
+    "nonmono": 5,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 364.1,
+    "ymin": -0.9,
+    "ymax": 746.2,
+    "lsb": 48.9,
+    "rsb": 52.8,
+    "advance": 465.8,
+    "stem_score": 90,
+    "flags": [
+     "5 curve(s) miss their extreme point"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 22,
+    "segs_per_sub": [
+     22
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9.9,
+    "nonmono": 5,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 370.9,
+    "ymin": 0.0,
+    "ymax": 743.9,
+    "lsb": 45.8,
+    "rsb": 43.8,
+    "advance": 460.5,
+    "stem_score": 90,
+    "flags": [
+     "5 curve(s) miss their extreme point"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 22,
+    "segs_per_sub": [
+     22
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 5,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 378.5,
+    "ymin": 0.0,
+    "ymax": 741.4,
+    "lsb": 42.5,
+    "rsb": 33.6,
+    "advance": 454.6,
+    "stem_score": 75,
+    "flags": [
+     "slight lump (jump 0.016)",
+     "5 curve(s) miss their extreme point"
+    ]
+   }
+  }
+ },
+ "l": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "106",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.016) at stem 106"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 8,
+    "segs_per_sub": [
+     8
+    ],
+    "signature": [
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 53.0,
+    "ymin": 0.0,
+    "ymax": 746.2,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 150.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 8,
+    "segs_per_sub": [
+     8
+    ],
+    "signature": [
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 78.0,
+    "ymin": 0.0,
+    "ymax": 744.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 169.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 8,
+    "segs_per_sub": [
+     8
+    ],
+    "signature": [
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 106.0,
+    "ymin": 0.0,
+    "ymax": 741.4,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 190.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "m": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 25,
+    "segs_per_sub": [
+     25
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00875,
+    "min_radius": 15.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 607.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 704.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 25,
+    "segs_per_sub": [
+     25
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01126,
+    "min_radius": 23.3,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 582.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 673.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.011)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 25,
+    "segs_per_sub": [
+     25
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 31.6,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 554.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 638.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "n": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "78",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 78"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00726,
+    "min_radius": 15.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 476.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0088,
+    "min_radius": 23.3,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 470.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 31.6,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 463.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "o": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     6,
+     8
+    ],
+    "signature": [
+     "CCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00897,
+    "min_radius": 108.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 44.5,
+    "rsb": 44.5,
+    "advance": 468.0,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     6,
+     8
+    ],
+    "signature": [
+     "CCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01099,
+    "min_radius": 88.6,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 41.8,
+    "rsb": 41.7,
+    "advance": 462.5,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.011)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 14,
+    "segs_per_sub": [
+     6,
+     8
+    ],
+    "signature": [
+     "CCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01464,
+    "min_radius": 66.4,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 528.0,
+    "lsb": 38.7,
+    "rsb": 38.7,
+    "advance": 456.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.015)"
+    ]
+   }
+  }
+ },
+ "p": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "78",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 78"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00754,
+    "min_radius": 5.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -225.2,
+    "ymax": 528.0,
+    "lsb": 48.9,
+    "rsb": 44.5,
+    "advance": 472.4,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00877,
+    "min_radius": 8.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -222.9,
+    "ymax": 528.0,
+    "lsb": 45.8,
+    "rsb": 41.8,
+    "advance": 466.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 10.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -220.4,
+    "ymax": 528.0,
+    "lsb": 42.5,
+    "rsb": 38.7,
+    "advance": 460.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "q": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00926,
+    "min_radius": 5.5,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -225.2,
+    "ymax": 528.0,
+    "lsb": 44.5,
+    "rsb": 48.9,
+    "advance": 472.4,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.00877,
+    "min_radius": 8.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -222.9,
+    "ymax": 528.0,
+    "lsb": 41.8,
+    "rsb": 45.8,
+    "advance": 466.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 23,
+    "segs_per_sub": [
+     15,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 10.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -220.4,
+    "ymax": 528.0,
+    "lsb": 38.7,
+    "rsb": 42.5,
+    "advance": 460.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "r": {
+  "score": 70,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "lumpy curve (jump 0.031) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.03099,
+    "min_radius": 5.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 300.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 48.9,
+    "rsb": 36.9,
+    "advance": 385.8,
+    "stem_score": 70,
+    "flags": [
+     "lumpy curve (jump 0.031)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01362,
+    "min_radius": 8.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 300.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 45.8,
+    "rsb": 34.7,
+    "advance": 380.5,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.014)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 16,
+    "segs_per_sub": [
+     16
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 10.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 300.0,
+    "ymin": 0.0,
+    "ymax": 528.0,
+    "lsb": 42.5,
+    "rsb": 32.1,
+    "advance": 374.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "s": {
+  "score": 75,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "too many points (354 segments \u2014 a trace, not a drawing) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 354,
+    "segs_per_sub": [
+     354
+    ],
+    "signature": [
+     "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9999.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": -7.4,
+    "ymax": 528.5,
+    "lsb": 44.5,
+    "rsb": 44.5,
+    "advance": 429.0,
+    "stem_score": 75,
+    "flags": [
+     "too many points (354 segments \u2014 a trace, not a drawing)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 354,
+    "segs_per_sub": [
+     354
+    ],
+    "signature": [
+     "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9999.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": -7.5,
+    "ymax": 528.6,
+    "lsb": 41.8,
+    "rsb": 41.7,
+    "advance": 423.5,
+    "stem_score": 75,
+    "flags": [
+     "too many points (354 segments \u2014 a trace, not a drawing)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 354,
+    "segs_per_sub": [
+     354
+    ],
+    "signature": [
+     "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9999.0,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": -7.5,
+    "ymax": 528.6,
+    "lsb": 38.7,
+    "rsb": 38.7,
+    "advance": 417.4,
+    "stem_score": 75,
+    "flags": [
+     "too many points (354 segments \u2014 a trace, not a drawing)"
+    ]
+   }
+  }
+ },
+ "t": {
+  "score": 70,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "lumpy curve (jump 0.021) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0206,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 211.0,
+    "ymin": 0.0,
+    "ymax": 641.2,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 308.7,
+    "stem_score": 70,
+    "flags": [
+     "lumpy curve (jump 0.021)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00984,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 236.0,
+    "ymin": 0.0,
+    "ymax": 639.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 327.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.010)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 26,
+    "segs_per_sub": [
+     26
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 264.0,
+    "ymin": 0.0,
+    "ymax": 636.4,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 348.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "u": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "78",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 78"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 14,
+    "segs_per_sub": [
+     14
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00716,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 516.2,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 476.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 14,
+    "segs_per_sub": [
+     14
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0088,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 514.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 470.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 14,
+    "segs_per_sub": [
+     14
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -7.0,
+    "ymax": 511.4,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 463.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "v": {
+  "score": 96,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "2 curve(s) miss their extreme point at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 12,
+    "segs_per_sub": [
+     12
+    ],
+    "signature": [
+     "CCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 10.1,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 7.9,
+    "xmax": 332.0,
+    "ymin": -1.7,
+    "ymax": 516.7,
+    "lsb": 44.8,
+    "rsb": 44.9,
+    "advance": 413.8,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 12,
+    "segs_per_sub": [
+     12
+    ],
+    "signature": [
+     "CCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 14.9,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 11.4,
+    "xmax": 328.5,
+    "ymin": 2.1,
+    "ymax": 514.6,
+    "lsb": 46.0,
+    "rsb": 46.2,
+    "advance": 409.3,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 12,
+    "segs_per_sub": [
+     12
+    ],
+    "signature": [
+     "CCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 20.3,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 15.0,
+    "xmax": 324.9,
+    "ymin": 7.3,
+    "ymax": 512.3,
+    "lsb": 47.1,
+    "rsb": 47.2,
+    "advance": 404.2,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   }
+  }
+ },
+ "w": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.009) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 23,
+    "segs_per_sub": [
+     23
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.00875,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 607.0,
+    "ymin": -7.0,
+    "ymax": 516.2,
+    "lsb": 36.9,
+    "rsb": 36.9,
+    "advance": 680.8,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.009)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 23,
+    "segs_per_sub": [
+     23
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01126,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 582.0,
+    "ymin": -7.0,
+    "ymax": 514.0,
+    "lsb": 34.6,
+    "rsb": 34.7,
+    "advance": 651.3,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.011)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 23,
+    "segs_per_sub": [
+     23
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 554.0,
+    "ymin": -7.0,
+    "ymax": 511.4,
+    "lsb": 32.1,
+    "rsb": 32.1,
+    "advance": 618.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "x": {
+  "score": 88,
+  "colour": "green",
+  "worst_stem": "106",
+  "compatible": true,
+  "flags": [
+   "8 curve(s) miss their extreme point at stem 106"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 24,
+    "segs_per_sub": [
+     24
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 11.2,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 9.7,
+    "xmax": 330.3,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 46.6,
+    "rsb": 46.6,
+    "advance": 413.8,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 24,
+    "segs_per_sub": [
+     24
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 16.8,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 12.9,
+    "xmax": 327.1,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 47.5,
+    "rsb": 47.6,
+    "advance": 409.3,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 24,
+    "segs_per_sub": [
+     24
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 22.6,
+    "nonmono": 8,
+    "squashed": 0,
+    "xmin": 15.4,
+    "xmax": 324.6,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 47.5,
+    "rsb": 47.5,
+    "advance": 404.2,
+    "stem_score": 88,
+    "flags": [
+     "8 curve(s) miss their extreme point"
+    ]
+   }
+  }
+ },
+ "y": {
+  "score": 83,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.014) at stem 53",
+   "1 curve(s) miss their extreme point at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01394,
+    "min_radius": 6.8,
+    "nonmono": 1,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -230.0,
+    "ymax": 516.2,
+    "lsb": 36.9,
+    "rsb": 36.9,
+    "advance": 452.8,
+    "stem_score": 83,
+    "flags": [
+     "slight lump (jump 0.014)",
+     "1 curve(s) miss their extreme point"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01543,
+    "min_radius": 9.9,
+    "nonmono": 1,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -230.0,
+    "ymax": 513.9,
+    "lsb": 34.6,
+    "rsb": 34.7,
+    "advance": 448.3,
+    "stem_score": 83,
+    "flags": [
+     "slight lump (jump 0.015)",
+     "1 curve(s) miss their extreme point"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 1,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 379.0,
+    "ymin": -230.0,
+    "ymax": 511.4,
+    "lsb": 32.1,
+    "rsb": 32.1,
+    "advance": 443.2,
+    "stem_score": 83,
+    "flags": [
+     "slight lump (jump 0.016)",
+     "1 curve(s) miss their extreme point"
+    ]
+   }
+  }
+ },
+ "z": {
+  "score": 96,
+  "colour": "green",
+  "worst_stem": "78",
+  "compatible": true,
+  "flags": [
+   "2 curve(s) miss their extreme point at stem 78"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 8.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 437.7,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 14.2,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 431.7,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 20,
+    "segs_per_sub": [
+     20
+    ],
+    "signature": [
+     "CCCCCCCCCCCCCCCCCCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 22.7,
+    "nonmono": 2,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 340.0,
+    "ymin": 0.0,
+    "ymax": 521.0,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 424.9,
+    "stem_score": 96,
+    "flags": [
+     "2 curve(s) miss their extreme point"
+    ]
+   }
+  }
+ },
+ "B.cap": {
+  "score": 70,
+  "colour": "amber",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "lumpy curve (jump 0.021) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 3,
+    "segs": 27,
+    "segs_per_sub": [
+     11,
+     8,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCC",
+     "CCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.02063,
+    "min_radius": 17.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 400.0,
+    "ymin": -4.0,
+    "ymax": 700.0,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 497.7,
+    "stem_score": 70,
+    "flags": [
+     "lumpy curve (jump 0.021)"
+    ]
+   },
+   "78": {
+    "subpaths": 3,
+    "segs": 27,
+    "segs_per_sub": [
+     11,
+     8,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCC",
+     "CCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01882,
+    "min_radius": 26.3,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 400.0,
+    "ymin": -4.0,
+    "ymax": 700.0,
+    "lsb": 45.8,
+    "rsb": 45.9,
+    "advance": 491.7,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.019)"
+    ]
+   },
+   "106": {
+    "subpaths": 3,
+    "segs": 27,
+    "segs_per_sub": [
+     11,
+     8,
+     8
+    ],
+    "signature": [
+     "CCCCCCCCCCC",
+     "CCCCCCCC",
+     "CCCCCCCC"
+    ],
+    "max_jump": 0.01566,
+    "min_radius": 35.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 400.0,
+    "ymin": -4.0,
+    "ymax": 700.0,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 484.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "exclam": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "106",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.016) at stem 106"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 6.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 56.2,
+    "ymin": 0.0,
+    "ymax": 746.2,
+    "lsb": 48.9,
+    "rsb": 48.8,
+    "advance": 153.9,
+    "stem_score": 100,
+    "flags": []
+   },
+   "78": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.0,
+    "min_radius": 9.9,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 82.6,
+    "ymin": 0.0,
+    "ymax": 744.0,
+    "lsb": 45.8,
+    "rsb": 46.0,
+    "advance": 174.4,
+    "stem_score": 100,
+    "flags": []
+   },
+   "106": {
+    "subpaths": 2,
+    "segs": 12,
+    "segs_per_sub": [
+     8,
+     4
+    ],
+    "signature": [
+     "CCCCCCCC",
+     "CCCC"
+    ],
+    "max_jump": 0.01571,
+    "min_radius": 13.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 112.4,
+    "ymin": 0.0,
+    "ymax": 741.4,
+    "lsb": 42.5,
+    "rsb": 42.4,
+    "advance": 197.3,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.016)"
+    ]
+   }
+  }
+ },
+ "period": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.011) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.01053,
+    "min_radius": 14.4,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 59.4,
+    "ymin": 0.0,
+    "ymax": 68.9,
+    "lsb": 36.9,
+    "rsb": 36.9,
+    "advance": 133.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.011)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.00719,
+    "min_radius": 21.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 87.4,
+    "ymin": 0.0,
+    "ymax": 101.3,
+    "lsb": 34.6,
+    "rsb": 34.6,
+    "advance": 156.6,
+    "stem_score": 100,
+    "flags": []
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.00519,
+    "min_radius": 28.7,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 118.7,
+    "ymin": 0.0,
+    "ymax": 137.7,
+    "lsb": 32.1,
+    "rsb": 32.1,
+    "advance": 182.9,
+    "stem_score": 100,
+    "flags": []
+   }
+  }
+ },
+ "comma": {
+  "score": 85,
+  "colour": "green",
+  "worst_stem": "53",
+  "compatible": true,
+  "flags": [
+   "slight lump (jump 0.018) at stem 53"
+  ],
+  "stems": {
+   "53": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.01823,
+    "min_radius": 8.1,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 59.4,
+    "ymin": -39.8,
+    "ymax": 72.4,
+    "lsb": 36.9,
+    "rsb": 36.9,
+    "advance": 133.2,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.018)"
+    ]
+   },
+   "78": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.01362,
+    "min_radius": 21.2,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 87.4,
+    "ymin": -58.5,
+    "ymax": 106.6,
+    "lsb": 34.6,
+    "rsb": 34.6,
+    "advance": 156.6,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.014)"
+    ]
+   },
+   "106": {
+    "subpaths": 1,
+    "segs": 4,
+    "segs_per_sub": [
+     4
+    ],
+    "signature": [
+     "CCCC"
+    ],
+    "max_jump": 0.01047,
+    "min_radius": 30.8,
+    "nonmono": 0,
+    "squashed": 0,
+    "xmin": 0.0,
+    "xmax": 118.7,
+    "ymin": -79.5,
+    "ymax": 144.8,
+    "lsb": 32.1,
+    "rsb": 32.1,
+    "advance": 182.9,
+    "stem_score": 85,
+    "flags": [
+     "slight lump (jump 0.010)"
+    ]
+   }
+  }
+ }
+}

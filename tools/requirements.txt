@@ -1,0 +1,9 @@
+# Aqua workshop — Python side. Create the venv at the repo root:
+#   python3 -m venv .venv && . .venv/bin/activate && pip install -r tools/requirements.txt
+# The browser side (export_glyphs.mjs) needs Node + Playwright with a Chromium; in the
+# sandbox both are preinstalled and React/Babel are served from a local npm pack.
+matplotlib
+numpy
+scipy
+fonttools[woff]
+skia-pathops

@@ -45,3 +45,4 @@ aqua-kit/engine/pinches_zoom.png
 
 # OS litter
 .DS_Store
+tools/out/*.svg
