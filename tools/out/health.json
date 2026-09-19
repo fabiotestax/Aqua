@@ -1000,12 +1000,11 @@
  "l": {
   "score": 50,
   "colour": "red",
-  "worst_stem": "106",
+  "worst_stem": "53",
   "compatible": true,
   "hand": "Fabio: wrong or still not there",
   "flags": [
-   "Fabio: wrong or still not there",
-   "slight lump (jump 0.016) at stem 106"
+   "Fabio: wrong or still not there"
   ],
   "stems": {
    "53": {
@@ -1018,13 +1017,13 @@
      "CCCCCCCC"
     ],
     "max_jump": 0.0,
-    "min_radius": 6.8,
+    "min_radius": 6.1,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
     "xmax": 53.0,
     "ymin": 0.0,
-    "ymax": 746.2,
+    "ymax": 751.0,
     "lsb": 48.9,
     "rsb": 48.8,
     "advance": 150.7,
@@ -1041,13 +1040,13 @@
      "CCCCCCCC"
     ],
     "max_jump": 0.0,
-    "min_radius": 9.9,
+    "min_radius": 9.1,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
     "xmax": 78.0,
     "ymin": 0.0,
-    "ymax": 744.0,
+    "ymax": 751.0,
     "lsb": 45.8,
     "rsb": 45.9,
     "advance": 169.7,
@@ -1063,21 +1062,19 @@
     "signature": [
      "CCCCCCCC"
     ],
-    "max_jump": 0.01571,
-    "min_radius": 13.8,
+    "max_jump": 0.0,
+    "min_radius": 12.7,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
     "xmax": 106.0,
     "ymin": 0.0,
-    "ymax": 741.4,
+    "ymax": 751.0,
     "lsb": 42.5,
     "rsb": 42.4,
     "advance": 190.9,
-    "stem_score": 85,
-    "flags": [
-     "slight lump (jump 0.016)"
-    ]
+    "stem_score": 100,
+    "flags": []
    }
   }
  },
@@ -2327,7 +2324,8 @@
   "hand": "Fabio: wrong or still not there",
   "flags": [
    "Fabio: wrong or still not there",
-   "lumpy curve (jump 0.021) at stem 53"
+   "lumpy curve (jump 0.022) at stem 53",
+   "ink overhangs its box (L 49 / R -4) at stem 53"
   ],
   "stems": {
    "53": {
@@ -2343,20 +2341,21 @@
      "CCCCCCCC",
      "CCCCCCCC"
     ],
-    "max_jump": 0.02063,
-    "min_radius": 17.9,
+    "max_jump": 0.0224,
+    "min_radius": 10.5,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
-    "xmax": 400.0,
-    "ymin": -4.0,
-    "ymax": 700.0,
+    "xmax": 453.0,
+    "ymin": 0.0,
+    "ymax": 715.0,
     "lsb": 48.9,
-    "rsb": 48.8,
+    "rsb": -4.2,
     "advance": 497.7,
-    "stem_score": 70,
+    "stem_score": 50,
     "flags": [
-     "lumpy curve (jump 0.021)"
+     "lumpy curve (jump 0.022)",
+     "ink overhangs its box (L 49 / R -4)"
     ]
    },
    "78": {
@@ -2372,20 +2371,21 @@
      "CCCCCCCC",
      "CCCCCCCC"
     ],
-    "max_jump": 0.01882,
-    "min_radius": 26.3,
+    "max_jump": 0.01981,
+    "min_radius": 15.5,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
-    "xmax": 400.0,
-    "ymin": -4.0,
-    "ymax": 700.0,
+    "xmax": 453.0,
+    "ymin": 0.0,
+    "ymax": 715.0,
     "lsb": 45.8,
-    "rsb": 45.9,
+    "rsb": -7.1,
     "advance": 491.7,
-    "stem_score": 85,
+    "stem_score": 65,
     "flags": [
-     "slight lump (jump 0.019)"
+     "slight lump (jump 0.020)",
+     "ink overhangs its box (L 46 / R -7)"
     ]
    },
    "106": {
@@ -2401,20 +2401,21 @@
      "CCCCCCCC",
      "CCCCCCCC"
     ],
-    "max_jump": 0.01566,
-    "min_radius": 35.8,
+    "max_jump": 0.01345,
+    "min_radius": 21.1,
     "nonmono": 0,
     "squashed": 0,
     "xmin": 0.0,
-    "xmax": 400.0,
-    "ymin": -4.0,
-    "ymax": 700.0,
+    "xmax": 453.0,
+    "ymin": 0.0,
+    "ymax": 715.0,
     "lsb": 42.5,
-    "rsb": 42.4,
+    "rsb": -10.6,
     "advance": 484.9,
-    "stem_score": 85,
+    "stem_score": 65,
     "flags": [
-     "slight lump (jump 0.016)"
+     "slight lump (jump 0.013)",
+     "ink overhangs its box (L 42 / R -11)"
     ]
    }
   }

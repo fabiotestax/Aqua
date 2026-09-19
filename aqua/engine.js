@@ -1281,7 +1281,85 @@ function buildDiffs(ed) {
   return out;
 }
 
+// ── Studio-facing helpers ─────────────────────────────────────────────────────
+// One entry point per question the Studio asks, so the g / exclam special cases in
+// layout() and exportSVG() are stated once more here and nowhere else.
+const METRICS = { upm: 1000, baseline: 0, xHeight: 521, xOvershoot: 528, capHeight: 715,
+                  ascender: 751, descender: DESC, overshoot: 7, stemMin: 53, stemMax: 106 };
+// The family: Light and Black are the two drawn masters (stems 53 and 106). Regular is a
+// planned third master near 78; until it is drawn it is a blend of the other two.
+// (Open with Fabio: whether 53 is the Light. Recommended yes.)
+const WEIGHTS = [
+  { name: 'Light', stem: 53, master: true },
+  { name: 'Regular', stem: 78, master: false },
+  { name: 'Black', stem: 106, master: true }];
+function weightName(s) {
+  let best = WEIGHTS[0];
+  for (const w of WEIGHTS) if (Math.abs(w.stem - s) < Math.abs(best.stem - s)) best = w;
+  return best.stem === s ? best.name : `${best.name}${s < best.stem ? '−' : '+'}`;
+}
+function bearing(s) { const d = Math.max(0, (107.4 - s) / 2.09); return 47 + 0.28 * d; }
+function kindOf(ch) {
+  if (ch === 'g') return 'offset';
+  for (const n in MASTERS) if (MASTERS[n].ch === ch) return 'drawn';
+  return BUILD[ch] ? 'parametric' : null;
+}
+// The glyph as the page lays it out: outline in font units, its left ink edge, its advance
+// (w) and both sidebearings at this stem. adv is the full box, lsb + w + rsb.
+function glyph(ch, s) {
+  if (ch !== 'g' && !BUILD[ch]) return null;
+  let d, w, minX = 0;
+  if (ch === 'g') {
+    const off = Math.max(0, (107.4 - s) / 2.09), c = neckComp(off);
+    d = offsetPath(REF22, off, true); minX = 42.5 + off * c; w = 427.5 - off - off * c;
+  } else {
+    d = BUILD[ch](s);
+    minX = ch === '!' ? 4 - 0.03 * s : 0;
+    w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
+  }
+  const sb = bearing(s), cl = SHAPE[ch] || 'ff', lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
+  return { ch, name: GNAME[ch] || ch, kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s };
+}
+// Parse an engine path (M / C / L / Z, absolute) into subpaths of cubic segments
+// [p0, c1, c2, p3, kind] — lines are lifted to cubics with handles at thirds, kind 'L'.
+function parsePath(d) {
+  const tk = d.match(/[MCLZ]|-?[\d.]+(?:e[-+]?\d+)?/g) || [];
+  const subs = []; let seg = [], cur = null, start = null, i = 0;
+  const lift = (a, b) => [a, [a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3],
+                          [a[0] + 2 * (b[0] - a[0]) / 3, a[1] + 2 * (b[1] - a[1]) / 3], b, 'L'];
+  while (i < tk.length) {
+    const t = tk[i];
+    if (t === 'M') { if (seg.length) subs.push(seg); seg = []; cur = start = [+tk[i+1], +tk[i+2]]; i += 3; }
+    else if (t === 'C') { const e = [+tk[i+5], +tk[i+6]]; seg.push([cur, [+tk[i+1], +tk[i+2]], [+tk[i+3], +tk[i+4]], e, 'C']); cur = e; i += 7; }
+    else if (t === 'L') { const e = [+tk[i+1], +tk[i+2]]; seg.push(lift(cur, e)); cur = e; i += 3; }
+    else if (t === 'Z') {
+      if (cur && start && (Math.abs(cur[0] - start[0]) > 1e-6 || Math.abs(cur[1] - start[1]) > 1e-6)) seg.push(lift(cur, start));
+      if (seg.length) subs.push(seg); seg = []; cur = start; i++;
+    } else i++;
+  }
+  if (seg.length) subs.push(seg);
+  return subs;
+}
+// Ink bounds of a path, sampled along every curve so an extreme without a node still counts.
+function bbox(d) {
+  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  const see = (x, y) => { if (x < xmin) xmin = x; if (x > xmax) xmax = x; if (y < ymin) ymin = y; if (y > ymax) ymax = y; };
+  for (const sub of parsePath(d)) for (const [p0, c1, c2, p3] of sub) {
+    for (let k = 0; k <= 12; k++) {
+      const t = k / 12, m = 1 - t;
+      see(m*m*m*p0[0] + 3*m*m*t*c1[0] + 3*m*t*t*c2[0] + t*t*t*p3[0],
+          m*m*m*p0[1] + 3*m*m*t*c1[1] + 3*m*t*t*c2[1] + t*t*t*p3[1]);
+    }
+  }
+  return xmin === Infinity ? null : { xmin, xmax, ymin, ymax };
+}
+// On-curve points of a path (the nodes a designer would drag), per subpath.
+function nodes(d) {
+  return parsePath(d).map(sub => sub.map(s => s[0]));
+}
+
 return {
+  METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,
   TUCK, NECK_TABLE, neckComp, inNeck, offsetPath, H_PATH, A_PATH, EXCL_PATH,
   WORD, KC, fx, TV, TVd, THr, THl, contour,
