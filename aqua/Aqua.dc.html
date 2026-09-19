@@ -892,10 +892,24 @@ function buildI(s) {
                { p: [s / 2 + r, cy], t: TVd }, { p: [s / 2, cy - r], t: THl }]);
 }
 
-// l: the i's stem carried up to the ascender, no dot.
+// l: constructed against the logotype's own l (refs/logotype/logotype-01.svg, path 10).
+// A straight stem of width s with the family foot and the family shoulder — but the top is
+// not a chisel cut. Measured off the artwork: the cut rises from the left shoulder, CRESTS
+// at ~0.72 s across, then rounds down to the right corner ~0.20 s below the crest. A drop
+// settling, not a plane. The crest is an explicit horizontal-tangent point so the extreme
+// sits on-curve, and every landmark is a function of s so the shape survives the axis.
 function buildL(s) {
-  const asc = 751, fr2 = 0.28 * s;
-  return contour([{ p: [s, asc - fr2], t: TVd }, ...foot(0, s), ...cutTop(0, s, asc)]);
+  const asc = 751, ascL = asc - SLANT * s;
+  // shoulder radius 0.22 s (the family's 0.34 s cut-shoulder is for a plane; a dome wants
+  // the left edge to climb almost to the top and turn over short and full)
+  const frL = 0.22 * s, crestX = 0.72 * s, dropR = 0.18 * s;
+  return contour([
+    { p: [s, asc - dropR], t: TVd },                        // top-right corner, softened
+    ...foot(0, s),
+    { p: [0, ascL - frL], t: TV },                           // left edge, up to the shoulder
+    { p: [frL * SL[0], ascL + frL * SL[1]], t: SL },         // shoulder onto the family slant
+    { p: [crestX, asc], t: THr, k0: 0.50 },                  // the crest
+  ]);
 }
 
 // v: the only letter in the set built from straight edges. Four cut terminals' worth of
