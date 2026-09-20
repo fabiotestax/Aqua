@@ -132,6 +132,11 @@ function updateNewGlyph(key, patch, settle = true, label) { const g = doc.newGly
 function setStrokes(key, strokes, settle = true, label) { const g = doc.newGlyphs && doc.newGlyphs[key]; if (!g) return; g.strokes = clone(strokes); if (settle) commit(label || `Change the drops of ${key}`); else live(); }
 function removeNewGlyph(key) { if (doc.newGlyphs) delete doc.newGlyphs[key]; commit(`Delete the letter ${key}`); }
 
+// ── the rules' spare characters (the digits) switched on ──
+function extras() { return doc.extra || []; }
+function addExtra(ch) { if (!doc.extra) doc.extra = []; if (!doc.extra.includes(ch)) { doc.extra.push(ch); commit(`Add ${ch} from Aqua's rules`); } }
+function removeExtra(ch) { if (doc.extra) { doc.extra = doc.extra.filter(c => c !== ch); if (!doc.extra.length) delete doc.extra; } commit(`Take ${ch} out of the set`); }
+
 // ── categories ──
 // doc.categories: the list (editable); doc.category[ch]: which one a letter belongs to.
 const DEFAULT_CATEGORIES = ['Letters', 'Capitals', 'Numbers', 'Punctuation', 'Diacritics', 'Ligatures', 'Pictos', 'Other'];
@@ -148,7 +153,7 @@ function categoryOf(ch) {
 function setCategory(ch, cat) { (doc.category || (doc.category = {}))[ch] = cat; commit(`${ch} is a ${cat.toLowerCase()} glyph`); }
 
 // ── files ──
-function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length + (v.ops ? v.ops.length : 0); return n + Object.keys(doc.masters).length + spacingChanges() + Object.keys(doc.newGlyphs || {}).length; }
+function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length + (v.ops ? v.ops.length : 0); return n + Object.keys(doc.masters).length + spacingChanges() + Object.keys(doc.newGlyphs || {}).length + (doc.extra || []).length; }
 function toJSON() { doc.saved = new Date().toISOString(); return JSON.stringify(doc, null, 1); }
 function download() {
   const a = document.createElement('a');
@@ -171,5 +176,6 @@ return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty
          importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange,
          setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc,
          newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph,
-         insertNode, deleteNodes, hasOps, nudgeMany, categories, setCategories, categoryOf, setCategory };
+         insertNode, deleteNodes, hasOps, nudgeMany, categories, setCategories, categoryOf, setCategory,
+         extras, addExtra, removeExtra, DEFAULT_CATEGORIES };
 });

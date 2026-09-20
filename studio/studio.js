@@ -11,6 +11,8 @@ const r1 = v => Math.round(v * 10) / 10, r0 = v => Math.round(v);
 const ROOMS = ['Glyphs', 'Weights', 'Spacing', 'Test', 'Import', 'Export', 'Guide', 'Health'];
 const LABEL = { '!': '!', '.': '.', ',': ',', B: 'B' };
 const shown = ch => LABEL[ch] || ch;
+// re-render one tick later, never inside a field's own change/blur handling
+const later = f => setTimeout(f, 0);
 const KIND = { parametric: 'By rules', drawn: 'By you, in two weights', offset: 'From the original g' };
 const KIND_LONG = {
   parametric: 'This letter is built from rules. Change the thickness and every part of it is redrawn to match.',
@@ -24,7 +26,7 @@ const store = (k, d) => { try { const v = localStorage.getItem('aqua.' + k); ret
 const save = (k, v) => { try { localStorage.setItem('aqua.' + k, JSON.stringify(v)); } catch {} };
 const S = {
   room: ROOMS.includes(q.get('room')) ? q.get('room') : store('room', 'Glyphs'),
-  glyph: q.get('glyph') && E.ORDER.includes(q.get('glyph')) ? q.get('glyph') : store('glyph', 'g'),
+  glyph: q.get('glyph') && E.kindOf(q.get('glyph')) ? q.get('glyph') : store('glyph', 'g'),
   stem: q.get('stem') ? Math.max(53, Math.min(106, +q.get('stem'))) : store('stem', 78),
   theme: q.get('theme') || store('theme', 'auto'),
   text: q.get('text') || store('text', 'aqua bonefish'),
@@ -75,7 +77,7 @@ function overall() {
 // ── top bar ───────────────────────────────────────────────────────────────────
 function renderTop() {
   const o = overall();
-  const drawn = E.ORDER.split('').filter(ch => E.kindOf(ch) === 'drawn').length;
+  const drawn = E.allChars().filter(ch => E.kindOf(ch) === 'drawn').length;
   $('#top').innerHTML = `
     <div class="brand">Aqua<span>Studio</span></div>
     <div class="seg" id="rooms">${ROOMS.map(r => `<b class="${r === S.room ? 'on' : ''}" data-room="${r}">${r}</b>`).join('')}</div>
@@ -135,7 +137,7 @@ function Glyphs(root) { if (S.newKey && D.newGlyphs()[S.newKey]) { window.AquaNe
 // Weights — the family, the axis, and whether every letter survives it.
 function Weights(root) {
   root.classList.add('one');
-  const s = S.stem, ok = E.ORDER.split('').filter(c => S.health[c].compatible), bad = E.ORDER.split('').filter(c => !S.health[c].compatible);
+  const s = S.stem, ok = E.allChars().filter(c => S.health[c].compatible), bad = E.allChars().filter(c => !S.health[c].compatible);
   root.innerHTML = `<div class="main">
     <h1 class="title">Weights</h1>
     <p class="lead">One axis, from Light to Black. Light and Black are the two drawn weights; everything between them is made live. Scrub the thickness and watch the whole set follow.</p>
@@ -152,7 +154,7 @@ function Weights(root) {
     <div class="panel">
       <h6>Works in every weight</h6>
       <p class="small sub" style="margin:0 0 12px">A letter passes when Light and Black are drawn with the same points in the same order, so every weight in between is a clean blend. ${bad.length ? `${bad.length} letter${bad.length > 1 ? 's do' : ' does'} not.` : 'Every letter passes.'}</p>
-      <div class="chips">${E.ORDER.split('').map(c => `<span class="chip ${S.health[c].compatible ? 'green' : 'red'}">${shown(c)}</span>`).join('')}</div>
+      <div class="chips">${E.allChars().map(c => `<span class="chip ${S.health[c].compatible ? 'green' : 'red'}">${shown(c)}</span>`).join('')}</div>
       ${bad.map(c => `<p class="small" style="margin:12px 0 0"><b>${shown(c)}</b> — ${esc(S.health[c].flags.find(f => f.code === 'masters')?.text || '')}</p>`).join('')}
     </div>
     <div class="panel"><h6>Ladder</h6><div class="ladder">${[53, 66, 78, 92, 106].map(st => `<div class="rung"><div class="lab">${st}<br>${E.weightName(st)}</div><div class="line" style="flex:1">${lineSVG('bonefish', st)}</div></div>`).join('')}</div></div>
@@ -182,7 +184,7 @@ function Spacing(root) {
         <div class="gap ${c.gap != null && !c.space && (c.gap < 70 || c.gap > 85) ? 'out' : ''}">${c.gap == null ? '&nbsp;' : c.space ? 'word space' : c.gap + ' before'}</div></div>`).join('')}</div>`;
   };
   const seg = (ch, side, cur) => `<span class="seg s" data-edge="${esc(ch)}" data-side="${side}">${['f', 'r', 'o'].map(k => `<b class="${cur === k ? 'on' : ''}" data-k="${k}">${CLS[k]}</b>`).join('')}</span>`;
-  const rows = E.ORDER.split('').map(c => {
+  const rows = E.allChars().map(c => {
     const g = E.glyph(c, s), b = E.bbox(g.d), cl = E.shapeOf(c);
     const inkL = r0(b.xmin - g.minX + g.lsb), inkR = r0(g.w + g.rsb + g.minX - b.xmax);
     const changed = sp.shape && sp.shape[c];
@@ -219,14 +221,12 @@ function Spacing(root) {
       <table><thead><tr><th>Pair</th><th>Room only</th><th>With the pair</th><th class="num">At Black</th><th class="num">At thickness ${s}</th><th></th></tr></thead><tbody>${pairRows}</tbody></table></div>
   </div>`;
   bindWeightPicker(root);
-  // re-render one tick later, never inside the field's own change/blur handling
-  const later = f => setTimeout(f, 0);
   $('#fromink').onchange = e => { const on = e.target.checked; later(() => D.setFromInk(on)); };
   root.querySelectorAll('[data-edge]').forEach(sg => sg.onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return;
     const ch = sg.dataset.edge, side = +sg.dataset.side, cur = E.shapeOf(ch), k = b.dataset.k; later(() => D.setShape(ch, side ? cur[0] + k : k + cur[1])); });
   root.querySelectorAll('[data-pair]').forEach(i => i.onchange = () => { const k = i.dataset.pair, v = +i.value; later(() => D.setKern(k, v)); });
   root.querySelectorAll('[data-drop]').forEach(a => a.onclick = e => { e.preventDefault(); const k = a.dataset.drop; later(() => D.setKern(k, 0)); });
-  $('#addpair').onclick = () => { const k = $('#np').value; if (k.length !== 2 || !E.ORDER.includes(k[0]) || !E.ORDER.includes(k[1])) { alert('Type two letters from the set, like "ra".'); return; } const v = +$('#nv').value; later(() => D.setKern(k, v)); };
+  $('#addpair').onclick = () => { const k = $('#np').value; if (k.length !== 2 || !E.allChars().includes(k[0]) || !E.allChars().includes(k[1])) { alert('Type two letters from the set, like "ra".'); return; } const v = +$('#nv').value; later(() => D.setKern(k, v)); };
   const rs = $('#resetsp'); if (rs) rs.onclick = e => { e.preventDefault(); if (confirm('Put the room, the edges and the pairs back to the tables?')) D.resetSpacing(); };
 }
 
@@ -337,9 +337,10 @@ function readSheets(files) {
       const m = /stem\s+(\d+)u/.exec(text) || /(\d{2,3})/.exec(name);
       const stem = m ? +m[1] : null;
       const weight = stem === 106 ? 'black' : stem === 53 ? 'regular' : null;
-      const byName = {}; for (const ch of E.ORDER) byName[E.GNAME[ch] || ch] = ch;
-      const v1 = !!doc.querySelector('path[id="glyph.zero"]') || paths.length > 30;
-      const cells = E.cellOrigins(v1 ? E.ORDER_V1 : E.ORDER);
+      const byName = {}; for (const ch of E.allChars()) byName[E.GNAME[ch] || ch] = ch;
+      // the 2025 sheets carried the digits and no l; today's sheets are laid out in allChars() order
+      const v1 = !!doc.querySelector('path[id="glyph.zero"]') && !doc.querySelector('path[id="glyph.l"]');
+      const cells = E.cellOrigins(v1 ? E.ORDER_V1 : E.allChars().join(''));
       const items = [];
       for (const p of paths) {
         const gname = p.id.slice(6), ch = byName[gname]; if (!ch) continue;
@@ -385,7 +386,7 @@ function Export(root) {
       <div class="btn pri inline" data-dl="53">Light · thickness 53</div>
       <div class="btn inline" data-dl="${s}">Current · ${E.weightName(s)} (${s})</div>
       <div class="row" style="margin:10px 0 0;max-width:420px"><label>Thickness</label><input type="range" min="53" max="106" step="1" value="${s}" data-act="stem"><div class="v">${s}</div></div>
-      <p class="small sub" style="margin:8px 0 0">${E.ORDER.length} letters on a 6-column grid · pink rules are baseline, small-letter height and tails · the guides layer is ignored on the way back.</p>
+      <p class="small sub" style="margin:8px 0 0">${E.allChars().length} letters on a 6-column grid · pink rules are baseline, small-letter height and tails · the guides layer is ignored on the way back.</p>
     </div>
     <div class="panel"><h6>Preview of the sheet at thickness ${s}</h6><div class="sheet"><img alt="export sheet" src="${src}"></div></div>
     <div class="grid2">
@@ -448,10 +449,12 @@ function md(src) {
 // Health — the sheet, the gate, the list of what is broken.
 function Health(root) {
   root.classList.add('one');
-  const reps = E.ORDER.split('').map(c => S.health[c]);
+  const chars = E.allChars(), reps = chars.map(c => S.health[c]);
   const n = k => reps.filter(r => r.colour === k).length;
   const broken = reps.filter(r => r.colour !== 'green').sort((a, b) => a.score - b.score);
   const gate = n('red') === 0 && n('amber') === 0;
+  const cats = D.categories(), byCat = {}; for (const c of chars) { const k = D.categoryOf(c); (byCat[k] || (byCat[k] = [])).push(c); }
+  const extras = E.extraChars(), spare = E.spareChars().filter(c => !extras.includes(c)), drops = chars.filter(c => E.kindOf(c) === 'drops');
   root.innerHTML = `<div class="main">
     <h1 class="title">Health</h1>
     <p class="lead">Every letter gets a score from its own geometry — smooth curves, points on the edges, works in every weight, sits in its box — and your verdicts sit on top: a letter you mark as not Aqua is red whatever the geometry says.</p>
@@ -459,23 +462,37 @@ function Health(root) {
     <div class="grid3" style="margin-bottom:18px">
       ${[['green', 'Looks good'], ['amber', 'Needs a look'], ['red', 'Not Aqua yet']].map(([k, t]) => `<div class="panel tight"><div class="kv" style="margin:0"><span><i class="dot ${k === 'amber' ? 'warn' : k === 'red' ? 'bad' : ''}"></i>${t}</span><span class="ink" style="font-size:22px;font-weight:700">${n(k)}</span></div></div>`).join('')}
     </div>
+    <div class="panel" style="margin-bottom:18px"><h6>The set</h6>
+      <div class="kv" style="margin:0 0 10px"><span>Glyphs in Aqua</span><span class="ink" style="font-size:22px;font-weight:700">${chars.length}</span></div>
+      <p class="small sub" style="margin:0 0 10px">${E.ORDER.length} from the start${extras.length ? `, ${extras.length} from Aqua's rules` : ''}${drops.length ? `, ${drops.length} from drops` : ''}. By category — change a letter's category in the Glyphs room, or edit the list here:</p>
+      <div class="chips" id="cats">${cats.map(k => `<span class="chip ${byCat[k] ? 'green' : ''}" title="${esc((byCat[k] || []).map(shown).join(' ') || 'none yet')}">${esc(k)} · ${(byCat[k] || []).length}${D.DEFAULT_CATEGORIES.includes(k) ? '' : ` <a href="#" data-dropcat="${esc(k)}" title="Remove this category">×</a>`}</span>`).join('')}${Object.keys(byCat).filter(k => !cats.includes(k)).map(k => `<span class="chip amber" title="used but not in the list">${esc(k)} · ${byCat[k].length}</span>`).join('')}
+        <span class="chip" style="padding:0 4px 0 10px"><input id="newcat" placeholder="new category…" style="border:0;background:none;color:inherit;font:inherit;width:120px;outline:none"><a href="#" id="addcat" title="Add">+</a></span></div>
+      ${spare.length || extras.length ? `<p class="small sub" style="margin:12px 0 6px">${spare.length ? `Aqua's rules can also draw these; click one to bring it into the set:` : 'Every spare character of the rules is in the set.'}</p>
+      <div class="chips">${spare.map(c => `<span class="chip" data-addx="${esc(c)}" style="cursor:pointer" title="Add ${shown(c)} from the rules"><span style="display:inline-block;height:18px;vertical-align:middle">${glyphSVG(c, 106, { box: 'metrics', pad: 2, h: 18 })}</span> ${shown(c)}</span>`).join('')}${extras.map(c => `<span class="chip green" title="in the set, from the rules">${shown(c)} <a href="#" data-dropx="${esc(c)}" title="Take it out again">×</a></span>`).join('')}</div>` : ''}
+    </div>
     <div class="tiles">${reps.map(r => `<div class="tile ${r.colour}" data-ch="${esc(r.ch)}"><div class="g">${glyphSVG(r.ch, 106, { box: 'metrics' })}</div><div class="s"><span>${shown(r.ch)}</span><span>${r.score}</span></div><div class="f">${esc(r.flags[0]?.text || 'Clean')}</div></div>`).join('')}</div>
     <div class="panel" style="margin-top:18px"><h6>What needs work</h6>
       ${broken.length ? `<table><thead><tr><th></th><th>Letter</th><th class="num">Score</th><th>Findings</th></tr></thead><tbody>${broken.map(r => `<tr><td><span class="g">${glyphSVG(r.ch, 106, { box: 'metrics' })}</span></td><td><b>${shown(r.ch)}</b><br><span class="sub small">${KIND[E.kindOf(r.ch)]}</span></td><td class="num" style="color:var(--${r.colour === 'red' ? 'bad' : 'warn'})">${r.score}</td><td>${r.flags.map(f => esc(f.text)).join('<br>')}</td></tr>`).join('')}</tbody></table>` : '<p class="small sub" style="margin:0">Nothing. Every letter is green.</p>'}
     </div>
     <div class="panel" style="margin-top:18px"><h6>Six optical checks · at thickness ${S.stem}</h6>
       <p class="small sub" style="margin:0 0 12px">What a trained eye would notice, letter by letter. They never change a drawing; they say where to look. Click a letter to open it.</p>
-      ${(() => { const all = AU.auditAll(S.stem); const laws = AU.LAWS;
-        const perLaw = laws.map(([k, n, d]) => ({ k, n, d, bad: E.ORDER.split('').filter(c => all[c].findings.some(f => f.law === k && !f.ok)) }));
+      ${(() => { const all = AU.auditAll(S.stem, chars); const laws = AU.LAWS;
+        const perLaw = laws.map(([k, n, d]) => ({ k, n, d, bad: chars.filter(c => all[c].findings.some(f => f.law === k && !f.ok)) }));
         return `<div class="chips" style="margin-bottom:14px">${perLaw.map(l => `<span class="chip ${l.bad.length ? 'amber' : 'green'}" title="${esc(l.d)}">${l.n} · ${l.bad.length ? l.bad.length + ' to look at' : 'all clear'}</span>`).join('')}</div>
         <table><thead><tr><th>Letter</th>${laws.map(l => `<th title="${esc(l[2])}">${l[1]}</th>`).join('')}<th>First thing to look at</th></tr></thead><tbody>
-        ${E.ORDER.split('').map(c => { const r = all[c]; const first = r.findings.find(f => !f.ok);
+        ${chars.map(c => { const r = all[c]; const first = r.findings.find(f => !f.ok);
           return `<tr data-ch="${esc(c)}" style="cursor:pointer"><td><b>${shown(c)}</b></td>${laws.map(l => { const fs = r.findings.filter(f => f.law === l[0]); const bad = fs.some(f => !f.ok); return `<td title="${esc(fs.map(f => f.text).join(' '))}" style="color:var(--${!fs.length ? 'faint' : bad ? 'warn' : 'ok'})">${!fs.length ? '·' : bad ? '!' : '✓'}</td>`; }).join('')}<td class="small">${first ? esc(first.text) : '<span class="sub">nothing</span>'}</td></tr>`; }).join('')}</tbody></table>`; })()}
     </div>
     ${S.build ? `<div class="panel tight" style="margin-top:18px"><h6>Last font build</h6><p class="small" style="margin:0">${esc(S.build.family)} ${esc(S.build.version)}${S.build.draft ? ' (draft)' : ''} · ${esc(S.build.date)} · gate ${S.build.gate.open ? 'open' : 'closed'} · every letter blends: ${S.build.interpolatable ? 'yes' : 'no'}.</p></div>` : ''}
     <p class="small sub">Scores are computed live from the outlines at thicknesses 53, 78 and 106; the worst weight governs. Your verdicts come from tools/hand.json.</p>
   </div>`;
   root.querySelectorAll('.tile, tr[data-ch]').forEach(t => t.onclick = () => setGlyph(t.dataset.ch));
+  root.querySelectorAll('[data-addx]').forEach(c => c.onclick = () => later(() => D.addExtra(c.dataset.addx)));
+  root.querySelectorAll('[data-dropx]').forEach(a => a.onclick = e => { e.preventDefault(); later(() => D.removeExtra(a.dataset.dropx)); });
+  root.querySelectorAll('[data-dropcat]').forEach(a => a.onclick = e => { e.preventDefault(); later(() => D.setCategories(cats.filter(k => k !== a.dataset.dropcat))); });
+  const addCat = () => { const v = $('#newcat').value.trim(); if (!v) return; if (cats.includes(v)) { alert(`There is already a category called ${v}.`); return; } later(() => D.setCategories([...cats, v])); };
+  $('#addcat').onclick = e => { e.preventDefault(); addCat(); };
+  $('#newcat').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addCat(); } e.stopPropagation(); };
 }
 
 // ── boot ──────────────────────────────────────────────────────────────────────
@@ -504,6 +521,7 @@ addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey;
   const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
   if (e.key === 'Escape' && $('#cheatsheet')) { $('#cheatsheet').remove(); return; }
+  if (e.key === 'Escape' && $('#newletter')) { $('#newletter').remove(); return; }
   if (!typing && e.key === '?') { e.preventDefault(); toggleCheat(); return; }
   if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); $('#openfile').click(); return; }
   if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); if (window.AquaNew) window.AquaNew.startNew(); return; }

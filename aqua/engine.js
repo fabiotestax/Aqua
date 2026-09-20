@@ -1273,8 +1273,8 @@ function buildDiffs(ed) {
 // between blends them, so an edit made "in both weights" holds across the axis.
 // tools/bake_edits.mjs writes a document into this file for good.
 const BAKED = { glyphs: {}, masters: {}, spacing: {} };
-let DOC = { glyphs: {}, masters: {}, spacing: null, newGlyphs: null };
-function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {}, spacing: (doc && doc.spacing) || null, newGlyphs: (doc && doc.newGlyphs) || null }; }
+let DOC = { glyphs: {}, masters: {}, spacing: null, newGlyphs: null, extra: null };
+function setDoc(doc) { DOC = { glyphs: (doc && doc.glyphs) || {}, masters: (doc && doc.masters) || {}, spacing: (doc && doc.spacing) || null, newGlyphs: (doc && doc.newGlyphs) || null, extra: (doc && doc.extra) || null }; }
 function getDoc() { return DOC; }
 const fxp = v => fx(v);
 function serializePath(subs) {
@@ -1539,8 +1539,17 @@ function dropsOutline(g, s) {
   const parts = (g.strokes || []).filter(st => st.length).map(st => strokeDrops(st, s, g));
   return parts.length ? parts.join('') : null;
 }
-// Every character the set can draw: the thirty, then the new letters in use.
-function allChars() { const out = ORDER.split(''); for (const k in newGlyphs()) { const g = newGlyphs()[k]; if (g.use !== false && g.ch && !out.includes(g.ch)) out.push(g.ch); } return out; }
+// Characters the rules can already draw but that are not in the set: the digits. A document
+// switches them on one by one (doc.extra) and they join the set like any other letter.
+function spareChars() { return Object.keys(BUILD).filter(c => !ORDER.includes(c)); }
+function extraChars() { const list = DOC.extra || BAKED.extra || []; return list.filter(c => BUILD[c] && !ORDER.includes(c)); }
+// Every character the set can draw: the thirty, the rules switched on, then the new letters in use.
+function allChars() {
+  const out = ORDER.split('');
+  for (const c of extraChars()) if (!out.includes(c)) out.push(c);
+  for (const k in newGlyphs()) { const g = newGlyphs()[k]; if (g.use !== false && g.ch && !out.includes(g.ch)) out.push(g.ch); }
+  return out;
+}
 function fillRule(ch) { return newGlyphFor(ch) ? 'nonzero' : 'evenodd'; }
 
 // ── Studio-facing helpers ─────────────────────────────────────────────────────
@@ -1647,7 +1656,7 @@ function nodes(d) {
 
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
-  TILE, strokeDrops, dropsOutline, spinePath, newGlyphs, newGlyphFor, allChars, fillRule,
+  TILE, strokeDrops, dropsOutline, spinePath, newGlyphs, newGlyphFor, allChars, fillRule, spareChars, extraChars,
   BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, applyOps, outline, nearestOnPath,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,

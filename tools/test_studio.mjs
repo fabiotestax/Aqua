@@ -188,9 +188,30 @@ await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 // ── Milestone 4: a new letter from drops, and a traced image ──
 await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
 await p.evaluate(() => { window.AquaDoc.clearAll(); });
-p.removeAllListeners('dialog'); p.on('dialog', d => d.accept(d.type() === 'prompt' ? 'L' : undefined));
-await p.click('[data-act="newletter"]'); await p.waitForTimeout(200);
+p.removeAllListeners('dialog'); p.on('dialog', d => d.accept());
+// the digits: Aqua's rules already draw them, so the dialog offers to bring a 6 in as it is
+await p.click('[data-act="newletter"]'); await p.waitForSelector('#newletter');
+ok(await p.evaluate(() => document.querySelectorAll('#nl-keys b').length > 20 && [...document.querySelectorAll('#nl-keys b')].some(b => b.textContent === '6')), 'the new-letter dialog lists the free keys');
+await p.locator('#nl-ch').fill('6'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => !document.querySelector('input[value="rules"]').disabled && document.querySelector('#nl-cat').value === 'Numbers' && document.querySelector('#nl-height b.on').dataset.h === 'caps'), 'typing 6 offers Aqua\'s rules and guesses Numbers · Capitals');
+await p.click('input[value="rules"]'); await p.click('#nl-go'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaEngine.allChars().includes('6') && window.AquaStudio.S.glyph === '6' && window.AquaEngine.kindOf('6') === 'parametric' && !!document.querySelector('#nodes .node')), 'the 6 joins the set, drawn by the rules, open for editing');
+ok(await p.evaluate(() => document.querySelector('#matrix .c[data-ch="6"]') !== null && window.AquaStudio.S.health['6'] !== undefined), 'the matrix and the health know the 6');
+await p.goto('http://localhost:8000/studio/?room=Health&theme=light', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+ok(await p.evaluate(() => document.body.innerText.includes('Glyphs in Aqua') && document.body.innerText.includes('Numbers · 1') && document.body.innerText.includes('Letters · 26')), 'the Health room counts the set by category');
+await p.locator('#newcat').fill('Arrows'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaDoc.categories().includes('Arrows') && document.body.innerText.includes('Arrows · 0')), 'a category can be added');
+await p.click('[data-dropx="6"]'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => !window.AquaEngine.allChars().includes('6') && !!document.querySelector('[data-addx="6"]')), 'and the 6 can leave the set again from the Health room');
+await p.screenshot({ path: 'studio/shots/health-set-light.png' });
+// a new letter from drops, through the dialog
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
+await p.locator('#nl-ch').fill('L'); await p.locator('#nl-name').fill('L'); await p.waitForTimeout(50);
+await p.screenshot({ path: 'studio/shots/newletter-dialog-light.png' });
+await p.keyboard.press('Enter'); await p.waitForTimeout(200);
 ok(await p.evaluate(() => window.AquaStudio.S.newKey === 'L' && !!document.querySelector('#tiles')), 'a new letter opens the drops room');
+ok(await p.evaluate(() => window.AquaDoc.newGlyphs().L.category === 'Capitals' && window.AquaDoc.newGlyphs().L.height === 'caps'), 'with its category and height set from the key');
 const tileClient = (ux, uy) => p.evaluate(([ux, uy]) => { const svg = document.getElementById('cv'), flip = document.getElementById('flip'); const pt = svg.createSVGPoint(); pt.x = ux; pt.y = uy; const c = pt.matrixTransform(flip.getScreenCTM()); return [c.x, c.y]; }, [ux, uy]);
 for (const [x, y] of [[40, 680], [40, 520], [40, 360], [40, 200], [40, 40], [40, 0], [200, 0], [360, 0]]) { const [cx, cy] = await tileClient(x, y); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
 let strokes = await p.evaluate(() => window.AquaDoc.newGlyphs().L.strokes);

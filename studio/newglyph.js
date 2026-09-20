@@ -38,7 +38,7 @@ function room(root) {
     <aside class="side">
       <input class="search" placeholder="Search letters…" id="search">
       <h6>Letters</h6>
-      <div class="matrix" id="matrix">${E.ORDER.split('').map(c => `<div class="c h-${S.health[c] ? S.health[c].colour : ''}" data-ch="${esc(c)}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}</div>`).join('')}
+      <div class="matrix" id="matrix">${E.allChars().filter(c => !E.newGlyphFor(c)).map(c => `<div class="c h-${S.health[c] ? S.health[c].colour : ''}" data-ch="${esc(c)}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}</div>`).join('')}
         ${Object.keys(all).map(k => `<div class="c gen ${k === ng.key ? 'on' : ''}" data-new="${esc(k)}" title="${esc(all[k].name)} · ${all[k].use === false ? 'draft' : 'in Aqua'}">${all[k].strokes.length ? glyphSVG(all[k].ch, s, { box: 'metrics', pad: 4, d: E.dropsOutline(all[k], s), fill: 'nonzero' }) : `<b>${esc(all[k].ch || '?')}</b>`}</div>`).join('')}
         <div class="c gen plus" data-act="newletter" title="Start a new letter">+</div></div>
       <div class="key"><i style="background:var(--panel);border:1px solid var(--line)"></i>drawn &nbsp; <i style="border:1.5px dashed var(--blue)"></i>from drops &nbsp; <i style="background:var(--tile)"></i>later</div>
@@ -79,16 +79,79 @@ function room(root) {
   bindCanvas();
   positionPills();
 }
-function startNew() {
-  const name = prompt('Name for the new letter (one character to type it, or a word like "anchor")', '');
-  if (!name) return;
-  const ch = name.length === 1 ? name : name[0];
-  const key = name.trim();
+// ── starting a new letter ──
+// The dialog asks what the letter is called, which key types it, its category and height, and
+// where to start: an empty grid, a suggested structure from the Studio's library
+// (studio/skeletons.js), a traced image, or Aqua's own rules when they already draw the
+// character (the digits). startNew() with no argument opens the dialog; with one, it creates.
+const HEIGHT_FOR = ch => /[A-Z0-9]/.test(ch) ? 'caps' : /[bdfhklt]/.test(ch) ? 'tall' : 'small';
+function freeKeys() { const inSet = E.allChars(), out = []; for (const c of '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&@#%*+=~^_|/\\<>[]{}()?;:\'"') if (!inSet.includes(c)) out.push(c); return out; }
+function parseTyped(v) { v = (v || '').trim(); if (!v) return ''; const m = /^u\+?([0-9a-f]{2,6})$/i.exec(v); if (m) { try { return String.fromCodePoint(parseInt(m[1], 16)); } catch { return ''; } } return [...v][0]; }
+function startNew(o) {
+  if (!o) { openDialog(); return; }
+  const ch = o.ch, key = (o.name || ch).trim(); if (!ch || !key) return;
+  if (o.from === 'rules') { D.addExtra(ch); if (o.cat && o.cat !== D.categoryOf(ch)) D.setCategory(ch, o.cat); A().setGlyph(ch); return; }
   if (D.newGlyphs()[key]) { alert('There is already a letter called ' + key); return; }
-  if (E.ORDER.includes(ch) && name.length === 1) { if (!confirm(`"${ch}" is already in Aqua. Make a drops version anyway? It will not replace the drawn one until you add it.`)) return; }
-  D.addNewGlyph(key, { ch, name: key, height: /[A-Z]/.test(ch) ? 'caps' : 'small', use: false });
-  ng.key = key; A().S.newKey = key; ng.sel = null; ng.tool = 'add'; ng.zoom = 1; ng.pan = [0, 0];
+  const init = { ch, name: key, height: o.height || HEIGHT_FOR(ch), category: o.cat || D.categoryOf(ch), use: false };
+  if (o.from === 'suggest' && window.AquaSkeletons) { const sk = window.AquaSkeletons.strokes(ch, init.height); if (sk) { init.strokes = sk.strokes; if (sk.ends) init.ends = sk.ends; } }
+  D.addNewGlyph(key, init);
+  ng.key = key; A().S.newKey = key; ng.sel = null; ng.tool = 'add'; ng.zoom = 1; ng.pan = [0, 0]; ng.image = null;
   A().renderRoom();
+  if (o.from === 'trace') setTimeout(() => { const f = document.getElementById('imgfile'); if (f) f.click(); }, 50);
+}
+function openDialog() {
+  const { esc, shown, glyphSVG } = A();
+  let el = document.getElementById('newletter'); if (el) el.remove();
+  const SK = window.AquaSkeletons, cats = D.categories();
+  const st = { ch: '', name: '', cat: null, height: null, from: 'blank', catTouched: false, heightTouched: false };
+  el = document.createElement('div'); el.id = 'newletter';
+  el.innerHTML = `<div class="sheet-card">
+    <div class="kv" style="margin:0 0 14px"><b style="font-size:16px">New letter</b><a href="#" id="nl-close">Close</a></div>
+    <div class="nl-row">
+      <label>Typed as</label>
+      <div><input class="num-in ch" id="nl-ch" maxlength="8" placeholder="6" autocomplete="off"> <span class="small sub">one character, or a code like U+2764</span>
+        <div class="nl-keys" id="nl-keys">${freeKeys().map(c => `<b data-k="${esc(c)}" title="free">${esc(c)}</b>`).join('')}</div>
+        <p class="small sub" style="margin:4px 0 0">Keys Aqua does not use yet. A picto can sit on any of them: that key is what shows it when you type. Letters already in Aqua can get a second drawing from drops; it stays a draft until you add it.</p></div>
+      <label>Name</label><input class="num-in" id="nl-name" placeholder="six, anchor, ampersand…" autocomplete="off">
+      <label>Category</label><select class="sel" id="nl-cat">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select>
+      <label>Height</label><span class="seg s" id="nl-height">${Object.keys(HEIGHTS).map(k => `<b data-h="${k}">${HEIGHTS[k][0]}</b>`).join('')}</span>
+      <label>Start from</label><div class="nl-from" id="nl-from"></div>
+    </div>
+    <div class="kv" style="margin:14px 0 0"><span class="small sub" id="nl-msg">Type the key first.</span><div class="btn pri inline off" id="nl-go" style="margin:0;padding:8px 18px">Start</div></div>
+  </div>`;
+  document.body.appendChild(el);
+  const $ = q => el.querySelector(q);
+  const sync = () => {
+    const ch = st.ch, inSet = ch && E.allChars().includes(ch), rules = ch && E.spareChars().includes(ch), sk = ch && SK ? SK.describe(ch) : null;
+    if (!st.heightTouched && ch) { st.height = HEIGHT_FOR(ch); $('#nl-height').querySelectorAll('b').forEach(b => b.classList.toggle('on', b.dataset.h === st.height)); }
+    if (!st.catTouched && ch) { st.cat = D.categoryOf(ch); $('#nl-cat').value = st.cat; }
+    const opts = [
+      ['blank', 'An empty grid', 'Tap tiles to place drops; strokes that follow each other join.', true],
+      ['suggest', 'A suggested structure', sk ? `${sk} — drops you can move, from the Studio's library of skeletons. It knows the usual shape of a character, not other fonts.` : ch ? 'No structure in the library for this character yet.' : 'Type the key to see if the library has one.', !!sk],
+      ['trace', 'Trace an image', 'Pick a picture; the Studio thins it to a skeleton and turns that into a first pass of drops.', true],
+      ['rules', 'Aqua\'s rules', rules ? `Aqua already knows how to draw ${shown(ch)}. Bring it in as it is, then edit its points like any other letter.` : 'Only for the characters the rules already draw (the digits).', !!rules]];
+    if (!opts.find(o => o[0] === st.from)[3]) st.from = 'blank';
+    $('#nl-from').innerHTML = opts.map(([k, t, d, on]) => `<label class="${on ? '' : 'off'} ${st.from === k ? 'on' : ''}"><input type="radio" name="nl-from" value="${k}" ${st.from === k ? 'checked' : ''} ${on ? '' : 'disabled'}><span><b>${t}</b>${k === 'rules' && rules ? `<span class="nl-preview" style="margin-top:4px"><span class="g">${glyphSVG(ch, 106, { box: 'metrics', pad: 4 })}</span><span class="g">${glyphSVG(ch, 53, { box: 'metrics', pad: 4 })}</span></span>` : ''}<small>${esc(d)}</small></span></label>`).join('');
+    $('#nl-from').querySelectorAll('input').forEach(r => r.onchange = () => { st.from = r.value; sync(); });
+    const go = $('#nl-go'), msg = $('#nl-msg');
+    const key = (st.name || ch).trim();
+    let why = '';
+    if (!ch) why = 'Type the key first.';
+    else if (st.from !== 'rules' && D.newGlyphs()[key]) why = `There is already a letter called ${key}.`;
+    else if (st.from === 'rules' && inSet) why = `${shown(ch)} is already in the set.`;
+    else why = st.from === 'rules' ? `Adds ${shown(ch)} to the set, drawn by the rules.` : inSet ? `A second drawing of ${shown(ch)}, from drops — a draft until you add it.` : `Typed with ${shown(ch)} · ${st.cat || D.categoryOf(ch)} · as tall as ${HEIGHTS[st.height || HEIGHT_FOR(ch)][0].toLowerCase()}.`;
+    go.classList.toggle('off', !ch || /already/.test(why)); msg.textContent = why;
+  };
+  $('#nl-ch').oninput = e => { st.ch = parseTyped(e.target.value); sync(); };
+  $('#nl-keys').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { $('#nl-ch').value = b.dataset.k; st.ch = b.dataset.k; sync(); $('#nl-name').focus(); } };
+  $('#nl-name').oninput = e => { st.name = e.target.value; sync(); };
+  $('#nl-cat').onchange = e => { st.cat = e.target.value; st.catTouched = true; sync(); };
+  $('#nl-height').onclick = e => { const b = e.target.closest('[data-h]'); if (b) { st.height = b.dataset.h; st.heightTouched = true; sync(); } };
+  const go = () => { if ($('#nl-go').classList.contains('off')) return; const o = { ch: st.ch, name: (st.name || st.ch).trim(), cat: st.cat || D.categoryOf(st.ch), height: st.height || HEIGHT_FOR(st.ch), from: st.from }; el.remove(); startNew(o); };
+  $('#nl-go').onclick = go;
+  el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); go(); } else if (e.key === 'Escape') { el.remove(); } e.stopPropagation(); };
+  el.onclick = e => { if (e.target === el || e.target.id === 'nl-close') { e.preventDefault(); el.remove(); } };
+  sync(); $('#nl-ch').focus();
 }
 
 // ── canvas ──
@@ -239,6 +302,7 @@ function renderInspector() {
     <div class="card" style="margin-top:0">
       <div class="kv"><span>Name</span><span><input class="num-in" id="ngname" value="${esc(g.name)}" style="width:110px;text-align:left"></span></div>
       <div class="kv"><span>Typed as</span><span><input class="num-in" id="ngch" value="${esc(g.ch)}" maxlength="1" style="width:44px;text-align:center"></span></div>
+      <div class="kv"><span>Category</span><span><select class="sel" id="ngcat" style="width:130px;padding:3px 6px">${D.categories().map(c => `<option ${(g.category || D.categoryOf(g.ch)) === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></span></div>
       <div class="kv"><span>Height</span><span class="seg s" id="ngheight">${Object.keys(HEIGHTS).map(k => `<b class="${g.height === k ? 'on' : ''}" data-h="${k}">${k === 'small' ? 'Small' : k === 'caps' ? 'Capitals' : 'Tall'}</b>`).join('')}</span></div>
       <div class="kv"><span>Thickness</span><span>${Math.abs((g.thick || 1) - 1) < 0.01 ? 'matches Aqua ✓' : `${Math.round((g.thick || 1) * 100)}% of Aqua`}</span></div>
       <div class="row" style="margin:4px 0"><label></label><input type="range" min="0.6" max="1.4" step="0.02" value="${g.thick || 1}" id="ngthick"><div class="v">${(g.thick || 1).toFixed(2)}</div></div>
@@ -260,6 +324,7 @@ function renderInspector() {
   const upd = (patch, label, settle = true) => D.updateNewGlyph(ng.key, patch, settle, label);
   insp.querySelector('#ngname').onchange = e => upd({ name: e.target.value.trim() || g.name }, 'Rename the letter');
   insp.querySelector('#ngch').onchange = e => { const c = e.target.value; if (c.length === 1) upd({ ch: c }, 'Change how the letter is typed'); };
+  insp.querySelector('#ngcat').onchange = e => upd({ category: e.target.value }, `${g.name} is a ${e.target.value.toLowerCase()} glyph`);
   insp.querySelector('#ngheight').onclick = e => { const b = e.target.closest('[data-h]'); if (b) { upd({ height: b.dataset.h }, 'Change the height'); if (ng.image) fitImage(); } };
   insp.querySelector('#ngends').onclick = e => { const b = e.target.closest('[data-e]'); if (b) upd({ ends: b.dataset.e }, 'Change the ends'); };
   const thick = insp.querySelector('#ngthick'); thick.oninput = () => { upd({ thick: +thick.value }, null, false); thick.nextElementSibling.textContent = (+thick.value).toFixed(2); redraw(); }; thick.onchange = () => upd({ thick: +thick.value }, 'Change the thickness');

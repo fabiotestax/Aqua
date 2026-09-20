@@ -51,7 +51,7 @@ function room(root) {
     <aside class="side">
       <input class="search" placeholder="Search letters…" value="${esc(S.search)}" id="search">
       <h6>Letters</h6>
-      <div class="matrix" id="matrix">${E.ORDER.split('').map(c => {
+      <div class="matrix" id="matrix">${E.allChars().filter(c => !E.newGlyphFor(c)).map(c => {
         const h = S.health[c].colour, hide = S.search && !c.toLowerCase().includes(S.search.toLowerCase()) && !(E.GNAME[c] || '').includes(S.search.toLowerCase());
         const mark = D.hasEdits(c) || D.hasMaster(c) ? '<i class="edited" title="changed in this session"></i>' : '';
         return `<div class="c h-${h} ${c === ch ? 'on' : ''} ${hide ? 'hide' : ''}" data-ch="${esc(c)}" title="${shown(c)} · ${H.LABEL[h]}">${glyphSVG(c, s, { box: 'metrics', pad: 4 })}${mark}</div>`; }).join('')}
@@ -353,6 +353,7 @@ function renderInspector() {
     <div class="btn" data-act="savevar">Save as a variation</div>
     <div class="btn ${edited ? '' : 'off'}" data-act="reset">Start this letter over</div>
     ${D.hasMaster(ch) ? `<div class="btn" data-act="forget" title="Go back to the drawing the Studio had before you brought this one in">Forget the imported drawing</div>` : ''}
+    ${E.extraChars().includes(ch) ? `<div class="btn" data-act="dropx" title="Aqua's rules keep drawing it; it just leaves the set">Take ${shown(ch)} out of the set</div>` : ''}
     ${healthLines(S.health[ch])}
     ${(() => { const r = AU.audit(ch, s); if (!r) return ''; return `<h6 style="margin-top:14px">Optical · at thickness ${s}</h6><div class="health">${r.findings.map(f => `<b class="${f.ok ? '' : 'w'}">${f.ok ? '✓' : '!'}</b>${esc(f.text)}<br>`).join('')}</div>`; })()}
     <details class="rules" ${ed.rulesOpen ? 'open' : ''}><summary>Aqua's rules at this weight</summary>
@@ -398,6 +399,7 @@ function renderInspector() {
     else if (act === 'reset') { if (confirm(`Undo every change to ${shown(ch)}${ed.variant ? ' (' + D.variants(ch)[ed.variant].name + ')' : ''}?`)) { ed.sel = new Set(); D.resetGlyph(ch, ed.variant); } }
     else if (act === 'forget') { if (confirm(`Forget the drawing you brought in for ${shown(ch)}?`)) D.forgetMaster(ch); }
     else if (act === 'savefile') D.download();
+    else if (act === 'dropx') { if (confirm(`Take ${shown(ch)} out of the set? The rules keep it; you can bring it back from the Health room.`)) { A().setGlyph('a'); D.removeExtra(ch); } }
   });
   const pad = insp.querySelector('#pad'); if (pad) pad.onclick = e => { const b = e.target.closest('[data-n]'); if (b && ed.sel.size) { const [dx, dy] = b.dataset.n.split(',').map(Number), m = e.shiftKey ? 10 : 1; nudgeSel(dx * m, dy * m); } };
 }
