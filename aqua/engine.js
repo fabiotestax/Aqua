@@ -1470,6 +1470,15 @@ function spinePath(pts, tension) {
   const f = v => Math.round(v * 10) / 10, segs = spine(pts, tension); if (!segs.length) return '';
   return `M${f(segs[0][0][0])} ${f(segs[0][0][1])}` + segs.map(sg => `C${f(sg[1][0])} ${f(sg[1][1])} ${f(sg[2][0])} ${f(sg[2][1])} ${f(sg[3][0])} ${f(sg[3][1])}`).join('');
 }
+// N points per spine segment, with the tangent at each: what the stroker thickens and what
+// the liquid joins measure.
+function spineSamples(segs, N) {
+  const B = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
+  const Dv = (p0, p1, p2, p3, t) => { const u = 1 - t; return [3*u*u*(p1[0]-p0[0]) + 6*u*t*(p2[0]-p1[0]) + 3*t*t*(p3[0]-p2[0]), 3*u*u*(p1[1]-p0[1]) + 6*u*t*(p2[1]-p1[1]) + 3*t*t*(p3[1]-p2[1])]; };
+  const S = [];
+  segs.forEach((sg, i) => { for (let j = i ? 1 : 0; j <= N; j++) { const t = j / N; let d = Dv(...sg, t); if (Math.hypot(d[0], d[1]) < 1e-6) d = [sg[3][0] - sg[0][0], sg[3][1] - sg[0][1]]; S.push({ p: B(...sg, t), d }); } });
+  return S;
+}
 function strokeDrops(pts, s, opt) {
   const w = s * (opt.thick || 1), th = 0.72 * w * contrastK(s), N = 6;
   const segs = spine(pts, opt.round == null ? 0.5 : opt.round);
@@ -1478,10 +1487,7 @@ function strokeDrops(pts, s, opt) {
     const [cx, cy] = pts[0], r = w / 2, kc = 0.5523 * r, f = v => Math.round(v * 10) / 10;
     return `M${f(cx - r)} ${f(cy)}C${f(cx - r)} ${f(cy + kc)} ${f(cx - kc)} ${f(cy + r)} ${f(cx)} ${f(cy + r)}C${f(cx + kc)} ${f(cy + r)} ${f(cx + r)} ${f(cy + kc)} ${f(cx + r)} ${f(cy)}C${f(cx + r)} ${f(cy - kc)} ${f(cx + kc)} ${f(cy - r)} ${f(cx)} ${f(cy - r)}C${f(cx - kc)} ${f(cy - r)} ${f(cx - r)} ${f(cy - kc)} ${f(cx - r)} ${f(cy)}Z`;
   }
-  const B = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0], u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]]; };
-  const Dv = (p0, p1, p2, p3, t) => { const u = 1 - t; return [3*u*u*(p1[0]-p0[0]) + 6*u*t*(p2[0]-p1[0]) + 3*t*t*(p3[0]-p2[0]), 3*u*u*(p1[1]-p0[1]) + 6*u*t*(p2[1]-p1[1]) + 3*t*t*(p3[1]-p2[1])]; };
-  const S = [];
-  segs.forEach((sg, i) => { for (let j = i ? 1 : 0; j <= N; j++) { const t = j / N; let d = Dv(...sg, t); if (Math.hypot(d[0], d[1]) < 1e-6) d = [sg[3][0] - sg[0][0], sg[3][1] - sg[0][1]]; S.push({ p: B(...sg, t), d }); } });
+  const S = spineSamples(segs, N);
   const width = n => th + (w - th) * Math.abs(n[0]);
   const L = [], R = [];
   const norms = S.map(sm => { const l = Math.hypot(sm.d[0], sm.d[1]) || 1; return [-sm.d[1] / l, sm.d[0] / l]; });
@@ -1535,9 +1541,254 @@ function strokeDrops(pts, s, opt) {
 }
 function newGlyphs() { return DOC.newGlyphs || {}; }
 function newGlyphFor(ch) { const all = newGlyphs(); for (const k in all) if (all[k].ch === ch && all[k].use !== false) return all[k]; return null; }
+// ── Liquid joins ──────────────────────────────────────────────────────────────
+// Where one stroke meets another, the union of two round strokes leaves a sharp notch on
+// each side. Water would not: it webs the corner. Every junction is found on the spines —
+// a stroke's end lying on another stroke, or two strokes crossing — and each notch between
+// two adjacent arms gets a web: a patch bounded by the two edges and a fillet tangent to
+// both, its radius a share of the thinner arm's half-width at that weight, so it grows with
+// the weight as a meniscus would. Junctions come from the spines, which do not depend on the
+// weight, so every weight gets the same webs and the outline keeps its point count. A stroke
+// that ends within reach of another is stretched onto it, so the join never opens up at Light.
+const unitV = v => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+function junctions(g) {
+  const tension = g.round == null ? 0.5 : g.round, reach = TILE * 1.6;
+  const strokes = (g.strokes || []).filter(st => st.length > 1);
+  const S = strokes.map(st => spineSamples(spine(st, tension), 6));
+  const out = [], seen = [];
+  // one junction per place per pair of strokes: the other end of an end-to-end corner, or a
+  // crossing right on top of an end, is the same junction seen again
+  const near = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < TILE * 0.75;
+  const dup = (J, a, b) => seen.some(q => near(q.J, J) && q.a === Math.min(a, b) && q.b === Math.max(a, b));
+  const note = (J, a, b) => seen.push({ J, a: Math.min(a, b), b: Math.max(a, b) });
+  // how far a spine runs on from a point on it (segment k, fraction t), each way
+  const cum = S.map(sa => { const c = [0]; for (let k = 1; k < sa.length; k++) c.push(c[k - 1] + Math.hypot(sa[k].p[0] - sa[k - 1].p[0], sa[k].p[1] - sa[k - 1].p[1])); return c; });
+  const runs = (b, k, t) => { const c = cum[b], at = c[k] + (c[k + 1] - c[k]) * t; return [at, c[c.length - 1] - at]; };
+  // arms around a junction point: [direction away from the point, stroke index]
+  strokes.forEach((st, a) => { for (const end of [0, 1]) {
+    const sa = S[a], sm = end ? sa[sa.length - 1] : sa[0];
+    // the closest point of any other spine, segment by segment
+    let best = null;
+    strokes.forEach((sb, b) => { if (b === a) return;
+      for (let k = 0; k + 1 < S[b].length; k++) {
+        const p = S[b][k].p, q = S[b][k + 1].p, vx = q[0] - p[0], vy = q[1] - p[1], l2 = vx * vx + vy * vy || 1;
+        const t = Math.max(0, Math.min(1, ((sm.p[0] - p[0]) * vx + (sm.p[1] - p[1]) * vy) / l2));
+        const x = [p[0] + vx * t, p[1] + vy * t], dist = Math.hypot(x[0] - sm.p[0], x[1] - sm.p[1]);
+        if (dist < reach && (!best || dist < best.dist)) best = { b, k, t, dist, x };
+      } });
+    if (!best) continue;
+    const sb = S[best.b], J = best.x;
+    if (dup(J, a, best.b)) continue;
+    note(J, a, best.b);
+    const arms = [{ d: unitV(end ? [-sm.d[0], -sm.d[1]] : sm.d), s: a }];
+    const d0 = sb[best.k].d, d1 = sb[best.k + 1].d, uB = unitV([d0[0] + (d1[0] - d0[0]) * best.t, d0[1] + (d1[1] - d0[1]) * best.t]);
+    // an arm of the other stroke counts only if it runs on for a while: the tail end of an
+    // arc that overlaps the next arc is not an arm
+    const [before, after] = runs(best.b, best.k, best.t);
+    if (before > TILE * 0.75) arms.push({ d: [-uB[0], -uB[1]], s: best.b });
+    if (after > TILE * 0.75) arms.push({ d: uB, s: best.b });
+    if (arms.length < 2) continue;
+    out.push({ J, arms, stretch: [a, end, J] });
+  } });
+  const ends = strokes.map((st, a) => [S[a][0].p, S[a][S[a].length - 1].p]);
+  // crossings: a segment of one spine cutting a segment of another
+  strokes.forEach((sa, a) => strokes.forEach((sb, b) => { if (b <= a) return;
+    for (let i = 0; i + 1 < S[a].length; i++) for (let j = 0; j + 1 < S[b].length; j++) {
+      const p = S[a][i].p, q = S[a][i + 1].p, r = S[b][j].p, t = S[b][j + 1].p;
+      const den = (q[0] - p[0]) * (t[1] - r[1]) - (q[1] - p[1]) * (t[0] - r[0]); if (Math.abs(den) < 1e-9) continue;
+      const u = ((r[0] - p[0]) * (t[1] - r[1]) - (r[1] - p[1]) * (t[0] - r[0])) / den, v = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / den;
+      if (u < 0 || u > 1 || v < 0 || v > 1) continue;
+      const J = [p[0] + u * (q[0] - p[0]), p[1] + u * (q[1] - p[1])];
+      if (dup(J, a, b)) continue;
+      // a crossing right at a stroke's end is that end's junction, found above
+      if ([...ends[a], ...ends[b]].some(e => Math.hypot(e[0] - J[0], e[1] - J[1]) < reach)) continue;
+      note(J, a, b);
+      const dA = unitV(S[a][i].d), dB = unitV(S[b][j].d);
+      out.push({ J, arms: [{ d: dA, s: a }, { d: [-dA[0], -dA[1]], s: a }, { d: dB, s: b }, { d: [-dB[0], -dB[1]], s: b }] });
+    } }));
+  return out;
+}
+function webs(g, s) {
+  const w = s * (g.thick || 1), th = 0.72 * w * contrastK(s), f = v => Math.round(v * 10) / 10;
+  const half = u => (th + (w - th) * Math.abs(u[1])) / 2;
+  const out = [];
+  for (const jn of junctions(g)) {
+    const arms = jn.arms.map(a => ({ ...a, ang: Math.atan2(a.d[1], a.d[0]), h: half(a.d) })).sort((a, b) => a.ang - b.ang);
+    for (let i = 0; i < arms.length; i++) {
+      const P = arms[i], Q = arms[(i + 1) % arms.length];
+      let phi = Q.ang - P.ang; if (phi <= 0) phi += 2 * Math.PI;
+      // no notch when the arms run straight through or nearly along each other (a tangential
+      // join is already smooth), and none on the outside of a corner
+      if (arms.length < 2 || phi > Math.PI - 0.35 || phi < 0.35) continue;
+      // the edge of P facing Q, the edge of Q facing P, and the corner where they meet
+      const nP = [-P.d[1], P.d[0]], nQ = [Q.d[1], -Q.d[0]];
+      const rx = nQ[0] * Q.h - nP[0] * P.h, ry = nQ[1] * Q.h - nP[1] * P.h;
+      const den = P.d[0] * (-Q.d[1]) - P.d[1] * (-Q.d[0]); if (Math.abs(den) < 1e-9) continue;
+      const t1 = (rx * (-Q.d[1]) - ry * (-Q.d[0])) / den;
+      const C = [jn.J[0] + P.d[0] * t1 + nP[0] * P.h, jn.J[1] + P.d[1] * t1 + nP[1] * P.h];
+      const r = 0.9 * Math.min(P.h, Q.h), theta = Math.PI - phi, hh = (4 / 3) * Math.tan(theta / 4) * r;
+      const Pa = [C[0] + P.d[0] * r, C[1] + P.d[1] * r], Pb = [C[0] + Q.d[0] * r, C[1] + Q.d[1] * r];
+      const c1 = [Pb[0] - Q.d[0] * hh, Pb[1] - Q.d[1] * hh], c2 = [Pa[0] - P.d[0] * hh, Pa[1] - P.d[1] * hh];
+      out.push(`M${f(Pa[0])} ${f(Pa[1])}L${f(C[0])} ${f(C[1])}L${f(Pb[0])} ${f(Pb[1])}C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(Pa[0])} ${f(Pa[1])}Z`);
+    }
+  }
+  return out;
+}
 function dropsOutline(g, s) {
-  const parts = (g.strokes || []).filter(st => st.length).map(st => strokeDrops(st, s, g));
+  const liquid = g.liquid !== false;
+  let strokes = (g.strokes || []).filter(st => st.length);
+  if (liquid) {
+    // stretch every stroke that ends within reach of another onto it: its end goes to where
+    // the round cap's tip lands on the other stroke's far edge, so the join closes at every
+    // weight and the cap never pokes out the other side
+    const w = s * (g.thick || 1), th = 0.72 * w * contrastK(s), half = u => (th + (w - th) * Math.abs(u[1])) / 2;
+    strokes = strokes.map(st => st.slice());
+    const live = strokes.filter(st => st.length > 1);
+    for (const jn of junctions(g)) if (jn.stretch) {
+      const [a, end, J] = jn.stretch, st = live[a]; if (!st) continue;
+      const uA = jn.arms[0].d, other = jn.arms.find(x => x.s !== a);
+      let reach = 0;
+      // the cap is a circle of the stroke's half-width about the end: put the end where that
+      // circle just touches the other stroke's far edge from inside
+      if (other) { const nB = [-other.d[1], other.d[0]], hB = half(other.d), cos = Math.abs(uA[0] * nB[0] + uA[1] * nB[1]); reach = (hB - half(uA)) / Math.max(0.5, cos); }
+      st[end ? st.length - 1 : 0] = [J[0] - uA[0] * reach, J[1] - uA[1] * reach];   // uA points back into the stroke
+    }
+  }
+  const parts = strokes.map(st => strokeDrops(st, s, g));
+  if (liquid && parts.length) parts.push(...webs(g, s));
   return parts.length ? parts.join('') : null;
+}
+// ── Simplify: a traced outline redrawn with few points ────────────────────────
+// An outline of hundreds of tiny pieces (the s by rules, a traced drawing) is redrawn the way
+// a designer would draw it: a point at every corner and every extreme (top, bottom, left,
+// right of each curve), one cubic between them, and more only where one cubic cannot follow
+// the shape within the tolerance. The splits are found once, on the Black, and reused index
+// for index on the Light, so the two weights come out with the same points in the same order
+// and the letter still blends.
+function fitOne(pts, u, t1, t2) {
+  // one cubic through the run, end tangents given (Schneider's least squares for the handle lengths)
+  const n = pts.length, p0 = pts[0], p3 = pts[n - 1];
+  let c11 = 0, c12 = 0, c22 = 0, x1 = 0, x2 = 0;
+  for (let i = 0; i < n; i++) {
+    const t = u[i], s = 1 - t, b1 = 3 * t * s * s, b2 = 3 * t * t * s, b0 = s * s * s, b3 = t * t * t;
+    const a1 = [t1[0] * b1, t1[1] * b1], a2 = [t2[0] * b2, t2[1] * b2];
+    c11 += a1[0] * a1[0] + a1[1] * a1[1]; c12 += a1[0] * a2[0] + a1[1] * a2[1]; c22 += a2[0] * a2[0] + a2[1] * a2[1];
+    const tmp = [pts[i][0] - (p0[0] * (b0 + b1) + p3[0] * (b2 + b3)), pts[i][1] - (p0[1] * (b0 + b1) + p3[1] * (b2 + b3))];
+    x1 += a1[0] * tmp[0] + a1[1] * tmp[1]; x2 += a2[0] * tmp[0] + a2[1] * tmp[1];
+  }
+  const det = c11 * c22 - c12 * c12, dist = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) / 3;
+  let al1 = det ? (x1 * c22 - x2 * c12) / det : 0, al2 = det ? (c11 * x2 - c12 * x1) / det : 0;
+  if (!(al1 > 1e-6) || !(al2 > 1e-6) || al1 > 4 * dist * 3 || al2 > 4 * dist * 3) { al1 = al2 = dist; }
+  return [p0, [p0[0] + t1[0] * al1, p0[1] + t1[1] * al1], [p3[0] + t2[0] * al2, p3[1] + t2[1] * al2], p3];
+}
+const bezAt = (b, t) => { const s = 1 - t; return [s*s*s*b[0][0] + 3*s*s*t*b[1][0] + 3*s*t*t*b[2][0] + t*t*t*b[3][0], s*s*s*b[0][1] + 3*s*s*t*b[1][1] + 3*s*t*t*b[2][1] + t*t*t*b[3][1]]; };
+function fitBest(pts, t1, t2, iters) {
+  // one cubic through the run: least squares for the handle lengths, then a few Newton steps
+  // that move each point's parameter to the nearest place on the curve, and fit again
+  const n = pts.length;
+  if (n === 2) { const d = Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]) / 3; return { b: [pts[0], [pts[0][0] + t1[0] * d, pts[0][1] + t1[1] * d], [pts[1][0] + t2[0] * d, pts[1][1] + t2[1] * d], pts[1]], err: 0, at: 1 }; }
+  let u = [0]; for (let i = 1; i < n; i++) u.push(u[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const L = u[n - 1] || 1; u = u.map(v => v / L);
+  let bez = fitOne(pts, u, t1, t2), worst = 0, at = (n / 2) | 0;
+  const err = () => { worst = 0; for (let i = 1; i < n - 1; i++) { const q = bezAt(bez, u[i]), e = (q[0] - pts[i][0]) ** 2 + (q[1] - pts[i][1]) ** 2; if (e > worst) { worst = e; at = i; } } return Math.sqrt(worst); };
+  let e = err();
+  for (let it = 0; it < iters; it++) {
+    u = u.map((t, i) => { if (i === 0 || i === n - 1) return t; const q = bezAt(bez, t), s = 1 - t;
+      const d1 = [3*s*s*(bez[1][0]-bez[0][0]) + 6*s*t*(bez[2][0]-bez[1][0]) + 3*t*t*(bez[3][0]-bez[2][0]), 3*s*s*(bez[1][1]-bez[0][1]) + 6*s*t*(bez[2][1]-bez[1][1]) + 3*t*t*(bez[3][1]-bez[2][1])];
+      const d2 = [6*s*(bez[2][0]-2*bez[1][0]+bez[0][0]) + 6*t*(bez[3][0]-2*bez[2][0]+bez[1][0]), 6*s*(bez[2][1]-2*bez[1][1]+bez[0][1]) + 6*t*(bez[3][1]-2*bez[2][1]+bez[1][1])];
+      const num = (q[0] - pts[i][0]) * d1[0] + (q[1] - pts[i][1]) * d1[1], den = d1[0] * d1[0] + d1[1] * d1[1] + (q[0] - pts[i][0]) * d2[0] + (q[1] - pts[i][1]) * d2[1];
+      const nt = den ? t - num / den : t; return Math.max(u[i - 1] + 1e-4, Math.min(u[i + 1] - 1e-4, nt)); });
+    const nb = fitOne(pts, u, t1, t2), old = e, ob = bez; bez = nb; e = err(); if (e > old) { bez = ob; e = old; break; }
+  }
+  return { b: bez, err: e, at };
+}
+function fitRun(pts, t1, t2, tol, depth) {
+  // fit a run of points; split at the worst point and recurse when one cubic will not do
+  const n = pts.length; if (n < 2) return [];
+  const f = fitBest(pts, t1, t2, 4);
+  if (f.err <= tol || depth > 8 || n < 4) return [{ b: f.b, from: 0, to: n - 1 }];
+  const at = Math.max(1, Math.min(n - 2, f.at));
+  const tc = unitV([pts[at - 1][0] - pts[at + 1][0], pts[at - 1][1] - pts[at + 1][1]]);
+  const left = fitRun(pts.slice(0, at + 1), t1, tc, tol, depth + 1), right = fitRun(pts.slice(at), [-tc[0], -tc[1]], t2, tol, depth + 1);
+  return [...left, ...right.map(r => ({ b: r.b, from: r.from + at, to: r.to + at }))];
+}
+// flatten a subpath into a polyline, K samples per curve, so two weights of the same
+// structure line up index for index
+function flattenSub(sub, K) {
+  const pts = [];
+  for (const [p0, c1, c2, p3, k] of sub) {
+    if (k === 'L') { pts.push(p0); continue; }
+    for (let i = 0; i < K; i++) pts.push(bezAt([p0, c1, c2, p3], i / K));
+  }
+  return pts;
+}
+// the direction of a closed polyline over a window of `span` units either side of i
+function dirAt(pts, i, span, side) {
+  const n = pts.length, walk = step => { let j = i, len = 0; while (len < span) { const k = (j + step + n) % n; len += Math.hypot(pts[k][0] - pts[j][0], pts[k][1] - pts[j][1]); j = k; if (len === 0) break; } return j; };
+  if (side < 0) { const a = pts[walk(-1)]; return unitV([pts[i][0] - a[0], pts[i][1] - a[1]]); }
+  if (side > 0) { const b = pts[walk(1)]; return unitV([b[0] - pts[i][0], b[1] - pts[i][1]]); }
+  const a = pts[walk(-1)], b = pts[walk(1)]; return unitV([b[0] - a[0], b[1] - a[1]]);
+}
+function isCorner(pts, i, cornerDeg) {
+  const din = dirAt(pts, i, 12, -1), dout = dirAt(pts, i, 12, 1);
+  return din[0] * dout[0] + din[1] * dout[1] < Math.cos(cornerDeg * Math.PI / 180);
+}
+function splitsOf(pts, cornerDeg) {
+  // indices of corners and extremes on a closed polyline: a corner turns sharply within a
+  // few units either side; an extreme is where the direction's x or y changes sign
+  const n = pts.length, out = new Set();
+  for (let i = 0; i < n; i++) {
+    if (isCorner(pts, i, cornerDeg)) { out.add(i); continue; }
+    const e0 = dirAt(pts, i, 6, -1), e1 = dirAt(pts, i, 6, 1);
+    if (Math.sign(e0[0]) !== Math.sign(e1[0]) && Math.abs(e0[0]) > 0.03 && Math.abs(e1[0]) > 0.03) out.add(i);   // leftmost / rightmost
+    if (Math.sign(e0[1]) !== Math.sign(e1[1]) && Math.abs(e0[1]) > 0.03 && Math.abs(e1[1]) > 0.03) out.add(i);   // top / bottom
+  }
+  // a corner or extreme found on neighbouring samples is one point: keep the sharpest
+  const list = [...out].sort((a, b) => a - b), groups = [];
+  for (const i of list) { const g = groups[groups.length - 1]; if (g && i - g[g.length - 1] <= 3) g.push(i); else groups.push([i]); }
+  if (groups.length > 1 && groups[0][0] + n - groups[groups.length - 1].slice(-1)[0] <= 3) { groups[0] = [...groups.pop(), ...groups[0]]; }
+  const turn = i => { const a = dirAt(pts, i, 12, -1), b = dirAt(pts, i, 12, 1); return -(a[0] * b[0] + a[1] * b[1]); };
+  const keep = groups.map(g => g.reduce((best, i) => turn(i) > turn(best) ? i : best, g[0])).sort((a, b) => a - b);
+  return keep.length ? keep : [0];
+}
+// Simplify one outline (a path string). opts: { tol, corner, K }. Returns { d, plan } where
+// plan records every cubic's sample range so the same plan can be replayed on another weight.
+function simplifyPath(d, opts = {}, plan) {
+  const tol = opts.tol || 1.5, corner = opts.corner || 50, K = opts.K || 8;
+  const subs = parsePath(d), outSubs = [], outPlan = [];
+  subs.forEach((sub, si) => {
+    const pts = flattenSub(sub, K), n = pts.length;
+    if (n < 3) { outSubs.push(sub); outPlan.push(null); return; }
+    // the tangent of a run's end: one-sided at a corner, through the point elsewhere
+    const tanAt = (i, side) => isCorner(pts, i, corner) ? dirAt(pts, i, 8, side) : dirAt(pts, i, 8, 0);
+    let runs;
+    if (plan && plan[si]) runs = plan[si];
+    else {
+      const sp = splitsOf(pts, corner); runs = [];
+      for (let k = 0; k < sp.length; k++) {
+        const a = sp[k], b = sp[(k + 1) % sp.length], len = ((b - a) + n) % n || n;
+        const run = []; for (let i = 0; i <= len; i++) run.push(pts[(a + i) % n]);
+        const t1 = tanAt(a, 1), t2 = tanAt(b, -1);
+        for (const r of fitRun(run, t1, [-t2[0], -t2[1]], tol, 0)) runs.push([(a + r.from) % n, (a + r.to) % n]);
+      }
+    }
+    // replay: exactly one cubic per run, with the tangents at the run's own ends
+    const segs = runs.map(([a, b]) => {
+      const len = ((b - a) + n) % n || n, run = []; for (let i = 0; i <= len; i++) run.push(pts[(a + i) % n]);
+      const t1 = tanAt(a, 1), t2 = tanAt(b, -1);
+      const b4 = fitBest(run, t1, [-t2[0], -t2[1]], 4).b;
+      return [b4[0], b4[1], b4[2], b4[3], 'C'];
+    });
+    outSubs.push(segs); outPlan.push(runs);
+  });
+  return { d: serializePath(outSubs), plan: outPlan };
+}
+// Both weights of a letter, simplified to the same structure. Returns { black, regular, points }.
+function simplifyPair(ch, opts) {
+  const black = outline(ch, 106), light = outline(ch, 53); if (!black || !light) return null;
+  const b = simplifyPath(black, opts), l = simplifyPath(light, opts, b.plan);
+  const chk = sameSkeleton(b.d, l.d); if (!chk.ok) return null;
+  return { black: b.d, regular: l.d, points: parsePath(b.d).reduce((k, s) => k + s.length, 0) };
 }
 // Characters the rules can already draw but that are not in the set: the digits. A document
 // switches them on one by one (doc.extra) and they join the set like any other letter.
@@ -1656,7 +1907,7 @@ function nodes(d) {
 
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
-  TILE, strokeDrops, dropsOutline, spinePath, newGlyphs, newGlyphFor, allChars, fillRule, spareChars, extraChars,
+  TILE, strokeDrops, dropsOutline, spinePath, junctions, webs, simplifyPath, simplifyPair, newGlyphs, newGlyphFor, allChars, fillRule, spareChars, extraChars,
   BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, applyOps, outline, nearestOnPath,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,

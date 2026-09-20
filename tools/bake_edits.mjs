@@ -57,7 +57,7 @@ if (doc.spacing) {
   const n = Object.keys(doc.spacing.shape || {}).length + Object.keys(doc.spacing.kern || {}).length;
   if (n || doc.spacing.fromInk) report.push(`baked spacing: room from ink ${spacing.fromInk ? 'on' : 'off'}, ${Object.keys(doc.spacing.shape || {}).length} edge classes, ${Object.keys(doc.spacing.kern || {}).length} pairs`);
 }
-const bakedLine = `const BAKED = ${JSON.stringify({ glyphs: baked.glyphs, masters: {}, spacing })};`;
+const bakedLine = `const BAKED = ${JSON.stringify({ glyphs: baked.glyphs, masters: {}, spacing, extra: doc.extra || [] })};`;
 if (!/^const BAKED = .*$/m.test(src)) throw new Error('could not find BAKED in the engine');
 src = src.replace(/^const BAKED = .*$/m, bakedLine);
 

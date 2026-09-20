@@ -67,7 +67,7 @@ function room(root) {
       <select class="sel" id="cat">${cats.map(c => `<option ${D.categoryOf(ch) === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
     </aside>
     <div class="canvas ${ed.space ? 'grab' : ''} tool-${ed.tool}" id="canvas">${canvasSVG(ch, s, d, nodes, g)}
-      <div class="crumb"><b>${shown(ch)}</b>${ed.variant ? ' · ' + esc(vars[ed.variant].name) : ''} &nbsp;·&nbsp; ${E.weightName(s)} &nbsp;·&nbsp; ${nodes.length} points &nbsp;·&nbsp; ${A().KIND[g.kind].toLowerCase()}${D.hasMaster(ch) ? ' · drawing brought in' : ''}</div>
+      <div class="crumb"><b>${shown(ch)}</b>${ed.variant ? ' · ' + esc(vars[ed.variant].name) : ''} &nbsp;·&nbsp; ${E.weightName(s)} &nbsp;·&nbsp; ${nodes.length} points &nbsp;·&nbsp; ${A().KIND[g.kind].toLowerCase()}${D.hasMaster(ch) ? (E.masterPair(ch).source === 'simplified' ? ' · redrawn with fewer points' : ' · drawing brought in') : ''}</div>
       ${guidesFor(ch).map(([n, y]) => `<div class="pill ${n === 'Middle' ? 'faint' : ''}" data-y="${y}">${n}</div>`).join('')}
       <div class="hint" id="hint">${hintFor()}</div>
       <div class="tools" id="tools">${TOOLS.map(([k, n, t]) => tool(k, n, t)).join('')}</div>
@@ -352,7 +352,8 @@ function renderInspector() {
     <div class="btn pri ${differ ? '' : 'off'}" data-act="applyall" title="${differ ? 'Carry the ' + (s < 80 ? 'Light' : 'Black') + ' edits onto the other weight' : 'Both weights already match'}">Apply to all weights</div>
     <div class="btn" data-act="savevar">Save as a variation</div>
     <div class="btn ${edited ? '' : 'off'}" data-act="reset">Start this letter over</div>
-    ${D.hasMaster(ch) ? `<div class="btn" data-act="forget" title="Go back to the drawing the Studio had before you brought this one in">Forget the imported drawing</div>` : ''}
+    ${nodes.length > 40 ? `<div class="btn" data-act="simplify" title="A point at every corner and extreme, one curve between them, the same in both weights">Redraw with fewer points (${nodes.length} now)</div>` : ''}
+    ${D.hasMaster(ch) ? `<div class="btn" data-act="forget" title="Go back to the drawing the Studio had before${E.masterPair(ch).source === 'simplified' ? ' the redraw' : ' you brought this one in'}">${E.masterPair(ch).source === 'simplified' ? 'Forget the redraw' : 'Forget the imported drawing'}</div>` : ''}
     ${E.extraChars().includes(ch) ? `<div class="btn" data-act="dropx" title="Aqua's rules keep drawing it; it just leaves the set">Take ${shown(ch)} out of the set</div>` : ''}
     ${healthLines(S.health[ch])}
     ${(() => { const r = AU.audit(ch, s); if (!r) return ''; return `<h6 style="margin-top:14px">Optical · at thickness ${s}</h6><div class="health">${r.findings.map(f => `<b class="${f.ok ? '' : 'w'}">${f.ok ? '✓' : '!'}</b>${esc(f.text)}<br>`).join('')}</div>`; })()}
@@ -397,7 +398,8 @@ function renderInspector() {
     else if (act === 'applyall') D.applyToAll(ch, ed.variant, s < 80 ? 'light' : 'black');
     else if (act === 'savevar') { const name = prompt('Name for the variation', `${shown(ch)} · ${D.variants(ch).length + 1}`); if (name) { const from = ed.variant; ed.variant = D.variants(ch).length; ed.sel = new Set(); D.addVariant(ch, name, from); } }
     else if (act === 'reset') { if (confirm(`Undo every change to ${shown(ch)}${ed.variant ? ' (' + D.variants(ch)[ed.variant].name + ')' : ''}?`)) { ed.sel = new Set(); D.resetGlyph(ch, ed.variant); } }
-    else if (act === 'forget') { if (confirm(`Forget the drawing you brought in for ${shown(ch)}?`)) D.forgetMaster(ch); }
+    else if (act === 'forget') { if (confirm(`Forget this drawing of ${shown(ch)} and go back to the one before?`)) D.forgetMaster(ch); }
+    else if (act === 'simplify') { if (confirm(`Redraw ${shown(ch)} with a point at every corner and extreme and one curve between them, in both weights? It becomes a drawn letter you edit point by point; the rules no longer apply to it. "Forget the redraw" brings this drawing back.`)) { const r = D.simplify(ch); if (!r.ok) alert('Could not redraw it: ' + r.why); else ed.sel = new Set(); } }
     else if (act === 'savefile') D.download();
     else if (act === 'dropx') { if (confirm(`Take ${shown(ch)} out of the set? The rules keep it; you can bring it back from the Health room.`)) { A().setGlyph('a'); D.removeExtra(ch); } }
   });

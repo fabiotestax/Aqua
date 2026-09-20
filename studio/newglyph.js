@@ -308,6 +308,7 @@ function renderInspector() {
       <div class="row" style="margin:4px 0"><label></label><input type="range" min="0.6" max="1.4" step="0.02" value="${g.thick || 1}" id="ngthick"><div class="v">${(g.thick || 1).toFixed(2)}</div></div>
       <div class="kv"><span>Ends</span><span class="seg s" id="ngends"><b class="${g.ends === 'flat' ? 'on' : ''}" data-e="flat">Flat</b><b class="${g.ends !== 'flat' ? 'on' : ''}" data-e="round">Drop</b></span></div>
       <div class="row" style="margin:6px 0 0"><label>Roundness</label><input type="range" min="0" max="1" step="0.05" value="${g.round == null ? 0.5 : g.round}" id="nground"><div class="v">${(g.round == null ? 0.5 : g.round).toFixed(2)}</div></div>
+      <label class="check" style="margin:8px 0 0" title="Where a stroke meets another, the corner is webbed like a meniscus; a stroke that ends on another is stretched into it. Same joins at every weight."><input type="checkbox" id="ngliquid" ${g.liquid === false ? '' : 'checked'}> Joins flow like water</label>
     </div>
     <h6>Reference image</h6>
     ${img ? `<div class="row"><label>Show</label><input type="range" min="0" max="1" step="0.05" value="${img.opacity}" id="ngopacity"><div class="v">${Math.round(img.opacity * 100)}%</div></div>
@@ -326,6 +327,7 @@ function renderInspector() {
   insp.querySelector('#ngname').onchange = e => upd({ name: e.target.value.trim() || g.name }, 'Rename the letter');
   insp.querySelector('#ngch').onchange = e => { const c = e.target.value; if (c.length === 1) upd({ ch: c }, 'Change how the letter is typed'); };
   insp.querySelector('#ngcat').onchange = e => upd({ category: e.target.value }, `${g.name} is a ${e.target.value.toLowerCase()} glyph`);
+  insp.querySelector('#ngliquid').onchange = e => upd({ liquid: e.target.checked }, e.target.checked ? `Joins of ${g.name} flow like water` : `Plain joins for ${g.name}`);
   insp.querySelector('#ngheight').onclick = e => { const b = e.target.closest('[data-h]'); if (b) { upd({ height: b.dataset.h }, 'Change the height'); if (ng.image) fitImage(); } };
   insp.querySelector('#ngends').onclick = e => { const b = e.target.closest('[data-e]'); if (b) upd({ ends: b.dataset.e }, 'Change the ends'); };
   const thick = insp.querySelector('#ngthick'); thick.oninput = () => { upd({ thick: +thick.value }, null, false); thick.nextElementSibling.textContent = (+thick.value).toFixed(2); redraw(); }; thick.onchange = () => upd({ thick: +thick.value }, 'Change the thickness');

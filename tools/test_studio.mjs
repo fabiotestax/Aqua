@@ -247,6 +247,23 @@ const amp = await p.evaluate(() => window.AquaDoc.newGlyphs().ampersand);
 ok(amp && amp.strokes.length === 2 && amp.strokes[0].length >= 6 && amp.category === 'Punctuation' && await p.evaluate(() => !!document.querySelector('#skin')), `the ampersand starts from the suggested structure (${amp && amp.strokes[0].length} drops) and draws`);
 ok(await p.evaluate(() => [...document.querySelectorAll('[data-act="suggest"]')].length === 1), 'the room offers to replace it with the suggestion again');
 await p.screenshot({ path: 'studio/shots/newglyph-suggest-light.png' });
+// liquid joins: a T from two strokes gets two webs at every weight; the toggle turns them off
+const liq = await p.evaluate(() => { const E = window.AquaEngine; const g = { ch: 'T', strokes: [[[0, 720], [440, 720]], [[220, 720], [220, 0]]], thick: 1, ends: 'round', round: 0.5 };
+  const n = s => E.parsePath(E.dropsOutline(g, s)).length; return { on: [n(53), n(78), n(106)], off: E.parsePath(E.dropsOutline({ ...g, liquid: false }, 106)).length, webs: E.webs(g, 106).length }; });
+ok(liq.on.every(n => n === 4) && liq.off === 2 && liq.webs === 2, `a T from two strokes gets two webs at every weight (${liq.on.join('/')} contours, ${liq.off} plain)`);
+ok(await p.evaluate(() => document.querySelector('#ngliquid') && document.querySelector('#ngliquid').checked), 'the drops room offers "Joins flow like water", on by default');
+await p.click('#ngliquid'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaDoc.newGlyphs().ampersand.liquid === false), 'and it can be switched off per letter');
+// simplify: the s by rules has 354 points; the redraw keeps the shape with a few dozen, in both weights
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=s&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+ok(await p.evaluate(() => document.querySelector('[data-act="simplify"]') !== null && document.querySelectorAll('#nodes .node').length === 354), 'the s offers "Redraw with fewer points"');
+await p.click('[data-act="simplify"]'); await p.waitForTimeout(300);
+const simp = await p.evaluate(() => { const E = window.AquaEngine; const n = s => E.parsePath(E.outline('s', s)).map(x => x.length).join('+'); return { n106: n(106), n53: n(53), kind: E.kindOf('s'), nodes: document.querySelectorAll('#nodes .node').length, src: E.masterPair('s').source }; });
+ok(simp.kind === 'drawn' && simp.src === 'simplified' && simp.nodes < 40 && simp.n106 === simp.n53, `the s is redrawn with ${simp.nodes} points, the same in both weights`);
+ok(await p.evaluate(() => { const h = window.AquaStudio.S.health.s; return h.compatible && !h.flags.some(f => /Too many points/.test(f.text)); }), 'blends across weights and is no longer flagged as a trace');
+await p.screenshot({ path: 'studio/shots/glyphs-simplified-light.png' });
+await p.click('[data-act="forget"]'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaEngine.kindOf('s') === 'parametric' && document.querySelectorAll('#nodes .node').length === 354), '"Forget the redraw" brings the rules back');
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();

@@ -64,19 +64,59 @@ inspector's "Optical" lines, and red haloes on the canvas for dark joins. The ca
 shows the Middle guide at 0.515 of the x-height (of the cap height for B).
 
 **New letters from drops** (`studio/newglyph.js`, engine `strokeDrops` / `dropsOutline`).
-A new letter is `doc.newGlyphs[key] = { ch, name, height, thick, ends, round, strokes, use }`:
-strokes of drop centres on the 40-unit tile grid. The engine draws a Catmull-Rom spine
-through each stroke, thickens it with the family's contrast (full stem standing up, thinner
-lying down, eased along the stroke), ends it in a round cap or a flat cut, and gathers any
-self-crossing loop at a sharp corner onto the crossing point so the outline never crosses
-itself and keeps the same point count at every weight. Strokes overlap where they meet, so a
-drops letter fills **nonzero** (`fillRule(ch)`); the Studio's renderers and the export sheet
-honour that, and the font build keeps the overlaps (TrueType fills by winding) with every
-stroke oriented as an outer contour. `allChars()` is the thirty plus the new letters in use;
-health, layout, export and the font build all go through it. The tracer
-(`traceImage`) thresholds a reference image, thins it (Zhang–Suen), walks the skeleton into
-polylines, simplifies, snaps to tiles and joins the pieces end to end — a first pass to edit,
-not a drawing. The density rule of the health score does not apply to drops letters.
+A new letter is `doc.newGlyphs[key] = { ch, name, height, thick, ends, round, strokes, use,
+category, liquid }`: strokes of drop centres on the 40-unit tile grid. The engine draws a
+spine through each stroke (bisector tangents clamped to the shorter chord), thickens it with
+the family's contrast (full stem standing up, thinner lying down, eased along the stroke),
+ends it in a round cap or a flat cut, and gathers any self-crossing loop at a sharp corner
+onto the crossing point so the outline never crosses itself and keeps the same point count
+at every weight. A stroke whose end meets its own start is gathered too, so a closed ring is
+always two overlapping open arcs. Strokes overlap where they meet, so a drops letter fills
+**nonzero** (`fillRule(ch)`); the Studio's renderers and the export sheet honour that, and
+the font build keeps the overlaps (TrueType fills by winding) with every stroke oriented as
+an outer contour. **Liquid joins** (`junctions` / `webs`, on unless `liquid: false`): every
+junction is found on the spines (a stroke's end within 1.6 tiles of another stroke, or two
+spines crossing), the ending stroke is stretched so its cap just touches the other stroke's
+far edge from inside, and each notch between two adjacent arms (angle 20°–160°) gets a web:
+a 3-point patch bounded by the two edges and a fillet tangent to both, radius 0.9 of the
+thinner arm's half-width at that weight. Junctions do not depend on the weight, so the webs
+keep the point count matched. The tracer (`traceImage`) thresholds a reference image, thins
+it (Zhang–Suen), walks the skeleton into polylines, simplifies, snaps to tiles and joins the
+pieces end to end — a first pass to edit, not a drawing. The density rule of the health
+score does not apply to drops letters.
+
+**The new-letter dialog** (`startNew()` / `openDialog()` in `newglyph.js`, Cmd/Ctrl+N or the
++ tile): typed-as (one character or `U+XXXX`, with the keys Aqua does not use laid out),
+name, category, height, and where to start — an empty grid, a suggested structure, a traced
+image, or Aqua's rules. **The skeleton library** (`studio/skeletons.js`, `AquaSkeletons`)
+holds 110 structures — a–z, A–Z, 0–9, punctuation and signs, a few pictos — as drop strokes
+in font units with a plain-language `describe(ch)`; `strokes(ch, height)` scales one to a
+height. It is a codified library of the usual construction of each character, not learned
+from other fonts, and the dialog says so. `node tools/shoot_skeletons.mjs` renders the whole
+library through the engine to `studio/shots/skeletons-light.png`.
+
+**The digits and the set.** The rules have always drawn 0–9; `spareChars()` lists what the
+rules can draw beyond `ORDER`, `doc.extra` switches them on one by one (`D.addExtra` /
+`removeExtra`, the Health room's chips, the dialog's "Aqua's rules"), `extraChars()` reads
+that, and `allChars()` is `ORDER` + extras + the drops letters in use. Every room, the
+export sheet, the health, the audits and the font build go through `allChars()`. Categories:
+`doc.categories` (editable list, `DEFAULT_CATEGORIES`) and `doc.category[ch]`; `categoryOf`
+guesses from the character; a new letter carries its own `category`. The Health room's
+"The set" panel shows the counts.
+
+**Simplify** (`simplifyPath` / `simplifyPair`, `D.simplify(ch)`, "Redraw with fewer points"
+in the inspector for any letter over 40 points): the outline is flattened (8 samples per
+curve), corners (turning over 50° within 12 units either side) and extremes (x or y
+direction changing sign) become the points, one cubic is fitted per run (least squares for
+the handle lengths, four Newton reparameterisations), and a run that misses by more than
+1.5 units is split at its worst point. The splits are found on the Black and replayed index
+for index on the Light, so both weights come out with the same structure; the result is a
+master pair with `source: 'simplified'` that `forgetMaster` undoes. The s goes from 354
+points to 24 within about 2 units of the original.
+
+**Not offered, and why** (also in the Guide): booleans change the point count and can do so
+differently per weight, which breaks the blend; a freehand pencil would trace, and Aqua is
+constructed. Drops letters keep their overlaps instead.
 
 **The font build.** `node tools/export_masters.mjs [edits.json]` writes `build/masters.json`
 straight from the engine (no browser): every glyph at the three master stems 53 / 78 / 106,
@@ -119,8 +159,24 @@ now* (edits included). A drawing whose point structure differs is refused with t
 Bringing one in replaces that weight's master, freezes the other weight as it looks now, and
 clears that letter's point edits, so the axis always has two matching outlines.
 
+**The editor** (`studio/editor.js`): selection is a Set — click, Shift-click, a marquee on
+empty canvas (Shift adds), Cmd/Ctrl+A, Tab; a drag on any selected point moves them all
+through `D.nudgeMany`; arrows nudge; Backspace removes points (`D.deleteNodes`, an
+`op` in the variation, applied by the engine's `applyOps` before the nudges, identically at
+every weight); Add point inserts on the outline (`E.nearestOnPath` → `D.insertNode`, a de
+Casteljau split); Measure draws a ruler; rotate / scale / flip act about the selection's
+centre. Space or the middle button pans, scroll / + / − zoom, 0 fits. The health module's
+`marks(ch, s)` puts amber haloes on overlapping points and bumps, the audit's crowding
+finding puts red ones on dark joins; the neighbours draw as ghosts from `E.layout`; a line
+of the set runs under the canvas; "Aqua's rules at this weight" lists the derived numbers.
+The Save button gets `attn` while the document has unsaved changes and the inspector carries
+a savebar. `?` opens the cheat sheet (`CHEAT` in `studio.js`).
+
 `node tools/test_studio.mjs` drives the running app end to end (drag, undo, nudge, snap,
-one-weight editing, variations, save/open, autosave, import, forget) and must stay green.
+multi-select, marquee, pan, add / remove point, measure, cheat sheet, one-weight editing,
+variations, save/open, autosave, import, forget, spacing, the built font, the digits, the
+Health counts and categories, the new-letter dialog, drops letters, the tracer, the skeleton
+library, liquid joins, simplify — 75 checks) and must stay green.
 
 ### One thing that will look strange
 

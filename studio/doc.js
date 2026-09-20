@@ -112,7 +112,18 @@ function importMaster(ch, weight, d) {
   const g = doc.glyphs[ch]; if (g) { const v = g.variants[g.use || 0]; v.light = {}; v.black = {}; }
   return { ok: true };
 }
-function forgetMaster(ch) { delete doc.masters[ch]; commit(`Forget the imported drawing of ${ch}`); }
+function forgetMaster(ch) { delete doc.masters[ch]; commit(`Forget the drawing of ${ch}`); }
+// Redraw a letter with few points: corners and extremes, one curve between them, the same
+// structure in both weights. It becomes a drawn letter (a master pair) that can be edited
+// point by point, and forgetMaster() brings the old drawing back.
+function simplify(ch) {
+  const r = E.simplifyPair(ch); if (!r) return { ok: false, why: 'the two weights did not come out with the same points' };
+  const cur = E.masterPair(ch);
+  doc.masters[ch] = { black: r.black, regular: r.regular, source: 'simplified', when: new Date().toISOString().slice(0, 10), from: cur ? cur.source : 'rules' };
+  const g = doc.glyphs[ch]; if (g) for (const v of g.variants) { v.light = {}; v.black = {}; delete v.ops; }
+  commit(`Redraw ${ch} with ${r.points} points`);
+  return { ok: true, points: r.points };
+}
 function hasMaster(ch) { return !!doc.masters[ch]; }
 
 // ── spacing ──
@@ -173,7 +184,7 @@ function get() { return doc; }
 return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty,
          variants, variant, used, hasEdits, nudge, setNode, resetNode, nodeState, applyToAll, weightsDiffer, resetGlyph,
          addVariant, useVariant, renameVariant, removeVariant,
-         importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange,
+         importMaster, forgetMaster, hasMaster, simplify, changeCount, toJSON, download, openText, clearAll, onChange,
          setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc,
          newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph,
          insertNode, deleteNodes, hasOps, nudgeMany, categories, setCategories, categoryOf, setCategory,

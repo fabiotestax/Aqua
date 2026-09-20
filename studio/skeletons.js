@@ -152,7 +152,7 @@ function describe(ch) { const e = LIB[ch]; return e ? e[0][0].toUpperCase() + e[
 function strokes(ch, height) {
   const e = LIB[ch]; if (!e) return null;
   const nat = NATURAL[e[1]], want = NATURAL[height] || nat, k = want / nat;
-  const out = e[2]().map(st => st.map(([x, y]) => [R(x), R(y * k)]));
+  const out = e[2]().map(st => st.map(([x, y]) => [R(x), R(y * k)]).filter((p, i, a) => !i || p[0] !== a[i - 1][0] || p[1] !== a[i - 1][1]));
   return { strokes: out, natural: e[1] };
 }
 function chars() { return Object.keys(LIB); }
