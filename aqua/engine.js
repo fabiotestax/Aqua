@@ -1318,10 +1318,33 @@ function nodeEdits(ch, variant) {
   if (!g || !g.variants || !g.variants.length) return null;
   const v = g.variants[variant == null ? (g.use || 0) : variant] || g.variants[0];
   const has = o => o && Object.keys(o).length;
-  return has(v.light) || has(v.black) ? v : null;
+  return has(v.light) || has(v.black) || (v.ops && v.ops.length) ? v : null;
 }
-function applyEdits(d, light, black, t) {
-  const subs = parsePath(d);
+// Structural edits shared by both weights: insert a point on a segment (the curve keeps its
+// shape — de Casteljau split) or remove a point (its two segments become one). Applied
+// before the nudges, identically at every weight, so the point counts stay matched.
+function applyOps(subs, ops) {
+  for (const op of ops || []) {
+    if (op.op === 'insert') {
+      const sub = subs[op.sub]; if (!sub || !sub[op.seg]) continue;
+      const [p0, c1, c2, p3, k] = sub[op.seg], t = Math.max(0.05, Math.min(0.95, op.t)), u = 1 - t;
+      const L = (a, b) => [a[0] * u + b[0] * t, a[1] * u + b[1] * t];
+      const q0 = L(p0, c1), q1 = L(c1, c2), q2 = L(c2, p3), r0 = L(q0, q1), r1 = L(q1, q2), m = L(r0, r1);
+      if (k === 'L') sub.splice(op.seg, 1, [p0, L(p0, [p0[0] + (m[0] - p0[0]) / 3, p0[1] + (m[1] - p0[1]) / 3]), [p0[0] + 2 * (m[0] - p0[0]) / 3, p0[1] + 2 * (m[1] - p0[1]) / 3], m, 'L'], [m, [m[0] + (p3[0] - m[0]) / 3, m[1] + (p3[1] - m[1]) / 3], [m[0] + 2 * (p3[0] - m[0]) / 3, m[1] + 2 * (p3[1] - m[1]) / 3], p3, 'L']);
+      else sub.splice(op.seg, 1, [p0, q0, r0, m, 'C'], [m, r1, q2, p3, 'C']);
+    } else if (op.op === 'delete') {
+      // global node index → subpath and position
+      let i = op.node, si = 0; while (si < subs.length && i >= subs[si].length) { i -= subs[si].length; si++; }
+      const sub = subs[si]; if (!sub || sub.length < 3) continue;
+      const prev = sub[(i + sub.length - 1) % sub.length], cur = sub[i];
+      const merged = [prev[0], prev[1], cur[2], cur[3], prev[4] === 'C' || cur[4] === 'C' ? 'C' : 'L'];
+      sub.splice(i, 1); sub[(i + sub.length - 1) % sub.length] = merged;
+    }
+  }
+  return subs;
+}
+function applyEdits(d, light, black, t, ops) {
+  const subs = applyOps(parsePath(d), ops);
   const L = light || {}, B = black || {};
   let i = 0;
   for (const sub of subs) {
@@ -1353,7 +1376,18 @@ function outline(ch, s, variant) {
   if (newGlyphFor(ch)) return d;
   const v = nodeEdits(ch, variant);
   if (!v) return d;
-  return applyEdits(d, v.light, v.black, Math.max(0, Math.min(1, (s - 53) / 53)));
+  return applyEdits(d, v.light, v.black, Math.max(0, Math.min(1, (s - 53) / 53)), v.ops);
+}
+// Where on the outline a point (font units) falls: the nearest segment and its parameter,
+// plus the distance — for the Add-point tool.
+function nearestOnPath(d, x, y) {
+  const subs = parsePath(d); let best = null;
+  subs.forEach((sub, si) => sub.forEach(([p0, c1, c2, p3], j) => {
+    for (let k = 0; k <= 24; k++) { const t = k / 24, u = 1 - t;
+      const px = u*u*u*p0[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*p3[0], py = u*u*u*p0[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*p3[1];
+      const dd = Math.hypot(px - x, py - y); if (!best || dd < best.dist) best = { sub: si, seg: j, t, dist: dd, p: [px, py] }; }
+  }));
+  return best;
 }
 // Any SVG path (absolute or relative M L H V C S Q T Z; arcs are skipped) → absolute
 // M / C / L / Z. Illustrator writes relative commands; this reads them exactly.
@@ -1614,7 +1648,7 @@ function nodes(d) {
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
   TILE, strokeDrops, dropsOutline, spinePath, newGlyphs, newGlyphFor, allChars, fillRule,
-  BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, outline,
+  BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, applyOps, outline, nearestOnPath,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,
   TUCK, NECK_TABLE, neckComp, inNeck, offsetPath, H_PATH, A_PATH, EXCL_PATH,

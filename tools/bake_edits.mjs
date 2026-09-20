@@ -44,8 +44,8 @@ const baked = JSON.parse(JSON.stringify(E.BAKED));
 for (const ch of Object.keys(doc.glyphs || {})) {
   const g = doc.glyphs[ch], v = g.variants[g.use || 0];
   const has = o => o && Object.keys(o).length;
-  if (!has(v.light) && !has(v.black)) continue;
-  baked.glyphs[ch] = { use: 0, variants: [{ name: 'main', light: v.light, black: v.black }] };
+  if (!has(v.light) && !has(v.black) && !(v.ops && v.ops.length)) continue;
+  baked.glyphs[ch] = { use: 0, variants: [{ name: 'main', light: v.light, black: v.black, ops: v.ops || [] }] };
   report.push(`baked ${Object.keys(v.light).length + Object.keys(v.black).length} point edits of ${ch}${g.variants.length > 1 ? ` (variation "${v.name}"; ${g.variants.length - 1} other variation(s) stay in the file)` : ''}`);
 }
 // 3. spacing: the whole table as it stands after this document

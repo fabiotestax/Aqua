@@ -40,7 +40,7 @@ after = await nodePos(3); ok(Math.abs((after[0] - before[0]) - 40) <= 3, 'redo m
 
 // 3. select + arrow nudge
 [cx, cy] = await nodeClient(5); await p.mouse.click(cx, cy); await p.waitForTimeout(50);
-ok(await p.evaluate(() => window.AquaEditor.state.sel === 5), 'clicking a point selects it');
+ok(await p.evaluate(() => window.AquaEditor.state.sel.has(5) && window.AquaEditor.state.sel.size === 1), 'clicking a point selects it');
 const b5 = await nodePos(5);
 await p.keyboard.press('ArrowUp'); await p.keyboard.press('Shift+ArrowLeft'); await p.waitForTimeout(100);
 after = await nodePos(5); ok(after[1] - b5[1] === 1 && b5[0] - after[0] === 10, `arrow keys nudge (up 1, left 10): ${after[0] - b5[0]}, ${after[1] - b5[1]}`);
@@ -51,6 +51,51 @@ ok(await p.locator('#selnudge').textContent().then(t => t.includes('nudged')), '
 const pos5 = await nodePos(5), dyPx = (pos5[1] - 521 + 4) / upp;   // aim 4 units below the line
 await p.mouse.move(cx, cy); await p.mouse.down(); await p.mouse.move(cx, cy + dyPx, { steps: 10 }); await p.mouse.up(); await p.waitForTimeout(100);
 after = await nodePos(5); ok(after[1] === 521, `snaps to the Small letters guide (y ${after[1]})`);
+
+// 4b. more than one point: Shift-click, a rectangle, a group drag, Backspace
+[cx, cy] = await nodeClient(6); await p.keyboard.down('Shift'); await p.mouse.click(cx, cy); await p.keyboard.up('Shift'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => { const s = window.AquaEditor.state.sel; return s.size === 2 && s.has(5) && s.has(6); }), 'Shift-click adds a second point');
+const ptsBefore = await p.evaluate(() => [...document.querySelectorAll('#nodes .node')].map(c => [+c.getAttribute('cx'), +c.getAttribute('cy')]));
+const bb = await p.locator('#nodes').boundingBox();
+await p.mouse.move(bb.x - 12, bb.y - 12); await p.mouse.down(); await p.mouse.move(bb.x + bb.width + 12, bb.y + bb.height + 12, { steps: 8 });
+ok(await p.evaluate(() => !!document.querySelector('#cv .marquee')), 'dragging on empty canvas draws a rectangle');
+await p.mouse.up(); await p.waitForTimeout(80);
+const nAll = ptsBefore.length;
+ok(await p.evaluate(n => window.AquaEditor.state.sel.size === n, nAll), `the rectangle selects every point inside it (${nAll})`);
+[cx, cy] = await nodeClient(2); await p.mouse.move(cx, cy); await p.mouse.down(); await p.mouse.move(cx + 10, cy, { steps: 3 }); await p.mouse.move(cx + 30 / upp, cy, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(100);
+const ptsAfter = await p.evaluate(() => [...document.querySelectorAll('#nodes .node')].map(c => [+c.getAttribute('cx'), +c.getAttribute('cy')]));
+ok(ptsAfter.every((q, i) => Math.abs((q[0] - ptsBefore[i][0]) - 30) <= 3), 'dragging one selected point moves the whole selection');
+await p.keyboard.press('Control+z'); await p.waitForTimeout(80);
+await p.keyboard.press('Escape'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => window.AquaEditor.state.sel.size === 0), 'Esc clears the selection');
+// Space + drag looks around
+const panBefore = await p.evaluate(() => [window.AquaEditor.state.pan.slice(), window.AquaDoc.changeCount()]);
+await p.keyboard.down(' '); await p.mouse.move(bb.x + 40, bb.y + 40); await p.mouse.down(); await p.mouse.move(bb.x + 140, bb.y + 60, { steps: 5 }); await p.mouse.up(); await p.keyboard.up(' '); await p.waitForTimeout(80);
+ok(await p.evaluate(([p0, n0]) => { const p1 = window.AquaEditor.state.pan; return Math.abs(p1[0] - p0[0]) > 20 && window.AquaDoc.changeCount() === n0; }, panBefore), 'Space + drag pans the canvas without editing anything');
+await p.keyboard.press('0');
+// add a point on the outline, then remove it again
+const nPts = await p.evaluate(() => document.querySelectorAll('#nodes .node').length);
+await p.keyboard.press('a'); await p.waitForTimeout(50);
+const mid = await p.evaluate(() => { const E = window.AquaEngine, d = E.outline('h', 78); const sub = E.parsePath(d)[0]; const a = sub[0][0], b = sub[1][0]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; });
+const midClient = await p.evaluate(([ux, uy]) => { const svg = document.getElementById('cv'), flip = document.getElementById('flip'); const pt = svg.createSVGPoint(); pt.x = ux; pt.y = uy; const c = pt.matrixTransform(flip.getScreenCTM()); return [c.x, c.y]; }, mid);
+await p.mouse.click(midClient[0], midClient[1]); await p.waitForTimeout(120);
+ok(await p.evaluate(n => document.querySelectorAll('#nodes .node').length === n + 1 && window.AquaEditor.state.sel.size === 1, nPts), `Add point puts a point on the outline (${nPts} → ${nPts + 1})`);
+ok(await p.evaluate(() => window.AquaEngine.parsePath(window.AquaEngine.outline('h', 53))[0].length === window.AquaEngine.parsePath(window.AquaEngine.outline('h', 106))[0].length), 'both weights got the point');
+p.removeAllListeners('dialog'); p.on('dialog', d => d.accept());
+await p.keyboard.press('v'); await p.keyboard.press('Backspace'); await p.waitForTimeout(120);
+ok(await p.evaluate(n => document.querySelectorAll('#nodes .node').length === n, nPts), 'Backspace removes it again');
+p.removeAllListeners('dialog'); p.on('dialog', d => d.accept(d.type() === 'prompt' ? 'h · open' : undefined));
+// measure
+await p.keyboard.press('r'); await p.mouse.move(bb.x + 20, bb.y + 20); await p.mouse.down(); await p.mouse.move(bb.x + 120, bb.y + 20, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(80);
+ok(await p.evaluate(() => !!document.querySelector('#cv .measure')), 'the measure tool draws a ruler');
+await p.keyboard.press('Escape'); await p.keyboard.press('v');
+// the cheat sheet
+await p.keyboard.press('?'); await p.waitForTimeout(80);
+ok(await p.evaluate(() => !!document.querySelector('#cheatsheet') && document.querySelector('#cheatsheet').textContent.includes('Space')), '? opens the cheat sheet');
+await p.screenshot({ path: 'studio/shots/cheatsheet-light.png' });
+await p.keyboard.press('Escape'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => !document.querySelector('#cheatsheet')), 'Esc closes it');
+ok(await p.evaluate(() => document.querySelector('#save').classList.contains('attn') && !!document.querySelector('.savebar')), 'the Save button and the inspector remind you to save');
 
 // 5. unlinked: edit Black only
 await p.click('#linked'); await p.waitForTimeout(100);

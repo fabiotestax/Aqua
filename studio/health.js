@@ -58,32 +58,39 @@ function extremumDepth(p0, c1, c2, p3) {
 
 function analyse(subs, stem) {
   const segs = [].concat(...subs);
-  let maxJump = 0, maxK = 0;
-  const FILLET_R = 0.6 * stem;
+  let maxJump = 0, maxK = 0, jumpAt = null, base = 0;
+  const FILLET_R = 0.6 * stem, marks = [];
   for (const sub of subs) {
     const n = sub.length;
     for (let i = 0; i < n; i++) {
       const [p0, c1, c2, p3, k] = sub[i];
       for (const t of [0, 0.25, 0.5, 0.75, 1]) maxK = Math.max(maxK, Math.abs(curv(p0, c1, c2, p3, t)));
       const [q0, q1, q2, q3, kk] = sub[(i + 1) % n];
+      // two points on top of each other
+      if (Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) < 1.5) marks.push({ code: 'overlap', node: base + (i + 1) % n, text: 'Two points sit on top of each other here' });
       if (k === 'L' || kk === 'L') continue;
       const ke = curv(p0, c1, c2, p3, 1), ks = curv(q0, q1, q2, q3, 0);
       if (Math.max(Math.abs(ke), Math.abs(ks)) > 1 / FILLET_R) continue;
-      maxJump = Math.max(maxJump, Math.abs(ke - ks));
+      const jump = Math.abs(ke - ks);
+      if (jump > maxJump) { maxJump = jump; jumpAt = base + (i + 1) % n; }
     }
+    base += n;
   }
-  let nonmono = 0, squashed = 0;
+  if (jumpAt != null && maxJump > 0.008) marks.push({ code: maxJump > 0.02 ? 'lump' : 'lump-slight', node: jumpAt, text: maxJump > 0.02 ? 'The curve bumps here' : 'The curve bumps slightly here' });
+  let nonmono = 0, squashed = 0, gi = 0;
   for (const [p0, c1, c2, p3, k] of segs) {
+    gi++;
     if (k !== 'C') continue;
-    if (!monotone(p0, c1, c2, p3) && extremumDepth(p0, c1, c2, p3) > 2) nonmono++;
+    if (!monotone(p0, c1, c2, p3) && extremumDepth(p0, c1, c2, p3) > 2) { nonmono++; marks.push({ code: 'extreme', node: gi - 1, text: 'This curve has no point at its outermost edge' }); }
     const chord = Math.hypot(p3[0]-p0[0], p3[1]-p0[1]);
     if (chord < 1e-6) continue;
     const h1 = Math.hypot(c1[0]-p0[0], c1[1]-p0[1]), h2 = Math.hypot(c2[0]-p3[0], c2[1]-p3[1]);
-    if (Math.min(h1, h2) < 0.05 * chord) squashed++;
+    if (Math.min(h1, h2) < 0.05 * chord) { squashed++; marks.push({ code: 'squashed', node: gi - 1, text: 'A curve handle is squashed flat here' }); }
   }
   const xs = [], ys = [];
   for (const s of segs) { xs.push(s[0][0], s[3][0]); ys.push(s[0][1], s[3][1]); }
   return {
+    marks,
     subpaths: subs.length, segs: segs.length, segsPerSub: subs.map(s => s.length),
     signature: subs.map(sub => sub.map(s => s[4]).join('')),
     maxJump: Math.round(maxJump * 1e5) / 1e5,
@@ -173,6 +180,8 @@ function lines(rep) {
   return out;
 }
 
+// Where the problems are, at one weight — for the canvas. [{ code, node, text }]
+function marks(ch, s) { const g = E.glyph(ch, s); if (!g) return []; return analyse(E.parsePath(g.d), s).marks; }
 function assessAll(hand) {
   const out = {};
   for (const ch of E.allChars()) out[ch] = assess(ch, hand);
@@ -180,5 +189,5 @@ function assessAll(hand) {
 }
 const LABEL = { green: 'Looks good', amber: 'Needs a look', red: 'Not Aqua yet' };
 
-return { STEMS, analyse, assess, assessAll, lines, LABEL };
+return { STEMS, analyse, assess, assessAll, lines, marks, LABEL };
 });

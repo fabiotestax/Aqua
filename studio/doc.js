@@ -61,7 +61,7 @@ function variants(ch) { const g = entry(ch); return g ? g.variants : [{ name: 'm
 function variant(ch, i) { const g = entry(ch, true); return g.variants[Math.min(i, g.variants.length - 1)]; }
 function used(ch) { const g = entry(ch); return g ? g.use || 0 : 0; }
 const has = o => o && Object.keys(o).length > 0;
-function hasEdits(ch, i) { const v = i == null ? null : variants(ch)[i]; if (v) return has(v.light) || has(v.black); return variants(ch).some(x => has(x.light) || has(x.black)); }
+function hasEdits(ch, i) { const v = i == null ? null : variants(ch)[i]; if (v) return has(v.light) || has(v.black) || !!(v.ops && v.ops.length); return variants(ch).some(x => has(x.light) || has(x.black) || (x.ops && x.ops.length)); }
 function edit(ch, i, node, which) { const v = variant(ch, i); const side = v[which] || (v[which] = {}); return side[node] || (side[node] = { d: [0, 0], r: 1 }); }
 function clean(v) { for (const w of ['light', 'black']) for (const k in v[w]) { const e = v[w][k]; if (Math.abs(e.d[0]) < 1e-9 && Math.abs(e.d[1]) < 1e-9 && Math.abs((e.r ?? 1) - 1) < 1e-9) delete v[w][k]; } }
 // Move a node by (dx, dy) — in both weights, or in one.
@@ -75,12 +75,21 @@ function setNode(ch, i, node, patch, which = 'both', settle = true) {
   clean(variant(ch, i));
   if (settle) commit(`Change point ${node + 1} of ${ch}`); else live();
 }
+// structural edits: insert a point on a segment / remove a point — both weights alike.
+// Node keys of the nudges shift so they keep pointing at the same points.
+function nodeIndexOfSeg(ch, i, sub, seg) { const subs = E.parsePath(E.outline(ch, 53, i)); let n = 0; for (let k = 0; k < sub; k++) n += subs[k].length; return n + seg; }
+function shiftKeys(v, from, by) { for (const w of ['light', 'black']) { const o = {}; for (const k in v[w]) { const n = +k; o[n >= from ? n + by : n] = v[w][k]; } v[w] = o; } }
+function insertNode(ch, i, sub, seg, t) { const v = variant(ch, i); const at = nodeIndexOfSeg(ch, i, sub, seg) + 1; (v.ops || (v.ops = [])).push({ op: 'insert', sub, seg, t }); shiftKeys(v, at, 1); commit(`Add a point to ${ch}`); return at; }
+function deleteNodes(ch, i, nodes) { const v = variant(ch, i); const list = [...new Set(nodes)].sort((a, b) => b - a); for (const n of list) { (v.ops || (v.ops = [])).push({ op: 'delete', node: n }); delete v.light[n]; delete v.black[n]; shiftKeys(v, n + 1, -1); } commit(`Remove ${list.length} point${list.length > 1 ? 's' : ''} from ${ch}`); }
+function hasOps(ch, i) { const v = variants(ch)[i]; return !!(v && v.ops && v.ops.length); }
+// move several nodes at once (a drag of a selection, a rotate, a scale)
+function nudgeMany(ch, i, deltas, which = 'both', settle = true, label) { for (const n in deltas) for (const w of which === 'both' ? ['light', 'black'] : [which]) { const e = edit(ch, i, +n, w); e.d = [e.d[0] + deltas[n][0], e.d[1] + deltas[n][1]]; } clean(variant(ch, i)); if (settle) commit(label || `Move ${Object.keys(deltas).length} points of ${ch}`); else live(); }
 function resetNode(ch, i, node) { const v = variant(ch, i); delete v.light[node]; delete v.black[node]; commit(`Reset point ${node + 1} of ${ch}`); }
 function nodeState(ch, i, node) { const v = variants(ch)[i] || variants(ch)[0]; return { light: v.light[node] || null, black: v.black[node] || null }; }
 // "Apply to all weights": carry one weight's edits onto the other.
 function applyToAll(ch, i, from) { const v = variant(ch, i); const to = from === 'light' ? 'black' : 'light'; v[to] = clone(v[from]); commit(`Apply ${ch}'s ${from === 'light' ? 'Light' : 'Black'} edits to both weights`); }
 function weightsDiffer(ch, i) { const v = variants(ch)[i] || variants(ch)[0]; return JSON.stringify(v.light) !== JSON.stringify(v.black); }
-function resetGlyph(ch, i) { if (doc.glyphs[ch]) { const k = i == null ? doc.glyphs[ch].use || 0 : i; doc.glyphs[ch].variants[k] = { name: doc.glyphs[ch].variants[k].name, light: {}, black: {} }; } commit(`Start ${ch} over`); }
+function resetGlyph(ch, i) { if (doc.glyphs[ch]) { const k = i == null ? doc.glyphs[ch].use || 0 : i; doc.glyphs[ch].variants[k] = { name: doc.glyphs[ch].variants[k].name, light: {}, black: {}, ops: [] }; } commit(`Start ${ch} over`); }
 
 // ── variations ──
 function addVariant(ch, name, from) { const g = entry(ch, true); const src = g.variants[from ?? g.use ?? 0]; g.variants.push({ name: name || `${ch} · ${g.variants.length + 1}`, light: clone(src.light), black: clone(src.black) }); commit(`New variation of ${ch}`); return g.variants.length - 1; }
@@ -123,8 +132,23 @@ function updateNewGlyph(key, patch, settle = true, label) { const g = doc.newGly
 function setStrokes(key, strokes, settle = true, label) { const g = doc.newGlyphs && doc.newGlyphs[key]; if (!g) return; g.strokes = clone(strokes); if (settle) commit(label || `Change the drops of ${key}`); else live(); }
 function removeNewGlyph(key) { if (doc.newGlyphs) delete doc.newGlyphs[key]; commit(`Delete the letter ${key}`); }
 
+// ── categories ──
+// doc.categories: the list (editable); doc.category[ch]: which one a letter belongs to.
+const DEFAULT_CATEGORIES = ['Letters', 'Capitals', 'Numbers', 'Punctuation', 'Diacritics', 'Ligatures', 'Pictos', 'Other'];
+function categories() { return doc.categories || DEFAULT_CATEGORIES.slice(); }
+function setCategories(list) { doc.categories = list.filter(Boolean); commit('Change the categories'); }
+function categoryOf(ch) {
+  if (doc.category && doc.category[ch]) return doc.category[ch];
+  const g = newGlyphs(); for (const k in g) if (g[k].ch === ch && g[k].category) return g[k].category;
+  if (/^[a-z]$/.test(ch)) return 'Letters'; if (/^[A-Z]$/.test(ch)) return 'Capitals'; if (/^[0-9]$/.test(ch)) return 'Numbers';
+  if (/^[!?.,;:'"()\-–—&@#%*\/\\]$/.test(ch)) return 'Punctuation';
+  if (/^[\u00C0-\u017F]$/.test(ch)) return 'Diacritics';
+  return 'Other';
+}
+function setCategory(ch, cat) { (doc.category || (doc.category = {}))[ch] = cat; commit(`${ch} is a ${cat.toLowerCase()} glyph`); }
+
 // ── files ──
-function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length; return n + Object.keys(doc.masters).length + spacingChanges() + Object.keys(doc.newGlyphs || {}).length; }
+function changeCount() { let n = 0; for (const ch in doc.glyphs) for (const v of doc.glyphs[ch].variants) n += Object.keys(v.light).length + Object.keys(v.black).length + (v.ops ? v.ops.length : 0); return n + Object.keys(doc.masters).length + spacingChanges() + Object.keys(doc.newGlyphs || {}).length; }
 function toJSON() { doc.saved = new Date().toISOString(); return JSON.stringify(doc, null, 1); }
 function download() {
   const a = document.createElement('a');
@@ -146,5 +170,6 @@ return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty
          addVariant, useVariant, renameVariant, removeVariant,
          importMaster, forgetMaster, hasMaster, changeCount, toJSON, download, openText, clearAll, onChange,
          setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc,
-         newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph };
+         newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph,
+         insertNode, deleteNodes, hasOps, nudgeMany, categories, setCategories, categoryOf, setCategory };
 });

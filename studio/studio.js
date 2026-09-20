@@ -86,9 +86,10 @@ function renderTop() {
       <span id="docstate" title="${esc(D.lastLabel())}">${D.changeCount() ? `${D.changeCount()} change${D.changeCount() > 1 ? 's' : ''}${D.dirty() ? ' · not saved to a file' : ' · saved'}` : 'no changes'}</span>
       <button class="iconbtn ${D.canUndo() ? '' : 'off'}" id="undo" title="Undo${D.canUndo() ? ' · ' + esc(D.lastLabel()) : ''}"><svg viewBox="0 0 20 20"><path d="M8 5L4 9l4 4M4 9h8a4 4 0 0 1 0 8h-2"/></svg></button>
       <button class="iconbtn ${D.canRedo() ? '' : 'off'}" id="redo" title="Redo"><svg viewBox="0 0 20 20"><path d="M12 5l4 4-4 4M16 9H8a4 4 0 0 0 0 8h2"/></svg></button>
-      <button class="iconbtn" id="save" title="Save your changes to a file"><svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg></button>
+      <button class="iconbtn ${D.dirty() && D.changeCount() ? 'attn' : ''}" id="save" title="Save your changes to a file (Cmd/Ctrl+S)"><svg viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg>${D.dirty() && D.changeCount() ? '<span>Save</span>' : ''}</button>
       <button class="iconbtn" id="open" title="Open a saved file"><svg viewBox="0 0 20 20"><path d="M10 13V3M6 7l4-4 4 4M4 16h12"/></svg></button>
       <input type="file" id="openfile" accept=".json,application/json" style="display:none">
+      <button class="iconbtn" id="cheat" title="Keyboard shortcuts (?)"><b style="font-size:13px">?</b></button>
       <button class="iconbtn" id="theme" title="Light / dark">${isDark()
         ? '<svg viewBox="0 0 20 20"><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5"/><path d="M10 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>'
         : '<svg viewBox="0 0 20 20"><path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"/></svg>'}</button>
@@ -96,6 +97,7 @@ function renderTop() {
   $('#rooms').onclick = e => { const b = e.target.closest('[data-room]'); if (b) go(b.dataset.room); };
   $('#theme').onclick = () => { S.theme = isDark() ? 'light' : 'dark'; save('theme', S.theme); applyTheme(); renderTop(); renderRoom(); };
   $('#undo').onclick = () => D.undo(); $('#redo').onclick = () => D.redo();
+  $('#cheat').onclick = () => toggleCheat();
   $('#save').onclick = () => D.download();
   $('#open').onclick = () => $('#openfile').click();
   $('#openfile').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { D.openText(t); } catch (err) { alert('That is not a Studio file: ' + err.message); } }); e.target.value = ''; };
@@ -483,8 +485,30 @@ D.init();
 computeHealth();
 renderTop(); renderRoom();
 D.onChange(() => { computeHealth(); renderTop(); renderRoom(); });
+const CHEAT = [
+  ['Everywhere', [['Cmd/Ctrl Z', 'Undo'], ['Shift Cmd/Ctrl Z', 'Redo'], ['Cmd/Ctrl S', 'Save your changes to a file'], ['Cmd/Ctrl O', 'Open a saved file'], ['1 · 2 · 3', 'Light · Regular · Black'], ['[ · ]', 'Previous · next letter'], ['Cmd/Ctrl N', 'New letter from drops'], ['?', 'This sheet'], ['Esc', 'Close this sheet, let go of a selection']]],
+  ['Editing a letter', [['Click', 'Select a point'], ['Shift click', 'Add or remove a point from the selection'], ['Drag on empty space', 'Select everything inside the rectangle (Shift adds)'], ['Cmd/Ctrl A', 'Select every point'], ['Drag a selected point', 'Move the selection · snaps to guides and points · Shift for no snap'], ['Arrows', 'Nudge one unit · Shift for ten'], ['Tab · Shift Tab', 'Next · previous point'], ['Backspace', 'Remove the selected points'], ['V · A · M · N · R · C', 'Select · Add point · Move · Nudge · Measure · Compare'], ['Space + drag', 'Look around'], ['Scroll · + · −', 'Zoom'], ['0 · double-click', 'Fit the letter'], ['G', 'Show or hide the neighbours'], ['L', 'Link or unlink Light and Black']]],
+  ['A letter from drops', [['Click a tile', 'Add a drop, continuing the stroke you are on'], ['Esc', 'Start a new stroke next time'], ['V · A · E', 'Select · Add drop · Erase'], ['Arrows', 'Move the selected drop one tile'], ['Backspace', 'Remove the selected drop'], ['Space + drag', 'Look around'], ['Scroll', 'Zoom']]]
+];
+function toggleCheat(force) {
+  let el = $('#cheatsheet');
+  if (el && force !== true) { el.remove(); return; }
+  if (el) return;
+  el = document.createElement('div'); el.id = 'cheatsheet';
+  el.innerHTML = `<div class="sheet-card"><div class="kv" style="margin:0 0 10px"><b style="font-size:16px">Keyboard shortcuts</b><a href="#" id="cheatclose">Close</a></div>
+    <div class="cheatcols">${CHEAT.map(([t, rows]) => `<div><h6>${t}</h6><table>${rows.map(([k, w]) => `<tr><td class="key-cell"><kbd>${k}</kbd></td><td>${w}</td></tr>`).join('')}</table></div>`).join('')}</div></div>`;
+  document.body.appendChild(el);
+  el.onclick = e => { if (e.target === el || e.target.id === 'cheatclose') { e.preventDefault(); el.remove(); } };
+}
 addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey;
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement && document.activeElement.tagName);
+  if (e.key === 'Escape' && $('#cheatsheet')) { $('#cheatsheet').remove(); return; }
+  if (!typing && e.key === '?') { e.preventDefault(); toggleCheat(); return; }
+  if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); $('#openfile').click(); return; }
+  if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); if (window.AquaNew) window.AquaNew.startNew(); return; }
+  if (!typing && !mod && ['1', '2', '3'].includes(e.key) && S.room !== 'Test') { setStem([53, 78, 106][+e.key - 1]); return; }
+  if (!typing && !mod && (e.key === '[' || e.key === ']') && S.room === 'Glyphs' && !S.newKey) { const all = E.allChars(), i = all.indexOf(S.glyph); setGlyph(all[(i + (e.key === ']' ? 1 : all.length - 1)) % all.length]); return; }
   if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) D.redo(); else D.undo(); return; }
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); D.download(); return; }
   if (window.AquaNew && window.AquaNew.keydown(e)) { e.preventDefault(); return; }

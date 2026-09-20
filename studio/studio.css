@@ -243,3 +243,32 @@ td.bad { color: var(--bad); }
 .canvas .hovertile { fill: var(--blue); fill-opacity: .10; stroke: var(--blue); stroke-width: 1.5; pointer-events: none; }
 .canvas .node.from { fill: var(--warn); }
 .canvas #bones path { fill: none; }
+
+/* ── editing, round two ── */
+.iconbtn.attn { background: var(--blue); color: #fff; border-color: var(--blue); width: auto; padding: 0 10px 0 8px; gap: 6px; font-size: 12px; font-weight: 600; }
+.iconbtn.attn svg path { stroke: #fff; }
+.savebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--sub); background: var(--tile); border-radius: 9px; padding: 8px 10px; margin: 0 0 12px; }
+.savebar.dirty { background: var(--warn2); color: var(--ink); }
+.savebar b { background: var(--blue); color: #fff; border-radius: 7px; padding: 4px 10px; cursor: pointer; font-weight: 600; }
+.canvas.grab, .canvas.grab svg { cursor: grab; }
+.canvas.tool-addpoint svg { cursor: crosshair; } .canvas.tool-measure svg { cursor: crosshair; } .canvas.tool-move svg { cursor: move; }
+.canvas .marquee { fill: var(--blue); fill-opacity: .08; stroke: var(--blue); stroke-dasharray: 4 3; }
+.canvas .ghost { fill: var(--ink-fill); fill-opacity: .08; }
+.canvas .mark .markhalo { fill: var(--warn); fill-opacity: .18; stroke: var(--warn); stroke-opacity: .6; stroke-width: 1; }
+.canvas .mark .markdot { fill: var(--warn); }
+.canvas .mark { cursor: pointer; }
+.canvas .measure line { stroke: var(--blue); } .canvas .measure circle { fill: var(--blue); }
+.canvas .measure .mlabel { fill: var(--glass); stroke: var(--line); stroke-width: .5; } .canvas .measure text { fill: var(--ink); font-family: -apple-system, Inter, Helvetica, sans-serif; }
+.sel { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--panel); color: var(--ink); width: 100%; }
+details.rules { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 12px; font-size: 13px; }
+details.rules summary { cursor: pointer; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--sub); font-weight: 600; }
+details.rules .kv { margin: 6px 0 0; }
+.look { margin-left: 28px; flex: 1; opacity: .85; display: flex; align-items: center; min-width: 0; overflow: hidden; }
+.look svg { max-width: 100%; }
+.bottom .note { max-width: 300px; }
+#cheatsheet { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.sheet-card { background: var(--panel); border-radius: 16px; padding: 22px 26px; max-width: 1100px; width: 92vw; max-height: 86vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.cheatcols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.cheatcols table td { padding: 5px 6px; border: 0; font-size: 12.5px; vertical-align: middle; }
+.key-cell { white-space: nowrap; width: 1%; }
+kbd { font: 11px/1 -apple-system, Inter, Helvetica, sans-serif; background: var(--tile); border: 1px solid var(--line2); border-bottom-width: 2px; border-radius: 5px; padding: 3px 6px; color: var(--ink); white-space: nowrap; }

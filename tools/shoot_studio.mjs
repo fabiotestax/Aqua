@@ -31,9 +31,20 @@ await p.screenshot({ path: `${out}/glyphs-a-black-light.png` });
 await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=k&stem=106', { waitUntil: 'networkidle' });
 await p.waitForFunction(() => window.studioReady === true);
 await p.evaluate(() => { window.AquaDoc.clearAll(); });
-await p.evaluate(() => { window.AquaDoc.nudge('k', 0, 4, 18, 0); window.AquaDoc.nudge('k', 0, 5, 18, 0); window.AquaEditor.state.sel = 5; window.AquaStudio.renderRoom(); });
+await p.evaluate(() => { window.AquaDoc.nudge('k', 0, 4, 18, 0); window.AquaDoc.nudge('k', 0, 5, 18, 0); window.AquaEditor.select([5]); window.AquaStudio.renderRoom(); });
 await p.waitForTimeout(150);
 await p.screenshot({ path: `${out}/glyphs-editing-light.png` });
+// several points at once: the whole bowl of the k's arm selected, with the group tools in the inspector
+await p.evaluate(() => { window.AquaEditor.select([4, 5, 6, 7, 8]); window.AquaStudio.renderRoom(); });
+await p.waitForTimeout(150);
+await p.screenshot({ path: `${out}/glyphs-multiselect-light.png` });
+// the s with its marks: overlapping points and bumps, haloed on the canvas
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=s&stem=106', { waitUntil: 'networkidle' });
+await p.waitForFunction(() => window.studioReady === true);
+await p.waitForTimeout(150);
+await p.screenshot({ path: `${out}/glyphs-marks-light.png` });
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=k&stem=106', { waitUntil: 'networkidle' });
+await p.waitForFunction(() => window.studioReady === true);
 await p.evaluate(() => { window.AquaEditor.state.compare = true; window.AquaStudio.renderRoom(); });
 await p.waitForTimeout(150);
 await p.screenshot({ path: `${out}/glyphs-compare-light.png` });
