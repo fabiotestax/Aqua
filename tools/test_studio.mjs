@@ -208,11 +208,15 @@ await p.screenshot({ path: 'studio/shots/health-set-light.png' });
 await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
 await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
 await p.locator('#nl-ch').fill('L'); await p.locator('#nl-name').fill('L'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => document.querySelector('input[value="rules"]').checked && document.querySelector('#nl-from').textContent.includes('a stem and a bar')), 'for an L the dialog offers Aqua\'s construction first: a stem and a bar');
 await p.screenshot({ path: 'studio/shots/newletter-dialog-light.png' });
+await p.click('input[value="blank"]');
 await p.keyboard.press('Enter'); await p.waitForTimeout(200);
 ok(await p.evaluate(() => window.AquaStudio.S.newKey === 'L' && !!document.querySelector('#tiles')), 'a new letter opens the drops room');
 ok(await p.evaluate(() => window.AquaDoc.newGlyphs().L.category === 'Capitals' && window.AquaDoc.newGlyphs().L.height === 'caps'), 'with its category and height set from the key');
 const tileClient = (ux, uy) => p.evaluate(([ux, uy]) => { const svg = document.getElementById('cv'), flip = document.getElementById('flip'); const pt = svg.createSVGPoint(); pt.x = ux; pt.y = uy; const c = pt.matrixTransform(flip.getScreenCTM()); return [c.x, c.y]; }, [ux, uy]);
+await p.keyboard.press('s'); await p.waitForTimeout(100);   // the Stroke tool: taps continue the stroke, however far apart
+ok(await p.evaluate(() => window.AquaNew.state.tool === 'add'), 'S picks the Stroke tool');
 for (const [x, y] of [[40, 680], [40, 520], [40, 360], [40, 200], [40, 40], [40, 0], [200, 0], [360, 0]]) { const [cx, cy] = await tileClient(x, y); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
 let strokes = await p.evaluate(() => window.AquaDoc.newGlyphs().L.strokes);
 ok(strokes.length === 1 && strokes[0].length === 8, `eight taps make one stroke of eight drops (${strokes.map(s => s.length).join('+')})`);
@@ -256,14 +260,67 @@ await p.click('#ngliquid'); await p.waitForTimeout(150);
 ok(await p.evaluate(() => window.AquaDoc.newGlyphs().ampersand.liquid === false), 'and it can be switched off per letter');
 // simplify: the s by rules has 354 points; the redraw keeps the shape with a few dozen, in both weights
 await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=s&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
-ok(await p.evaluate(() => document.querySelector('[data-act="simplify"]') !== null && document.querySelectorAll('#nodes .node').length === 354), 'the s offers "Redraw with fewer points"');
+ok(await p.evaluate(() => document.querySelectorAll('#nodes .node').length < 40 && !window.AquaStudio.S.health.s.flags.some(f => /Too many/.test(f.text))), `the s by rules is polished into ${await p.evaluate(() => document.querySelectorAll('#nodes .node').length)} points`);
+await p.evaluate(() => { window.AquaEngine.POLISH.delete('s'); window.AquaStudio.renderRoom(); }); await p.waitForTimeout(150);
+ok(await p.evaluate(() => document.querySelector('[data-act="simplify"]') !== null && document.querySelectorAll('#nodes .node').length > 300), 'unpolished, the s offers "Redraw with fewer points"');
 await p.click('[data-act="simplify"]'); await p.waitForTimeout(300);
 const simp = await p.evaluate(() => { const E = window.AquaEngine; const n = s => E.parsePath(E.outline('s', s)).map(x => x.length).join('+'); return { n106: n(106), n53: n(53), kind: E.kindOf('s'), nodes: document.querySelectorAll('#nodes .node').length, src: E.masterPair('s').source }; });
 ok(simp.kind === 'drawn' && simp.src === 'simplified' && simp.nodes < 40 && simp.n106 === simp.n53, `the s is redrawn with ${simp.nodes} points, the same in both weights`);
 ok(await p.evaluate(() => { const h = window.AquaStudio.S.health.s; return h.compatible && !h.flags.some(f => /Too many points/.test(f.text)); }), 'blends across weights and is no longer flagged as a trace');
 await p.screenshot({ path: 'studio/shots/glyphs-simplified-light.png' });
 await p.click('[data-act="forget"]'); await p.waitForTimeout(200);
-ok(await p.evaluate(() => window.AquaEngine.kindOf('s') === 'parametric' && document.querySelectorAll('#nodes .node').length === 354), '"Forget the redraw" brings the rules back');
+ok(await p.evaluate(() => window.AquaEngine.kindOf('s') === 'parametric' && document.querySelectorAll('#nodes .node').length > 300), '"Forget the redraw" brings the rules back');
+await p.evaluate(() => { window.AquaEngine.POLISH.add('s'); });
+// ── Aqua's construction: a capital from the family's parts, through the dialog ──
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=a&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.evaluate(() => { window.AquaDoc.clearAll(); });
+await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
+await p.locator('#nl-ch').fill('H'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => document.querySelector('input[value="rules"]').checked && document.querySelector('#nl-from').textContent.includes('two stems and a bar')), 'typing H offers Aqua\'s construction: two stems and a bar');
+await p.keyboard.press('Enter'); await p.waitForTimeout(250);
+const H = await p.evaluate(() => { const E = window.AquaEngine; const n = s => E.parsePath(E.outline('H', s)).map(x => x.length).join('+'); return { inSet: E.allChars().includes('H'), kind: E.kindOf('H'), glyph: window.AquaStudio.S.glyph, n106: n(106), n53: n(53), health: window.AquaStudio.S.health.H && window.AquaStudio.S.health.H.compatible }; });
+ok(H.inSet && H.kind === 'parametric' && H.glyph === 'H' && H.n106 === H.n53 && H.health, `the H joins the set, built from the parts, ${H.n106} points at every weight`);
+await p.screenshot({ path: 'studio/shots/glyphs-construction-H-light.png' });
+// every glyph Aqua can build has the same structure at every weight
+const allBuilt = await p.evaluate(() => { const E = window.AquaEngine; let bad = 0; for (const c of E.spareChars()) { const n = s => E.parsePath(E.outline(c, s)).map(x => x.length).join('+'); if (n(53) !== n(106) || n(78) !== n(106)) bad++; } return { n: E.spareChars().length, bad }; });
+ok(allBuilt.bad === 0 && allBuilt.n > 120, `all ${allBuilt.n} buildable glyphs keep their structure across the weights`);
+// the Health room: add all the capitals in one go
+await p.goto('http://localhost:8000/studio/?room=Health&theme=light', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.click('[data-addall="Capitals"]'); await p.waitForTimeout(400);
+ok(await p.evaluate(() => window.AquaEngine.allChars().filter(c => /^[A-Z]$/.test(c)).length === 26 && document.body.innerText.includes('Capitals · 26')), 'the Health room brings in all the capitals at once');
+await p.screenshot({ path: 'studio/shots/health-capitals-light.png' });
+// copy and paste between outline letters: the o's outer contour into the i
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=o&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+await p.locator('#nodes .node[data-i="0"]').click(); await p.keyboard.press('Control+c'); await p.waitForTimeout(80);
+ok(await p.evaluate(() => { const c = window.AquaDoc.clip(); return c && c.kind === 'contours' && c.n === 1 && c.from === 'o'; }), 'Cmd/Ctrl+C copies the contour under the selected point, at both weights');
+await p.goto('http://localhost:8000/studio/?room=Glyphs&theme=light&glyph=i&stem=106', { waitUntil: 'networkidle' }); await p.waitForFunction(() => window.studioReady === true);
+const iBefore = await p.evaluate(() => document.querySelectorAll('#nodes .node').length);
+await p.keyboard.press('Control+v'); await p.waitForTimeout(200);
+const iAfter = await p.evaluate(() => { const E = window.AquaEngine; return { nodes: document.querySelectorAll('#nodes .node').length, sel: window.AquaEditor.state.sel.size, same: E.parsePath(E.outline('i', 53)).length === E.parsePath(E.outline('i', 106)).length }; });
+ok(iAfter.nodes === iBefore + 6 && iAfter.sel === 6 && iAfter.same, `Cmd/Ctrl+V pastes it into the i (${iBefore} → ${iAfter.nodes} points), selected, in both weights`);
+await p.keyboard.press('Control+z'); await p.waitForTimeout(100);
+ok(await p.evaluate(n => document.querySelectorAll('#nodes .node').length === n, iBefore), 'and undo takes it out again');
+// the blob tool: blobs that touch merge like water
+await p.evaluate(() => { window.AquaDoc.clearAll(); });
+await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
+await p.locator('#nl-ch').fill('W'); await p.locator('#nl-name').fill('wave'); await p.click('input[value="blank"]'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+ok(await p.evaluate(() => window.AquaNew.state.tool === 'blob'), 'a new drops letter starts with the blob tool');
+const tile2 = (ux, uy) => p.evaluate(([ux, uy]) => { const svg = document.getElementById('cv'), flip = document.getElementById('flip'); const pt = svg.createSVGPoint(); pt.x = ux; pt.y = uy; const c = pt.matrixTransform(flip.getScreenCTM()); return [c.x, c.y]; }, [ux, uy]);
+for (const [x, y] of [[40, 0], [40, 40], [40, 80], [40, 200], [40, 240]]) { const [cx, cy] = await tile2(x, y); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
+let stw = await p.evaluate(() => window.AquaDoc.newGlyphs().wave.strokes.map(s => s.length));
+ok(stw.join('+') === '3+2', `blobs that touch join into a stroke, a far one starts another (${stw.join('+')})`);
+for (const [x, y] of [[40, 120], [40, 160]]) { const [cx, cy] = await tile2(x, y); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
+stw = await p.evaluate(() => window.AquaDoc.newGlyphs().wave.strokes.map(s => s.length));
+ok(stw.join('+') === '7', `a blob between two strokes bridges them into one (${stw.join('+')})`);
+{ const [cx, cy] = await tile2(80, 80); await p.mouse.click(cx, cy); await p.waitForTimeout(60); }
+stw = await p.evaluate(() => window.AquaDoc.newGlyphs().wave.strokes.map(s => s.length));
+ok(stw.join('+') === '7+2', `a blob beside the middle of a stroke starts a branch (${stw.join('+')})`);
+await p.screenshot({ path: 'studio/shots/newglyph-blob-light.png' });
+await p.keyboard.press('Escape'); await p.keyboard.press('Control+c'); await p.waitForTimeout(60);
+await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
+await p.locator('#nl-ch').fill('X'); await p.locator('#nl-name').fill('wave2'); await p.click('input[value="blank"]'); await p.keyboard.press('Enter'); await p.waitForTimeout(200);
+await p.keyboard.press('Control+v'); await p.waitForTimeout(150);
+ok(await p.evaluate(() => window.AquaDoc.newGlyphs().wave2.strokes.length === 2), 'strokes copy and paste between drops letters');
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();

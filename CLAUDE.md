@@ -95,14 +95,64 @@ height. It is a codified library of the usual construction of each character, no
 from other fonts, and the dialog says so. `node tools/shoot_skeletons.mjs` renders the whole
 library through the engine to `studio/shots/skeletons-light.png`.
 
-**The digits and the set.** The rules have always drawn 0–9; `spareChars()` lists what the
-rules can draw beyond `ORDER`, `doc.extra` switches them on one by one (`D.addExtra` /
-`removeExtra`, the Health room's chips, the dialog's "Aqua's rules"), `extraChars()` reads
-that, and `allChars()` is `ORDER` + extras + the drops letters in use. Every room, the
-export sheet, the health, the audits and the font build go through `allChars()`. Categories:
-`doc.categories` (editable list, `DEFAULT_CATEGORIES`) and `doc.category[ch]`; `categoryOf`
-guesses from the character; a new letter carries its own `category`. The Health room's
-"The set" panel shows the counts.
+**The construction, extended** (engine section of that name, after `BUILD`). The generator:
+146 more glyphs built from the parts the thirty use — capitals A–Z, punctuation and signs,
+the accents alone, the composed letters (àáâäãå ç èéêë ìíîï ñ òóôöõ ùúûü ýÿ and their
+capitals), fi and fl. The capital's rules come from the B, the one capital in the artwork:
+stem 1.20 s, bar 0.68 s·k, bowl walls 1.03 s, bowl top and bottom 0.76 s·k, tops cornered
+at 0.20 s, feet at 0.30 s, the inside of a junction at 0.22 s, a bar end on 0.30 of its own
+thickness. Helpers: `poly(vertices, radii)` (a polygon with a true circular fillet at every
+vertex, via `corner`), `rrect`, `bar`, `box`, lines as `[point, direction]` with `offL` (a
+line moved by the stroke) and `X` (where two cross), `ringOpen` (the c's construction at any
+size), `sCurve` (the s's), `circleRing`, `shiftPath`, `scalePath`. Straight capitals are
+polygons; diagonal ones place their outer edges and derive the inner ones by offset, so every
+junction is where two edges cross; round ones sit on the ring's and the bowl's rules; curved
+signs are centrelines under the contrast law (`strokePath`). Marks are drawn at the origin
+and placed by `compose(base, mark)` on the base's ink centre (the stem for i and j, whose
+dot is dropped), one dot-gap above the x-height or the cap. The table `EXT` holds
+`[builder, width | 'ink', spacing class, production name, description, nonzero?, stroke?]`;
+the loop after it registers everything in `BUILD`, `GNAME`, `EXT_W`, `EXT_SHAPE`,
+`NONZERO` (glyphs that overlap and fill by winding: `windNonzero` runs every hole the other
+way) and `POLISH`. `describeGlyph(ch)` is the plain sentence the dialog and the inspector
+show. `node tools/shoot_construction.mjs [out] [chars]` renders the set at Black and Light.
+
+**Polish.** `strokePath` outlines (the s, 2, 3, 5 and every stroke-built sign) are polylines
+of hundreds of pieces; `polishPath(key, d, at106)` fits them into cubics — corners judged
+over 6 units at 60°, a point at every extreme, one cubic per run, split where it misses by
+more than 1.2 — with the plan found at Black and replayed at every other weight
+(`simplifyPath` with `onlyLines`, so a cubic contour such as a drop is left alone). The
+stroke's ends are cut square with both corners softened on the family's 0.34 (K = 4 samples
+give way at each end, so the count is the same at every weight). The s now exports as
+about 30 points, not 354; `export identical to HEAD` no longer holds for s 2 3 5 by
+decision (2026-09-20). Health may still flag a tight inner turn at Black on a stroke glyph:
+that is a design note for Fabio, not a fault of the fit.
+
+**The digits and the set.** `spareChars()` lists everything `BUILD` can draw beyond
+`ORDER` (146 glyphs), `doc.extra` switches them on (`D.addExtra` / `addExtras` /
+`removeExtra`, the Health room's chips grouped by category with "add all", the dialog's
+"Aqua's construction"), `extraChars()` reads that, and `allChars()` is `ORDER` + extras +
+the drops letters in use. Every room, the export sheet, the health, the audits and the font
+build go through `allChars()`; a draft build with all 146 on gives 178 glyphs and
+`interpolatable: every glyph interpolates`. Categories: `doc.categories` (editable list,
+`DEFAULT_CATEGORIES`) and `doc.category[ch]`; `categoryOf` guesses from the character; a new
+letter carries its own `category`. The Health room's "The set" panel shows the counts.
+
+**Copy and paste.** `D.clip()` is the clipboard in `localStorage`. In the outline editor
+Cmd/Ctrl+C copies the contours holding the selected points (all with nothing selected) at
+both weights, from `E.outline(ch, 53 / 106)`; Cmd/Ctrl+V adds them to the current letter as
+an `addsub` op (`D.addContours`, applied by `applyOps` blended by t, so the blend keeps
+working). In the drops room the same keys copy the selected stroke (or all) and paste
+strokes. **Smart guides:** `snap()` in the editor snaps a dragged point to the guides and to
+other points' x and y, and failing that to a 45° ray from its neighbours or from where the
+drag started, drawn dashed with the angle. **Blob** (default tool in the drops room, key B):
+`addBlob` puts a drop that joins the end of any stroke it touches, bridges two strokes it
+touches at both ends, or starts a branch off the middle of one; on its own it is a round
+blob. S is the Stroke tool (taps continue the stroke, however far apart).
+
+**History.** Rewritten 2026-09-20 with git-filter-repo at Fabio's request: the source brand's
+files are gone from every commit, his working folder is `refs/fabio-files/`, and the name is
+replaced in every file and message. All three branches were force-pushed. Clones and forks
+made before that still carry the old history.
 
 **Simplify** (`simplifyPath` / `simplifyPair`, `D.simplify(ch)`, "Redraw with fewer points"
 in the inspector for any letter over 40 points): the outline is flattened (8 samples per
@@ -176,7 +226,9 @@ a savebar. `?` opens the cheat sheet (`CHEAT` in `studio.js`).
 multi-select, marquee, pan, add / remove point, measure, cheat sheet, one-weight editing,
 variations, save/open, autosave, import, forget, spacing, the built font, the digits, the
 Health counts and categories, the new-letter dialog, drops letters, the tracer, the skeleton
-library, liquid joins, simplify — 75 checks) and must stay green.
+library, liquid joins, simplify, Aqua's construction through the dialog and the Health
+room, the polish, copy/paste in both editors, the blob tool — 90 checks) and must stay
+green.
 
 ### One thing that will look strange
 

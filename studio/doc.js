@@ -143,9 +143,21 @@ function updateNewGlyph(key, patch, settle = true, label) { const g = doc.newGly
 function setStrokes(key, strokes, settle = true, label) { const g = doc.newGlyphs && doc.newGlyphs[key]; if (!g) return; g.strokes = clone(strokes); if (settle) commit(label || `Change the drops of ${key}`); else live(); }
 function removeNewGlyph(key) { if (doc.newGlyphs) delete doc.newGlyphs[key]; commit(`Delete the letter ${key}`); }
 
-// ── the rules' spare characters (the digits) switched on ──
+// ── the rules' spare characters (digits, capitals, punctuation, accents) switched on ──
 function extras() { return doc.extra || []; }
-function addExtra(ch) { if (!doc.extra) doc.extra = []; if (!doc.extra.includes(ch)) { doc.extra.push(ch); commit(`Add ${ch} from Aqua's rules`); } }
+function addExtra(ch) { if (!doc.extra) doc.extra = []; if (!doc.extra.includes(ch)) { doc.extra.push(ch); commit(`Add ${ch} from Aqua's construction`); } }
+function addExtras(list, label) { if (!doc.extra) doc.extra = []; let n = 0; for (const ch of list) if (!doc.extra.includes(ch)) { doc.extra.push(ch); n++; } if (n) commit(label || `Add ${n} glyphs from Aqua's construction`); }
+// ── contours pasted from another letter: an op that adds them at both weights ──
+function addContours(ch, vi, light, black) {
+  const v = variant(ch, vi); if (!v.ops) v.ops = [];
+  v.ops.push({ op: 'addsub', light, black });
+  commit(`Paste ${light.split('M').length - 1} contour${light.split('M').length > 2 ? 's' : ''} into ${ch}`);
+}
+// ── the clipboard: contours (at both weights) or strokes, kept in the browser ──
+function clip(v) {
+  if (v === undefined) { try { return JSON.parse(localStorage.getItem('aqua.clip') || 'null'); } catch { return null; } }
+  try { localStorage.setItem('aqua.clip', JSON.stringify(v)); } catch {}
+}
 function removeExtra(ch) { if (doc.extra) { doc.extra = doc.extra.filter(c => c !== ch); if (!doc.extra.length) delete doc.extra; } commit(`Take ${ch} out of the set`); }
 
 // ── categories ──
@@ -157,8 +169,9 @@ function categoryOf(ch) {
   if (doc.category && doc.category[ch]) return doc.category[ch];
   const g = newGlyphs(); for (const k in g) if (g[k].ch === ch && g[k].category) return g[k].category;
   if (/^[a-z]$/.test(ch)) return 'Letters'; if (/^[A-Z]$/.test(ch)) return 'Capitals'; if (/^[0-9]$/.test(ch)) return 'Numbers';
-  if (/^[!?.,;:'"()\-–—&@#%*\/\\]$/.test(ch)) return 'Punctuation';
-  if (/^[\u00C0-\u017F]$/.test(ch)) return 'Diacritics';
+  if (/^[!?.,;:'"()\[\]{}\-\u2013\u2014\u2212_&@#%*+=<>^~|\/\\\u2026\u00B7\u2022\u2018\u2019\u201C\u201D\u00AB\u00BB\u00A1\u00BF\u00B0\u20AC$\u00A3\u00D7\u00F7]$/.test(ch)) return 'Punctuation';
+  if (/^[\u00C0-\u017F\u00B4`\u02C6\u00A8\u02DC\u02DA\u00B8\u00AF\u02C7]$/.test(ch)) return 'Diacritics';
+  if (/^[\uFB01\uFB02]$/.test(ch)) return 'Ligatures';
   return 'Other';
 }
 function setCategory(ch, cat) { (doc.category || (doc.category = {}))[ch] = cat; commit(`${ch} is a ${cat.toLowerCase()} glyph`); }
@@ -188,5 +201,5 @@ return { init, get, commit, live, undo, redo, canUndo, canRedo, lastLabel, dirty
          setFromInk, setShape, setKern, resetSpacing, spacingChanges, spacing: spacingDoc,
          newGlyphs, addNewGlyph, updateNewGlyph, setStrokes, removeNewGlyph,
          insertNode, deleteNodes, hasOps, nudgeMany, categories, setCategories, categoryOf, setCategory,
-         extras, addExtra, removeExtra, DEFAULT_CATEGORIES };
+         extras, addExtra, addExtras, removeExtra, addContours, clip, DEFAULT_CATEGORIES };
 });

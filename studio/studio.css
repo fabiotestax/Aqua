@@ -213,6 +213,10 @@ td .g svg { height: 28px; width: auto; }
 .canvas .halo { fill: var(--blue); fill-opacity: .14; pointer-events: none; }
 .canvas .before { fill: none !important; stroke: var(--bad); stroke-opacity: .8; pointer-events: none; }
 .canvas .snapline { stroke: var(--blue); stroke-opacity: .7; pointer-events: none; }
+.canvas .snapline.ray { stroke-dasharray: 6 4; stroke-opacity: .55; }
+.canvas .snapdot { fill: var(--blue); pointer-events: none; }
+.canvas .snaplabel { fill: var(--blue); font-family: 'IBM Plex Mono', monospace; pointer-events: none; }
+.nl-keys b.can { border-bottom: 2px solid var(--blue); }
 .canvas svg { touch-action: none; user-select: none; cursor: default; }
 .canvas .hint { position: absolute; right: 18px; top: 14px; font-size: 12px; color: var(--sub); }
 .check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: -4px 0 12px; cursor: pointer; }

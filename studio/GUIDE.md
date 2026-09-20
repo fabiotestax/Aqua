@@ -49,25 +49,42 @@ weight: the letter has to belong to it.
 **A new letter.** The + tile in the grid, or Cmd/Ctrl+N, opens the new-letter dialog:
 
 - *Typed as*: the key that shows it when you type. One character, or a code like U+2764.
-  The keys Aqua does not use yet are laid out to pick from; a picto can sit on any of them.
+  The keys not yet in the set are laid out to pick from; the underlined ones Aqua can build
+  itself. Every accented letter and most signs can be typed straight in.
 - *Name*, *Category* and *Height* (guessed from the key; change them if you like).
-- *Start from*: an empty grid; **a suggested structure** from the Studio's library (it knows
-  the usual construction of every letter, digit, sign and a few pictos: a stem and an arch
-  for the n, a bowl and a stem for the a, a diagonal into a small loop then the big loop and
-  the arm for the ampersand; it is a codified library, not something learned from other
-  fonts, and always a start rather than a drawing); **a traced image** (pick a picture, the
-  Studio thins it to a skeleton and turns that into drops); or **Aqua's rules**, for the
-  characters the rules already draw (the digits 0–9): those come in as they are and open
-  in the editor like any other letter.
+- *Start from*: **Aqua's construction**, offered first whenever Aqua can build the character.
+  Aqua knows its own parts — the stem with the family foot and cut, the bar on its own
+  radius, the arch, the bowl, the ring, the diagonal joined with a true fillet, the
+  centreline stroke under the contrast law — and builds capitals, punctuation, signs,
+  accents and the composed letters from them, at every weight, the way the thirty are built.
+  The dialog says what it will make ("two stems and a bar") and the letter comes in drawn,
+  ready to edit point by point, with its health score. The alternatives are an empty grid
+  of drops, a rough structure from the drops library (it knows the usual shape of a
+  character, not other fonts), or a traced image.
 
-A letter from drops is made on a tile grid: tap tiles to place drops, drops that follow each
-other become one stroke, Esc starts a new stroke, touching another stroke's end joins it.
-The engine draws each stroke with Aqua's own thickness and contrast at every weight, and
-where strokes meet, **the joins flow like water**: a stroke that ends on another is
-stretched into it, and every corner between two strokes is webbed, like the meniscus water
-makes in a corner. The webs grow with the weight. Untick "Joins flow like water" in the
-inspector for plain overlapping strokes. "Suggest a structure" in the inspector places the
-library's drops for that character; "Add to Aqua" puts the letter in the set.
+The Health room's "The set" panel lists everything Aqua can build, grouped (Capitals,
+Numbers, Punctuation, Diacritics, Ligatures), one click each or "add all" for a group. A
+letter brought in this way can be taken out again from its inspector.
+
+A letter from drops is made on a tile grid with the **Blob** tool: tap a tile and a round
+blob appears; tap next to a stroke and the blob joins it; tap between two strokes and it
+bridges them into one; tap beside the middle of a stroke and a branch starts there. Blobs
+that touch merge like water, and where strokes meet, **the joins flow like water**: a
+stroke that ends on another is stretched into it, and every corner between two strokes is
+webbed, like the meniscus water makes in a corner. The webs grow with the weight. The
+**Stroke** tool (S) is for drawing a stroke tap by tap however far apart the drops are.
+The engine draws each stroke with Aqua's own thickness and contrast at every weight and
+polishes it into clean curves. Untick "Joins flow like water" for plain overlapping
+strokes; "Add to Aqua" puts the letter in the set.
+
+**Copy and paste.** In a letter, Cmd/Ctrl+C copies the contours under the selected points
+(all of them with nothing selected), at both weights; Cmd/Ctrl+V pastes them into any other
+letter, selected and ready to move. In a drops letter the same keys copy and paste strokes.
+
+**Smart guides.** While you drag a point, a guide appears when it lines up with a guide
+line or with another point's x or y, and a dashed ray with its angle when it sits at 45° to
+its neighbours or to where the drag started; the point follows the angle. Hold Shift to move
+it freely.
 
 **Weights** scrubs the whole alphabet from Light to Black and shows whether every letter
 blends cleanly between the two drawn weights.

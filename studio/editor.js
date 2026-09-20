@@ -197,7 +197,10 @@ function zoomBy(f, at) {
   if (before) { const after = toUnits(at); ed.pan = [ed.pan[0] + (before[0] - after[0]), ed.pan[1] + (before[1] - after[1])]; }
   redrawCanvas();
 }
-function snap(want, self, nodes, shift) {
+// Smart guides. A dragged point snaps to the guides and to the other points' x and y; failing
+// that, to a 45-degree ray from its neighbours or from where the drag started, so a point
+// follows an angle. Shift moves it freely.
+function snap(want, self, nodes, shift, origin) {
   const lines = []; let [x, y] = want;
   if (!shift) {
     const tol = 8 / ed.view.k; let bestY = null, bestX = null;
@@ -207,12 +210,31 @@ function snap(want, self, nodes, shift) {
       if (Math.abs(x - n.p[0]) <= tol && (bestX == null || Math.abs(x - n.p[0]) < Math.abs(x - bestX))) bestX = n.p[0]; });
     if (bestY != null) { y = bestY; lines.push(['y', bestY]); }
     if (bestX != null) { x = bestX; lines.push(['x', bestX]); }
+    if (bestX == null && bestY == null && self != null) {
+      const refs = [];
+      if (nodes[self - 1] && !ed.sel.has(self - 1)) refs.push(nodes[self - 1].p);
+      if (nodes[self + 1] && !ed.sel.has(self + 1)) refs.push(nodes[self + 1].p);
+      if (origin) refs.push(origin);
+      let best = null;
+      for (const R of refs) {
+        const d = Math.hypot(x - R[0], y - R[1]); if (d < 14) continue;
+        const a = Math.atan2(y - R[1], x - R[0]) * 180 / Math.PI;
+        for (const target of [0, 45, 90, 135, 180, -45, -90, -135]) {
+          const diff = Math.abs(((a - target + 540) % 360) - 180);
+          if (diff <= 3.5 && (!best || diff < best.diff)) best = { diff, R, target, d };
+        }
+      }
+      if (best) { const t = best.target * Math.PI / 180; x = best.R[0] + best.d * Math.cos(t); y = best.R[1] + best.d * Math.sin(t); lines.push(['ray', best.R, best.target]); }
+    }
   }
   return { p: [Math.round(x), Math.round(y)], lines };
 }
 function showSnaps(lines) {
   const g = document.getElementById('snaps'); if (!g) return; const v = ed.view, far = 4000;
-  g.innerHTML = lines.map(([ax, val]) => ax === 'y' ? `<line class="snapline" x1="${r1(v.x - far)}" x2="${r1(v.x + v.w + far)}" y1="${val}" y2="${val}" style="stroke-width:${r1(1 / v.k)}"/>` : `<line class="snapline" y1="${r1(v.y - far)}" y2="${r1(v.y + v.h + far)}" x1="${val}" x2="${val}" style="stroke-width:${r1(1 / v.k)}"/>`).join('');
+  g.innerHTML = lines.map(([ax, val, ang]) => {
+    if (ax === 'ray') { const t = ang * Math.PI / 180, L = 3000, c = Math.cos(t), sn = Math.sin(t); const lbl = ((ang % 180) + 180) % 180;
+      return `<line class="snapline ray" x1="${r1(val[0] - c * L)}" y1="${r1(val[1] - sn * L)}" x2="${r1(val[0] + c * L)}" y2="${r1(val[1] + sn * L)}" style="stroke-width:${r1(1 / v.k)}"/><circle class="snapdot" cx="${r1(val[0])}" cy="${r1(val[1])}" r="${r1(3 / v.k)}"/><text class="snaplabel" x="${r1(val[0] + c * 40 / v.k)}" y="${r1(val[1] + sn * 40 / v.k)}" transform="translate(0 ${r1(val[1] + sn * 40 / v.k)}) scale(1 -1) translate(0 ${-r1(val[1] + sn * 40 / v.k)})" style="font-size:${r1(11 / v.k)}px">${lbl}\u00b0</text>`; }
+    return ax === 'y' ? `<line class="snapline" x1="${r1(v.x - far)}" x2="${r1(v.x + v.w + far)}" y1="${val}" y2="${val}" style="stroke-width:${r1(1 / v.k)}"/>` : `<line class="snapline" y1="${r1(v.y - far)}" y2="${r1(v.y + v.h + far)}" x1="${val}" x2="${val}" style="stroke-width:${r1(1 / v.k)}"/>`; }).join('');
 }
 function bindCanvas() {
   const svg = document.getElementById('cv'), cv = document.getElementById('canvas'); if (!svg) return;
@@ -254,7 +276,7 @@ function bindCanvas() {
     if (drag.kind === 'nodes') {
       const nodes = flatNodes(outlineNow(ch, s));
       const want = [drag.base[0] + (p[0] - drag.start[0]), drag.base[1] + (p[1] - drag.start[1])];
-      const sn = snap(want, drag.i, nodes, e.shiftKey);
+      const sn = snap(want, drag.i, nodes, e.shiftKey, drag.base);
       const cur = nodes[drag.i].p, dx = sn.p[0] - cur[0], dy = sn.p[1] - cur[1];
       if (dx || dy) { const deltas = {}; for (const k of ed.sel) deltas[k] = [dx, dy]; D.nudgeMany(ch, ed.variant, deltas, w, false); drag.moved = true; updateLive(); }
       showSnaps(sn.lines);
@@ -342,6 +364,7 @@ function renderInspector() {
     </div>` : `<h6>This letter</h6>
     <div class="card" style="margin-top:0">
       <div class="kv"><span>Made</span><span class="ink">${KIND[g.kind]}</span></div>
+      ${E.describeGlyph(ch) ? `<div class="kv"><span>Built as</span><span>${esc(E.describeGlyph(ch))}</span></div>` : ''}
       <div class="kv"><span>Width</span><span>${r0(g.w)} units</span></div>
       <div class="kv"><span>Room on the left</span><span>${r0(g.lsb)} units</span></div>
       <div class="kv"><span>Room on the right</span><span>${r0(g.rsb)} units</span></div>
@@ -405,6 +428,26 @@ function renderInspector() {
   });
   const pad = insp.querySelector('#pad'); if (pad) pad.onclick = e => { const b = e.target.closest('[data-n]'); if (b && ed.sel.size) { const [dx, dy] = b.dataset.n.split(',').map(Number), m = e.shiftKey ? 10 : 1; nudgeSel(dx * m, dy * m); } };
 }
+// Copy and paste between letters. Copied are whole contours, the ones holding the selected
+// points (all of them with nothing selected), at both weights; pasted they become an op that
+// adds them to this letter at both weights, so the blend keeps working.
+function copySelection() {
+  const { S } = A(); const ch = S.glyph;
+  const L = E.parsePath(E.outline(ch, 53)), B = E.parsePath(E.outline(ch, 106));
+  const subOf = []; L.forEach((sub, si) => sub.forEach(() => subOf.push(si)));
+  const want = new Set(ed.sel.size ? [...ed.sel].map(i => subOf[i]).filter(x => x != null) : L.map((_, i) => i));
+  const pick = subs => E.serializePath(subs.filter((_, i) => want.has(i)));
+  D.clip({ kind: 'contours', light: pick(L), black: pick(B), from: ch, n: want.size });
+  const hint = document.getElementById('hint'); if (hint) hint.textContent = `copied ${want.size} contour${want.size > 1 ? 's' : ''} of ${ch} \u00b7 Cmd/Ctrl+V pastes into any letter`;
+}
+function pasteClip() {
+  const { S } = A(); const ch = S.glyph, c = D.clip(); if (!c) return;
+  if (c.kind !== 'contours') { alert('The clipboard holds drops, which go into a letter made of drops.'); return; }
+  const before = flatNodes(outlineNow(ch, S.stem)).length;
+  D.addContours(ch, ed.variant, c.light, c.black);
+  const after = flatNodes(outlineNow(ch, S.stem)).length;
+  ed.sel = new Set(Array.from({ length: after - before }, (_, i) => before + i)); redrawCanvas(); renderInspector();
+}
 function nudgeSel(dx, dy) { const { S } = A(); const ch = S.glyph, s = S.stem; const deltas = {}; for (const i of ed.sel) deltas[i] = [dx, dy]; D.nudgeMany(ch, ed.variant, deltas, which(s), true, ed.sel.size > 1 ? `Nudge ${ed.sel.size} points of ${ch}` : `Nudge point ${[...ed.sel][0] + 1} of ${ch}`); }
 function deleteSelection() {
   const { S } = A(); const ch = S.glyph, s = S.stem, nodes = flatNodes(outlineNow(ch, s)), list = selList();
@@ -428,6 +471,8 @@ function keydown(e) {
   if (e.key === 'Escape') { if (ed.sel.size || ed.measure) { ed.sel = new Set(); ed.measure = null; redrawCanvas(); renderInspector(); } return true; }
   if ((e.key === 'Backspace' || e.key === 'Delete') && ed.sel.size) { deleteSelection(); return true; }
   if (mod && e.key.toLowerCase() === 'a') { ed.sel = new Set(Array.from({ length: n }, (_, i) => i)); redrawCanvas(); renderInspector(); return true; }
+  if (mod && e.key.toLowerCase() === 'c') { copySelection(); return true; }
+  if (mod && e.key.toLowerCase() === 'v') { pasteClip(); return true; }
   if (mod) return false;
   const k = e.key.toLowerCase();
   const tools = { v: 'select', a: 'addpoint', m: 'move', n: 'nudge', r: 'measure', c: 'compare' };

@@ -433,10 +433,30 @@ function strokePath(nodes, wFn) {
     L.push([sm.p[0] + n[0] * w, sm.p[1] + n[1] * w]);
     R.push([sm.p[0] - n[0] * w, sm.p[1] - n[1] * w]);
   });
+  // the ends are cut square, with both corners softened on the family's 0.34 — the same
+  // corner every cut terminal in the set carries
+  const K = 4;   // samples that give way to the corner at each end — the same number at every weight
+  const cap = (pe, u, n, h, back) => {
+    const r = Math.min(0.68 * h, 0.9 * back, 0.9 * h), pts = [];   // 0.34 of the stroke: the family's corner
+    const CL = [pe[0] + n[0] * h, pe[1] + n[1] * h], CR = [pe[0] - n[0] * h, pe[1] - n[1] * h];
+    const c1 = [CL[0] - u[0] * r - n[0] * r, CL[1] - u[1] * r - n[1] * r], c2 = [CR[0] - u[0] * r + n[0] * r, CR[1] - u[1] * r + n[1] * r];
+    for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2; pts.push([c1[0] + (n[0] * Math.cos(a) + u[0] * Math.sin(a)) * r, c1[1] + (n[1] * Math.cos(a) + u[1] * Math.sin(a)) * r]); }
+    for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2; pts.push([c2[0] + (u[0] * Math.cos(a) - n[0] * Math.sin(a)) * r, c2[1] + (u[1] * Math.cos(a) - n[1] * Math.sin(a)) * r]); }
+    return { pts, r };
+  };
+  const first = S[0], last = S[S.length - 1];
+  const uE = (() => { const l = Math.hypot(last.d[0], last.d[1]) || 1; return [last.d[0] / l, last.d[1] / l]; })(), nE = [-uE[1], uE[0]];
+  const uS = (() => { const l = Math.hypot(first.d[0], first.d[1]) || 1; return [-first.d[0] / l, -first.d[1] / l]; })(), nS = [-uS[1], uS[0]];
+  const hE = Math.hypot(L[L.length - 1][0] - last.p[0], L[L.length - 1][1] - last.p[1]), hS = Math.hypot(L[0][0] - first.p[0], L[0][1] - first.p[1]);
+  const along = (P, pe, u) => -((P[0] - pe[0]) * u[0] + (P[1] - pe[1]) * u[1]);
+  const backE = Math.min(along(L[L.length - 1 - K], last.p, uE), along(R[R.length - 1 - K], last.p, uE));
+  const backS = Math.min(along(L[K], first.p, uS), along(R[K], first.p, uS));
+  const capE = cap(last.p, uE, nE, hE, backE), capS = cap(first.p, uS, nS, hS, backS);
+  const Lk = L.slice(K, L.length - K), Rk = R.slice(K, R.length - K);
+  const ring = [...Lk, ...capE.pts, ...Rk.slice().reverse(), ...capS.pts];
   const f = v => Math.round(v * 10) / 10;
-  let d = `M${f(L[0][0])} ${f(L[0][1])}`;
-  for (let i = 1; i < L.length; i++) d += `L${f(L[i][0])} ${f(L[i][1])}`;
-  for (let i = R.length - 1; i >= 0; i--) d += `L${f(R[i][0])} ${f(R[i][1])}`;
+  let d = `M${f(ring[0][0])} ${f(ring[0][1])}`;
+  for (let i = 1; i < ring.length; i++) d += `L${f(ring[i][0])} ${f(ring[i][1])}`;
   return d + 'Z';
 }
 
@@ -1089,7 +1109,9 @@ function glyphWidth(ch, s) {
               l:s, c:379, j:100+s, k:380, p:379, q:379, d:379, x:340, y:379, z:340,
               B:400, '.':1.12*s, ',':1.12*s,
               '2':330, '3':330, '4':360, '5':330, '6':330, '7':330, '8':330, '9':330 };
-  return W[ch];
+  if (W[ch] != null) return W[ch];
+  if (EXT_BASE[ch]) return glyphWidth(EXT_BASE[ch], s);
+  return EXT_W[ch];
 }
 const BUILD = { h: buildH, a: buildA, n: buildN, b: buildB, u: buildU, m: buildM, w: buildW,
                 o: buildO, e: buildE, s: buildS, v: buildV, r: buildR, t: buildT, f: buildF,
@@ -1099,6 +1121,586 @@ const BUILD = { h: buildH, a: buildA, n: buildN, b: buildB, u: buildU, m: buildM
                 '.': buildPeriod, ',': buildComma,
                 '2': build2, '3': build3, '4': build4, '5': build5,
                 '6': build6, '7': build7, '8': build8, '9': build9 };
+
+// ── The construction, extended ────────────────────────────────────────────────
+// Capitals, punctuation, signs, accents and the composed letters, built from the parts the
+// thirty already use: stems with the family's corners, bars on the bar's own radius,
+// diagonals joined with true circular fillets, rings and bowls on the ring's rule, curved
+// strokes drawn as centrelines under the contrast law. A new glyph therefore carries the
+// family's weight, contrast and terminals at every stem width, and interpolates by
+// construction. It is a start for Fabio to edit, drawn the way the set is drawn.
+//
+// The capital's rules come from the B, the one capital in the artwork: a capital stem is
+// 1.20 s, a bar 0.68 s·k, a bowl's walls 1.03 s and its top and bottom 0.76 s·k. Tops are
+// cornered at 0.20 s and feet at 0.30 s (the family foot), the inside of a junction at
+// 0.22 s (the t's rule), a bar end on 0.30 of its own thickness (the z's rule).
+const CAP = 715, CAPOV = 722;
+const capStem = s => 1.20 * s, capBar = s => 0.68 * s * contrastK(s);
+const capWall = s => 1.03 * s, capTop = s => 0.76 * s * contrastK(s);
+const CAPR = s => ({ t: 0.20 * s, f: 0.30 * s, j: 0.22 * s });
+// a closed polygon with a circular fillet at every vertex (r: one radius, or one per vertex;
+// 0 = sharp). Radii are clamped to what the two edges at a vertex can carry.
+function poly(V, r) {
+  const n = V.length, pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = V[(i - 1 + n) % n], b = V[i], c = V[(i + 1) % n];
+    const d1 = nrm([b[0] - a[0], b[1] - a[1]]), d2 = nrm([c[0] - b[0], c[1] - b[1]]);
+    const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    const cross = d1[0] * d2[1] - d1[1] * d2[0];
+    if (Math.abs(cross) < 1e-6) { pts.push({ p: b, t: d2, tin: d1 }); continue; }
+    const dot = -(d1[0] * d2[0] + d1[1] * d2[1]), ang = Math.acos(Math.max(-1, Math.min(1, dot)));
+    let ri = Array.isArray(r) ? r[i] : r;
+    ri = Math.min(ri, 0.48 * l1 * Math.tan(ang / 2), 0.48 * l2 * Math.tan(ang / 2));
+    if (ri < 0.5) { pts.push({ p: b, t: d2, tin: d1 }); continue; }
+    pts.push(...corner(b, d1, d2, ri));
+  }
+  return contour(pts);
+}
+const rrect = (x0, y0, x1, y1, r) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], r);
+// a straight stroke from a to b, w wide, with its ends rounded on r
+function bar(a, b, w, r) {
+  const d = nrm([b[0] - a[0], b[1] - a[1]]), n = [-d[1] * w / 2, d[0] * w / 2];
+  return poly([[a[0] + n[0], a[1] + n[1]], [a[0] - n[0], a[1] - n[1]], [b[0] - n[0], b[1] - n[1]], [b[0] + n[0], b[1] + n[1]]], r);
+}
+// lines as [point, direction]; a line moved w to its left; where two lines cross
+const line = (p, d) => [p, d];
+const offL = (L, w) => [[L[0][0] - L[1][1] * w, L[0][1] + L[1][0] * w], L[1]];
+const X = (A, B) => isect(A[0], A[1], B[0], B[1]);
+const hline = y => [[0, y], THr], vline = x => [[x, 0], TV];
+// a rounded box — every counter of a capital bowl is one (the B's rule)
+function box(xl, xr, yb, yt, r) {
+  const rc = Math.min(r, 0.49 * (xr - xl), 0.49 * (yt - yb));
+  return contour([
+    { p: [xl, yb + rc], t: TVd }, { p: [xl + rc, yb], t: THr },
+    { p: [xr - rc, yb], t: THr }, { p: [xr, yb + rc], t: TV },
+    { p: [xr, yt - rc], t: TV }, { p: [xr - rc, yt], t: THl },
+    { p: [xl + rc, yt], t: THl }, { p: [xl, yt - rc], t: TVd }]);
+}
+const boxR = (xl, xr, yb, yt) => Math.min(0.38 * (xr - xl), 0.38 * (yt - yb));
+// move or scale a path
+function scalePath(d, k) { const tk = d.match(/[MCLZ]|-?[\d.]+/g); return tk.map(t => /^[MCLZ]$/.test(t) ? (t === 'M' ? '\nM' : t === 'Z' ? 'Z' : t) : fx(+t * k)).join(' ').replace(/\n/g, '').replace(/([MCLZ]) /g, '$1').replace(/ Z/g, 'Z').trim(); }
+function shiftPath(d, dx, dy) {
+  const tk = d.match(/[MCLZ]|-?[\d.]+/g); let out = '', i = 0;
+  while (i < tk.length) {
+    const t = tk[i];
+    if (t === 'M' || t === 'L') { out += `${t}${fx(+tk[i + 1] + dx)} ${fx(+tk[i + 2] + dy)}`; i += 3; }
+    else if (t === 'C') { out += `C${fx(+tk[i + 1] + dx)} ${fx(+tk[i + 2] + dy)} ${fx(+tk[i + 3] + dx)} ${fx(+tk[i + 4] + dy)} ${fx(+tk[i + 5] + dx)} ${fx(+tk[i + 6] + dy)}`; i += 7; }
+    else { out += 'Z'; i++; }
+  }
+  return out;
+}
+
+// ── capitals: the straight ones, as polygons ──
+function buildCapI(s) { const r = CAPR(s); return poly([[0, 0], [capStem(s), 0], [capStem(s), CAP], [0, CAP]], [r.f, r.f, r.t, r.t]); }
+function buildCapL(s) { const bs = capStem(s), th = capBar(s), W = 400, r = CAPR(s), rb = 0.30 * th;
+  return poly([[0, 0], [W, 0], [W, th], [bs, th], [bs, CAP], [0, CAP]], [r.f, rb, rb, r.j, r.t, r.t]); }
+function buildCapE(s) { const bs = capStem(s), th = capBar(s), W = 410, Wm = 372, r = CAPR(s), rb = 0.30 * th, yB = 0.515 * CAP - th / 2;
+  return poly([[0, 0], [W, 0], [W, th], [bs, th], [bs, yB], [Wm, yB], [Wm, yB + th], [bs, yB + th], [bs, CAP - th], [W, CAP - th], [W, CAP], [0, CAP]],
+              [r.f, rb, rb, r.j, r.j, rb, rb, r.j, r.j, rb, rb, r.t]); }
+function buildCapF(s) { const bs = capStem(s), th = capBar(s), W = 400, Wm = 362, r = CAPR(s), rb = 0.30 * th, yB = 0.515 * CAP - th / 2;
+  return poly([[0, 0], [bs, 0], [bs, yB], [Wm, yB], [Wm, yB + th], [bs, yB + th], [bs, CAP - th], [W, CAP - th], [W, CAP], [0, CAP]],
+              [r.f, r.f, r.j, rb, rb, r.j, r.j, rb, rb, r.t]); }
+function buildCapH(s) { const bs = capStem(s), th = capBar(s), W = 480, r = CAPR(s), yB = 0.515 * CAP - th / 2;
+  return poly([[0, 0], [bs, 0], [bs, yB], [W - bs, yB], [W - bs, 0], [W, 0], [W, CAP], [W - bs, CAP], [W - bs, yB + th], [bs, yB + th], [bs, CAP], [0, CAP]],
+              [r.f, r.f, r.j, r.j, r.f, r.f, r.t, r.t, r.j, r.j, r.t, r.t]); }
+function buildCapT(s) { const bs = capStem(s), th = capBar(s), W = 440, cx = W / 2, r = CAPR(s), rb = 0.30 * th;
+  return poly([[cx - bs / 2, 0], [cx + bs / 2, 0], [cx + bs / 2, CAP - th], [W, CAP - th], [W, CAP], [0, CAP], [0, CAP - th], [cx - bs / 2, CAP - th]],
+              [r.f, r.f, r.j, rb, rb, rb, rb, r.j]); }
+
+// ── capitals: the diagonal ones. Outer edges are placed, inner edges are the outer ones
+// moved in by the stroke, and every junction is where two edges cross. ──
+function buildCapA(s) {
+  const W = 520, th = capBar(s), dw = 1.08 * s, r = CAPR(s), cx = W / 2, apex = 0.62 * capStem(s);
+  const oL = line([0, 0], nrm([cx - apex, CAP])), oR = line([W, 0], nrm([-(W - cx - apex), CAP]));
+  const iL = offL(oL, -dw), iR = offL(oR, dw);
+  const yB = 0.24 * CAP, base = hline(0), b0 = hline(yB), b1 = hline(yB + th), top = hline(CAP);
+  return poly([[0, 0], X(iL, base), X(iL, b0), X(iR, b0), X(iR, base), [W, 0], X(oR, top), X(oL, top)], [r.f, r.j, r.j, r.j, r.j, r.f, r.t, r.t])
+       + poly([X(iL, b1), X(iR, b1), X(iL, iR)], r.j);
+}
+function buildCapV(s) {
+  const W = 500, k = contrastK(s), dwL = 1.08 * s, dwR = s * (0.62 + 0.30 * k), r = CAPR(s), Vo = [0.5 * W, -7];
+  const oL = line([0, CAP], nrm([Vo[0], Vo[1] - CAP])), oR = line([W, CAP], nrm([Vo[0] - W, Vo[1] - CAP]));
+  const iL = offL(oL, dwL), iR = offL(oR, -dwR), top = hline(CAP);
+  return poly([X(oL, top), Vo, X(oR, top), X(iR, top), X(iL, iR), X(iL, top)], [r.t, r.f, r.t, r.t, r.j, r.t]);
+}
+function buildCapW(s) {
+  const W = 720, k = contrastK(s), dw = 1.0 * s, dwT = s * (0.62 + 0.30 * k), r = CAPR(s);
+  const V1 = [0.27 * W, -7], V2 = [0.73 * W, -7], M = [0.5 * W, 0.94 * CAP];
+  // e1 and e4 are the outer edges of the outside strokes, e2 and e3 the outer edges of the
+  // middle pair (they meet at the peak M); every inner edge is its outer edge moved in
+  const e1 = line([0, CAP], nrm([V1[0], V1[1] - CAP])), e2 = line(V1, nrm([M[0] - V1[0], M[1] - V1[1]]));
+  const e3 = line(M, nrm([V2[0] - M[0], V2[1] - M[1]])), e4 = line(V2, nrm([W - V2[0], CAP - V2[1]]));
+  const R1 = offL(e1, dw), L2 = offL(e2, dwT), R3 = offL(e3, dw), L4 = offL(e4, dwT), top = hline(CAP);
+  return poly([[0, CAP], V1, M, V2, [W, CAP], X(L4, top), X(L4, R3), X(R3, top), X(L2, top), X(L2, R1), X(R1, top)],
+              [r.t, r.f, r.j, r.f, r.t, r.t, r.j, r.t, r.t, r.j, r.t]);
+}
+function buildCapX(s) {
+  const W = 470, k = contrastK(s), dwA = 1.06 * s, dwB = s * (0.66 + 0.30 * k), r = CAPR(s);
+  // A rises to the right, B to the left; A2 and B2 are their second edges, moved in by the stroke
+  const A = line([0, 0], nrm([W - 1.1 * dwA, CAP])), B = line([W, 0], nrm([-(W - 1.1 * dwB), CAP]));
+  const A2 = offL(A, -dwA), B2 = offL(B, dwB), base = hline(0), top = hline(CAP);
+  return poly([X(A, base), X(A2, base), X(A2, B2), X(B2, base), X(B, base), X(B, A2), X(A2, top), X(A, top), X(A, B), X(B, top), X(B2, top), X(B2, A)],
+              [r.f, r.f, r.j, r.f, r.f, r.j, r.t, r.t, r.j, r.t, r.t, r.j]);
+}
+function buildCapY(s) {
+  const W = 470, k = contrastK(s), bs = capStem(s), dwL = 1.04 * s, dwR = s * (0.66 + 0.30 * k), r = CAPR(s), cx = W / 2, yJ = 0.44 * CAP;
+  const oL = line([0, CAP], nrm([cx - bs / 2, yJ - CAP])), oR = line([W, CAP], nrm([cx + bs / 2 - W, yJ - CAP]));
+  const iL = offL(oL, dwL), iR = offL(oR, -dwR), top = hline(CAP), sL = vline(cx - bs / 2), sR = vline(cx + bs / 2);
+  return poly([[cx - bs / 2, 0], [cx + bs / 2, 0], X(sR, oR), X(oR, top), X(iR, top), X(iL, iR), X(iL, top), X(oL, top), X(sL, oL)],
+              [r.f, r.f, r.j, r.t, r.t, r.j, r.t, r.t, r.j]);
+}
+function buildCapZ(s) {
+  const W = 440, th = capBar(s), dw = 1.02 * s, r = CAPR(s), rb = 0.30 * th;
+  const D = line([W, CAP - th], nrm([-(W - dw), -(CAP - 2 * th)])), D2 = offL(D, -dw);
+  const b0 = hline(0), b1 = hline(th), t0 = hline(CAP - th), t1 = hline(CAP);
+  return poly([[0, 0], [W, 0], [W, th], X(D, b1), [W, CAP - th], [W, CAP], [0, CAP], [0, CAP - th], X(D2, t0), [0, th]],
+              [rb, rb, rb, r.j, rb, rb, rb, rb, r.j, rb]);
+}
+function buildCapN(s) {
+  const W = 490, bs = capStem(s), dwv = 1.30 * s, r = CAPR(s);
+  const D = line([bs, CAP], nrm([W - 2 * bs, -(CAP - dwv)])), D2 = offL(D, -dwv * (W - 2 * bs) / Math.hypot(W - 2 * bs, CAP - dwv));
+  const L1 = vline(bs), L2 = vline(W - bs), top = hline(CAP), base = hline(0);
+  return poly([[0, 0], [bs, 0], X(L1, D2), X(D2, base), [W, 0], [W, CAP], [W - bs, CAP], X(L2, D), [bs, CAP], [0, CAP]],
+              [r.f, r.f, r.j, r.j, r.f, r.t, r.t, r.j, r.t, r.t]);
+}
+function buildCapM(s) {
+  const W = 590, bs = capStem(s), dwv = 1.24 * s, r = CAPR(s), cx = W / 2, Vo = [cx, 0.10 * CAP];
+  const oL = line([bs, CAP - dwv], nrm([Vo[0] - bs, Vo[1] - CAP + dwv])), oR = line([W - bs, CAP - dwv], nrm([Vo[0] - W + bs, Vo[1] - CAP + dwv]));
+  const uL = line([bs, CAP], oL[1]), uR = line([W - bs, CAP], oR[1]);
+  return poly([[0, 0], [bs, 0], [bs, CAP - dwv], Vo, [W - bs, CAP - dwv], [W - bs, 0], [W, 0], [W, CAP], [W - bs, CAP], X(uL, uR), [bs, CAP], [0, CAP]],
+              [r.f, r.f, r.j, r.f, r.j, r.f, r.f, r.t, r.t, r.j, r.t, r.t]);
+}
+function buildCapK(s) {
+  const W = 470, bs = capStem(s), r = CAPR(s), vA = 1.12 * s, vL = 1.22 * s, aTop = 0.53 * CAP, lBot = 0.42 * CAP;
+  const dA = nrm([W - bs, CAP - aTop]), dL = nrm([W - bs, -lBot]), nA = [-dA[0], -dA[1]], nL = [-dL[0], -dL[1]];
+  const crotch = isect([bs, aTop - vA], dA, [bs, lBot + vL], dL);
+  return contour([
+    { p: [bs, CAP - r.t], t: TVd },
+    ...corner([bs, aTop], TVd, dA, r.j), ...corner([W, CAP], dA, TVd, r.t), ...corner([W, CAP - vA], TVd, nA, r.t),
+    ...corner(crotch, nA, dL, r.j), ...corner([W, vL], dL, TVd, r.f), ...corner([W, 0], TVd, nL, r.f),
+    ...corner([bs, lBot], nL, TVd, r.j), ...corner([bs, 0], TVd, THl, r.f), ...corner([0, 0], THl, TV, r.f),
+    ...corner([0, CAP], TV, THr, r.t), { p: [bs - r.t, CAP], t: THr }]);
+}
+
+// ── capitals: the round ones, on the ring's and the bowl's rules ──
+// the ring opened on the right with the family's cut terminals (the c's construction)
+function ringOpen(W, bot, top, wall, th, s) {
+  const cx = W / 2, cy = (top + bot) / 2, hs = 0.18 * (top - bot), nSL = [-SL[0], -SL[1]];
+  const xl = wall, xr = W - wall, yb = bot + th, yt = top - th, rt = 0.26 * s;
+  const yTi = cy - hs - SLANT * wall, yTo = cy + hs - SLANT * wall;
+  const crT = Math.min(0.42 * (xr - xl), 0.85 * (yt - yb));
+  const crB = Math.max(0.10 * s, Math.min(crT, (yTi - yb) - 0.28 * s));
+  return contour([
+    ...corner([W, cy + hs], SL, TV, rt),
+    { p: [cx, top], t: THl }, { p: [0, cy + hs], t: TVd },
+    { p: [0, cy - hs], t: TVd }, { p: [cx, bot], t: THr },
+    ...corner([W, cy - hs], TV, nSL, rt),
+    ...corner([xr, yTi], nSL, TVd, rt),
+    { p: [xr, yb + crB], t: TVd }, { p: [xr - crB, yb], t: THl },
+    { p: [xl + crB, yb], t: THl }, { p: [xl, yb + crB], t: TV },
+    { p: [xl, yt - crT], t: TV }, { p: [xl + crT, yt], t: THr },
+    { p: [xr - crT, yt], t: THr }, { p: [xr, yt - crT], t: TVd },
+    ...corner([xr, yTo], TVd, SL, rt)]);
+}
+function buildCapC(s) { return ringOpen(470, -7, CAPOV, capWall(s), capTop(s), s); }
+function buildCapO(s) { return buildRing(500, -7, CAPOV, capWall(s), capTop(s)); }
+function buildCapQ(s) { return buildCapO(s) + bar([0.58 * 500, 0.16 * CAP], [0.88 * 500, -0.16 * CAP], 1.02 * s, 0.30 * s); }
+function buildCapG(s) {
+  const W = 500, wall = capWall(s), th = capTop(s), r = CAPR(s), bot = -7, top = CAPOV;
+  const cx = W / 2, cy = (top + bot) / 2, hs = 0.18 * (top - bot), xl = wall, xr = W - wall, yb = bot + th, yt = top - th, rt = 0.26 * s;
+  const crT = Math.min(0.42 * (xr - xl), 0.85 * (yt - yb)), crB = Math.min(crT, 0.85 * (0.44 * CAP - yb));
+  const thB = capBar(s), yBT = 0.47 * CAP, yBB = yBT - thB, xBar = 0.52 * W, rb = 0.30 * thB, yTo = cy + hs - SLANT * wall;
+  return contour([
+    ...corner([W, cy + hs], SL, TV, rt),
+    { p: [cx, top], t: THl }, { p: [0, cy + hs], t: TVd }, { p: [0, cy - hs], t: TVd }, { p: [cx, bot], t: THr },
+    { p: [W, cy - hs], t: TV }, { p: [W, yBT - rb], t: TV }, { p: [W - rb, yBT], t: THl },
+    { p: [xBar + rb, yBT], t: THl }, { p: [xBar, yBT - rb], t: TVd }, { p: [xBar, yBB + rb], t: TVd }, { p: [xBar + rb, yBB], t: THr },
+    { p: [xr - r.j, yBB], t: THr }, { p: [xr, yBB - r.j], t: TVd },
+    { p: [xr, yb + crB], t: TVd }, { p: [xr - crB, yb], t: THl },
+    { p: [xl + crB, yb], t: THl }, { p: [xl, yb + crB], t: TV },
+    { p: [xl, yt - crT], t: TV }, { p: [xl + crT, yt], t: THr },
+    { p: [xr - crT, yt], t: THr }, { p: [xr, yt - crT], t: TVd },
+    ...corner([xr, yTo], TVd, SL, rt)]);
+}
+function buildCapD(s) {
+  const bs = capStem(s), W = 480, wall = capWall(s), tt = capTop(s), r = CAPR(s);
+  const R = Math.min(0.48 * (W - bs), 0.42 * CAP);
+  const cl = bs, cr = W - wall, cb = tt, ct = CAP - tt;
+  return contour([
+    { p: [0, CAP - r.t], t: TV }, { p: [r.t, CAP], t: THr }, { p: [W - R, CAP], t: THr }, { p: [W, CAP - R], t: TVd },
+    { p: [W, R], t: TVd }, { p: [W - R, 0], t: THl }, { p: [r.f, 0], t: THl }, { p: [0, r.f], t: TV }])
+    + box(cl, cr, cb, ct, Math.min(0.49 * (cr - cl), 0.42 * (ct - cb)));
+}
+function buildCapU(s) {
+  const W = 470, bs = capStem(s), tt = capTop(s), r = CAPR(s), cx = W / 2, ro = -7 + cx, ib = -7 + tt, ri = ib + (cx - bs);
+  return contour([
+    { p: [0, CAP - r.t], t: TV }, { p: [r.t, CAP], t: THr }, { p: [bs - r.t, CAP], t: THr }, { p: [bs, CAP - r.t], t: TVd },
+    { p: [bs, ri], t: TVd }, { p: [cx, ib], t: THr }, { p: [W - bs, ri], t: TV },
+    { p: [W - bs, CAP - r.t], t: TV }, { p: [W - bs + r.t, CAP], t: THr }, { p: [W - r.t, CAP], t: THr }, { p: [W, CAP - r.t], t: TVd },
+    { p: [W, ro], t: TVd }, { p: [cx, -7], t: THl }, { p: [0, ro], t: TV }]);
+}
+function buildCapJ(s) {
+  const W = 320, bs = capStem(s), tt = capTop(s), r = CAPR(s), x0 = W - bs, bot = -7, Rt = 0.36 * CAP, rr = 0.30 * tt;
+  return contour([
+    { p: [W, CAP - r.t], t: TVd }, { p: [W, bot + Rt], t: TVd },
+    { p: [rr, bot], t: THl }, { p: [0, bot + rr], t: TV }, { p: [0, bot + tt - rr], t: TV }, { p: [rr, bot + tt], t: THr },
+    { p: [x0, bot + 0.78 * Rt], t: TV }, { p: [x0, CAP - r.t], t: TV }, { p: [x0 + r.t, CAP], t: THr }, { p: [W - r.t, CAP], t: THr }]);
+}
+function buildCapP(s) {
+  const bs = capStem(s), W = 440, wall = capWall(s), tt = capTop(s), r = CAPR(s), yBB = 0.42 * CAP;
+  const R = Math.min(0.45 * (W - bs), 0.45 * (CAP - yBB));
+  const cl = bs, cr = W - wall, cb = yBB + tt, ct = CAP - tt;
+  return contour([
+    { p: [0, CAP - r.t], t: TV }, { p: [r.t, CAP], t: THr }, { p: [W - R, CAP], t: THr }, { p: [W, CAP - R], t: TVd },
+    { p: [W, yBB + R], t: TVd }, { p: [W - R, yBB], t: THl }, { p: [bs + r.j, yBB], t: THl }, { p: [bs, yBB - r.j], t: TVd },
+    { p: [bs, r.f], t: TVd }, { p: [bs - r.f, 0], t: THl }, { p: [r.f, 0], t: THl }, { p: [0, r.f], t: TV }])
+    + box(cl, cr, cb, ct, boxR(cl, cr, cb, ct));
+}
+function buildCapR(s) {
+  const bs = capStem(s), W = 510, W1 = 420, wall = capWall(s), tt = capTop(s), r = CAPR(s), yBB = 0.44 * CAP, legw = 1.10 * s;
+  const R = Math.min(0.45 * (W1 - bs), 0.45 * (CAP - yBB));
+  const cl = bs, cr = W1 - wall, cb = yBB + tt, ct = CAP - tt;
+  // the leg leaves the bowl's right wall just above the underside and lands on the far right;
+  // its inner edge is the outer one moved in by the stroke
+  const Lo = line([W1, yBB + 0.12 * R], nrm([W - W1, -(yBB + 0.12 * R)])), dLeg = Lo[1], nLeg = [-dLeg[0], -dLeg[1]];
+  const Li = offL(Lo, -legw), base = hline(0), under = hline(yBB);
+  return contour([
+    { p: [0, CAP - r.t], t: TV }, { p: [r.t, CAP], t: THr }, { p: [W1 - R, CAP], t: THr }, { p: [W1, CAP - R], t: TVd },
+    ...corner(Lo[0], TVd, dLeg, r.j),
+    ...corner([W, 0], dLeg, THl, r.f), ...corner(X(Li, base), THl, nLeg, r.f),
+    ...corner(X(Li, under), nLeg, THl, r.j),
+    { p: [bs + r.j, yBB], t: THl }, { p: [bs, yBB - r.j], t: TVd },
+    { p: [bs, r.f], t: TVd }, { p: [bs - r.f, 0], t: THl }, { p: [r.f, 0], t: THl }, { p: [0, r.f], t: TV }])
+    + box(cl, cr, cb, ct, boxR(cl, cr, cb, ct));
+}
+// the s's construction at any size: two bowls of one radius joined by a spine, as a
+// centreline under the contrast law (the s itself keeps its own numbers)
+function sCurve(W, top, bot, wall, th, taperK) {
+  const span = top - bot, cxU = 0.494 * W, yU = bot + 0.733 * span, cxL = 0.506 * W, yL = bot + 0.237 * span;
+  const a = 0.494 * W - wall / 2, bU = 0.267 * span - th / 2, bL = 0.237 * span - th / 2;
+  const E = (cx, cy, ra, rb, deg) => { const t = deg * Math.PI / 180; return { p: [cx + ra * Math.cos(t), cy + rb * Math.sin(t)], d: [-ra * Math.sin(t), rb * Math.cos(t)] }; };
+  const up = d => nrm(d), dn = d => nrm([-d[0], -d[1]]);
+  const n1 = E(cxU, yU, a, bU, -16), n2 = E(cxU, yU, a, bU, 90), n3 = E(cxU, yU, a, bU, 180), n4 = E(cxU, yU, a, bU, 228);
+  const n6 = E(cxL, yL, a, bL, 44), n7 = E(cxL, yL, a, bL, 0), n8 = E(cxL, yL, a, bL, -90), n9 = E(cxL, yL, a, bL, -195);
+  const nodes = [
+    { p: n1.p, t: up(n1.d) }, { p: n2.p, t: up(n2.d) }, { p: n3.p, t: up(n3.d) }, { p: n4.p, t: up(n4.d) },
+    { p: [(n4.p[0] + n6.p[0]) / 2, (n4.p[1] + n6.p[1]) / 2], t: nrm([n6.p[0] - n4.p[0], n6.p[1] - n4.p[1]]) },
+    { p: n6.p, t: dn(n6.d) }, { p: n7.p, t: dn(n7.d) }, { p: n8.p, t: dn(n8.d) }, { p: n9.p, t: dn(n9.d) }];
+  return strokePath(nodes, (u, n) => (th + (wall - th) * Math.abs(n[0])) * (0.74 + 0.26 * Math.min(1, Math.min(u, 1 - u) / (taperK || 0.13))));
+}
+function buildCapS(s) { return sCurve(430, CAPOV, -7, 1.08 * s, capTop(s)); }
+
+// ── punctuation and signs ──
+// the family's own width law for a centreline stroke, tapered toward its ends like the s
+const lawW = (s, th, taper) => (u, n) => (th + (s - th) * Math.abs(n[0])) * (taper ? (0.80 + 0.20 * Math.min(1, Math.min(u, 1 - u) / taper)) : 1);
+const drop = (s, x, y) => shiftPath(buildPeriod(s), x, y);
+function buildQuestion(s) {
+  const k = contrastK(s), th = 0.72 * s * k, W = 330, cx = W / 2, R = 0.26 * CAP, yc = CAP - R;
+  const E = ell(cx, yc, cx - s / 2 - 4, R - th / 2);
+  const a = E(180), b = E(90), c = E(0);
+  const stroke = strokePath([
+    { p: a.p, t: a.cw }, { p: b.p, t: b.cw }, { p: c.p, t: c.cw },
+    { p: [cx + 8, 0.40 * CAP], t: nrm([-0.45, -1]), h0: 0.36 }, { p: [cx, 0.30 * CAP], t: TVd, h1: 0.40 }, { p: [cx, 0.22 * CAP], t: TVd }], lawW(s, th, 0.10));
+  return stroke + drop(s, cx - 0.56 * s, 0);
+}
+function buildQuestionDown(s) { return flipPath(buildQuestion(s), 330, 521); }
+function buildExclamDown(s) { return flipPath(buildExcl(s), null, 521); }
+function buildColon(s) { const r = 0.56 * s; return buildPeriod(s) + drop(s, 0, 521 - 2.3 * r); }
+function buildSemicolon(s) { const r = 0.56 * s; return buildComma(s) + drop(s, 0, 521 - 2.3 * r); }
+function buildEllipsis(s) { const w = 1.12 * s; return buildPeriod(s) + drop(s, w + 0.8 * s, 0) + drop(s, 2 * (w + 0.8 * s), 0); }
+function buildMiddot(s) { const r = 0.56 * s; return drop(s, 0, 0.5 * 521 - r); }
+function buildBullet(s) { const r = 0.42 * 521 / 2 + 0.2 * s, cx = r, cy = 0.5 * 521; return contour([{ p: [cx - r, cy], t: TV }, { p: [cx, cy + r], t: THr }, { p: [cx + r, cy], t: TVd }, { p: [cx, cy - r], t: THl }]); }
+function buildQuoteSingle(s) { const w = 0.92 * s, h = 0.30 * CAP; return rrect(0, CAP - h, w, CAP, [0.34 * w, 0.34 * w, 0.20 * s, 0.20 * s]); }
+function buildQuoteDbl(s) { const w = 0.92 * s, gap = 0.72 * s; return buildQuoteSingle(s) + shiftPath(buildQuoteSingle(s), w + gap, 0); }
+// the comma raised to the cap line is the closing quote; turned round it is the opening one
+function buildQuoteRight(s) { const r = 0.56 * s; return shiftPath(buildComma(s), 0, CAP - 2.44 * r); }
+function buildQuoteLeft(s) { const r = 0.56 * s; return shiftPath(flipPath(buildComma(s), 2 * r, 1.10 * r), 0, CAP - 2.44 * r); }
+function buildQuoteDblRight(s) { return buildQuoteRight(s) + shiftPath(buildQuoteRight(s), 1.72 * s, 0); }
+function buildQuoteDblLeft(s) { return buildQuoteLeft(s) + shiftPath(buildQuoteLeft(s), 1.72 * s, 0); }
+function dash(W, s) { const k = contrastK(s), th = 0.72 * s * k, y = 0.53 * 521; return rrect(0, y - th / 2, W, y + th / 2, 0.30 * th); }
+function buildHyphen(s) { return dash(210, s); }
+function buildEndash(s) { return dash(480, s); }
+function buildEmdash(s) { return dash(920, s); }
+function buildMinus(s) { return dash(360, s); }
+function buildUnderscore(s) { const k = contrastK(s), th = 0.72 * s * k; return rrect(0, -0.62 * th - 60, 460, 0.38 * th - 60, 0.30 * th); }
+function buildParenLeft(s) {
+  const k = contrastK(s), th = 0.72 * s * k, w = 0.86 * s, top = CAP + 40, bot = DESC - 20, W = 230;
+  const E = ell(W - w / 2, (top + bot) / 2, W - w, (top - bot) / 2 - th / 2 + 18);
+  const a = E(112), b = E(180), c = E(248);
+  return strokePath([{ p: a.p, t: a.ccw }, { p: b.p, t: b.ccw }, { p: c.p, t: c.ccw }], lawW(s * 0.9, th, 0));
+}
+function buildParenRight(s) { return flipPath(buildParenLeft(s), 230, null); }
+function buildBracketLeft(s) { const w = 0.88 * s, k = contrastK(s), th = 0.72 * s * k, W = 220, r = CAPR(s), rb = 0.30 * th, top = CAP + 40, bot = DESC - 20;
+  return poly([[0, bot], [W, bot], [W, bot + th], [w, bot + th], [w, top - th], [W, top - th], [W, top], [0, top]], [r.t, rb, rb, r.j, r.j, rb, rb, r.t]); }
+function buildBracketRight(s) { return flipPath(buildBracketLeft(s), 220, null); }
+function buildBraceLeft(s) {
+  const k = contrastK(s), th = 0.72 * s * k, W = 260, top = CAP + 40, bot = DESC - 20, yM = (top + bot) / 2, cx = W - 0.44 * W, rr = 0.20 * (top - bot);
+  return strokePath([
+    { p: [W, top - th / 2], t: THl, h0: 0.55 }, { p: [cx, top - rr], t: TVd, h0: 0.40, h1: 0.40 }, { p: [cx, yM + 0.6 * rr], t: TVd, h0: 0.30 },
+    { p: [0.36 * cx, yM], t: nrm([-1, -0.35]), h0: 0.30, h1: 0.30 }, { p: [cx, yM - 0.6 * rr], t: TVd, h1: 0.30, h0: 0.40 },
+    { p: [cx, bot + rr], t: TVd, h1: 0.40 }, { p: [W, bot + th / 2], t: THr, h1: 0.55 }], lawW(0.9 * s, th, 0));
+}
+function buildBraceRight(s) { return flipPath(buildBraceLeft(s), 260, null); }
+function buildSlash(s) { const dw = 1.0 * s, W = 360, top = CAP + 20, bot = DESC + 30; const d = nrm([W - dw, top - bot]); const dwh = dw / d[1]; return poly([[0, bot], [dwh, bot], [W, top], [W - dwh, top]], 0.26 * s); }
+function buildBackslash(s) { return flipPath(buildSlash(s), 360, null); }
+function buildBarV(s) { const w = 0.9 * s; return rrect(0, DESC - 20, w, CAP + 40, 0.20 * s); }
+function chevron(W, yM, h, th, s, open) {
+  // two bars meeting at a point on the left (open = 'left') or right
+  const r = CAPR(s), tip = [0, yM], top = [W, yM + h], bot = [W, yM - h];
+  const eT = line(tip, nrm([W, h])), eB = line(tip, nrm([W, -h]));
+  const iT = offL(eT, -th), iB = offL(eB, th), right = vline(W);
+  const d = poly([tip, X(eB, right), X(iB, right), X(iT, iB), X(iT, right), X(eT, right)], [r.j, 0.30 * th, 0.30 * th, r.j, 0.30 * th, 0.30 * th]);
+  return open === 'right' ? flipPath(d, W, null) : d;
+}
+function buildLess(s) { const k = contrastK(s), th = 0.78 * s * k; return chevron(360, 0.53 * 521, 0.42 * 521, th, s, 'left'); }
+function buildGreater(s) { const k = contrastK(s), th = 0.78 * s * k; return chevron(360, 0.53 * 521, 0.42 * 521, th, s, 'right'); }
+function rotateChevronUp(s) {
+  const k = contrastK(s), th = 0.66 * s * k, r = CAPR(s), W = 300, h = 0.30 * CAP, cx = W / 2, apexY = CAP;
+  const eL = line([0, apexY - h], nrm([cx, h])), eR = line([cx, apexY], nrm([cx, -h]));
+  const iL = offL(eL, -th), iR = offL(eR, -th), base = hline(apexY - h);
+  return poly([[0, apexY - h], X(iL, base), X(iL, iR), X(iR, base), [W, apexY - h], [cx, apexY]], [0.30 * th, 0.30 * th, r.j, 0.30 * th, 0.30 * th, r.j]);
+}
+function buildPlus(s) { const k = contrastK(s), th = 0.78 * s * k, W = 360, cy = 0.53 * 521, r = 0.30 * th, j = 0.22 * s, cx = W / 2, h = 0.78 * s;
+  return poly([[cx - h / 2, cy - W / 2], [cx + h / 2, cy - W / 2], [cx + h / 2, cy - th / 2], [W, cy - th / 2], [W, cy + th / 2], [cx + h / 2, cy + th / 2], [cx + h / 2, cy + W / 2], [cx - h / 2, cy + W / 2], [cx - h / 2, cy + th / 2], [0, cy + th / 2], [0, cy - th / 2], [cx - h / 2, cy - th / 2]],
+              [r, r, j, r, r, j, r, r, j, r, r, j]); }
+function buildEqual(s) { const k = contrastK(s), th = 0.78 * s * k, W = 360, cy = 0.53 * 521, g = 0.42 * 521 / 2;
+  return rrect(0, cy - g - th / 2, W, cy - g + th / 2, 0.30 * th) + rrect(0, cy + g - th / 2, W, cy + g + th / 2, 0.30 * th); }
+function buildMultiply(s) { const k = contrastK(s), th = 0.78 * s * k, W = 330, cy = 0.53 * 521, h = W / 2;
+  return bar([0, cy - h], [W, cy + h], th, 0.30 * th) + bar([0, cy + h], [W, cy - h], th, 0.30 * th); }
+function buildDivide(s) { const k = contrastK(s), th = 0.72 * s * k, r = 0.56 * s, cy = 0.53 * 521; return buildMinus(s) + drop(s, 180 - r, cy + th / 2 + 0.36 * s) + drop(s, 180 - r, cy - th / 2 - 0.36 * s - 2.32 * r); }
+function buildNumberSign(s) { const k = contrastK(s), th = 0.78 * s * k, W = 470, r = 0.30 * th, y1 = 0.30 * CAP, y2 = 0.66 * CAP;
+  const dw = 0.94 * s, lean = 0.18 * CAP;
+  return rrect(0, y1 - th / 2, W, y1 + th / 2, r) + rrect(0, y2 - th / 2, W, y2 + th / 2, r)
+       + bar([0.28 * W, 0], [0.28 * W + lean, CAP], dw, 0.30 * dw) + bar([0.66 * W, 0], [0.66 * W + lean, CAP], dw, 0.30 * dw); }
+function buildAsterisk(s) { const k = contrastK(s), th = 0.80 * s * k, W = 330, cx = W / 2, cy = CAP - W / 2, R = W / 2;
+  let d = ''; for (let i = 0; i < 3; i++) { const a = (90 + i * 60) * Math.PI / 180; d += bar([cx - R * Math.cos(a), cy - R * Math.sin(a)], [cx + R * Math.cos(a), cy + R * Math.sin(a)], th, 0.36 * th); } return d; }
+function buildPercent(s) { const k = contrastK(s), th = 0.66 * s * k, W = 560, rw = 0.66 * s, D = 0.40 * CAP;
+  const ring = (x, y) => circleRing(x + D / 2, y + D / 2, D / 2, rw, th);
+  return ring(0, CAP - D) + ring(W - D, 0) + bar([0.22 * W, -7], [0.78 * W, CAP + 7], 0.84 * s, 0.30 * s); }
+function buildAmpersand(s) {
+  const k = contrastK(s), th = 0.72 * s * k, W = 580;
+  const EU = ell(0.40 * W, 0.735 * CAP, 0.24 * W, 0.235 * CAP), EL = ell(0.42 * W, 0.315 * CAP, 0.36 * W, 0.315 * CAP);
+  const u1 = EU(-30), u2 = EU(90), u3 = EU(180), l1 = EL(-12), l2 = EL(-90), l3 = EL(180), l4 = EL(120);
+  return strokePath([
+    { p: u1.p, t: u1.ccw }, { p: u2.p, t: u2.ccw }, { p: u3.p, t: u3.ccw },
+    { p: [0.52 * W, 0.47 * CAP], t: nrm([1, -0.85]), h0: 0.36, h1: 0.36 },
+    { p: l1.p, t: l1.cw }, { p: l2.p, t: l2.cw }, { p: l3.p, t: l3.cw }, { p: l4.p, t: l4.cw },
+    { p: [W, 0.34 * CAP], t: nrm([1, 0.25]), h1: 0.40 }], lawW(s, th, 0.06));
+}
+function buildAt(s) {
+  const k = contrastK(s), th = 0.66 * s * k, W = 640, cx = W / 2, cy = 0.42 * CAP, ry = 0.58 * CAP, rx = cx - 0.45 * s;
+  const E = ell(cx, cy, rx, ry), o = [E(-55), E(-90), E(180), E(90), E(0), E(-30)];
+  const outer = strokePath(o.map(q => ({ p: q.p, t: q.cw })), lawW(0.82 * s, 0.9 * th, 0.05));
+  // the a inside is Aqua's own a, at three quarters, sitting on the curl's middle
+  const a = basePath('a', s), kk = 0.74, ab = bbox(a);
+  return outer + shiftPath(scalePath(a, kk), cx + 0.04 * W - kk * (ab.xmin + ab.xmax) / 2, cy - kk * (ab.ymin + ab.ymax) / 2);
+}
+function buildDollar(s) { const W = 400, k = contrastK(s); return sCurve(W, CAP + 4, -7, 0.94 * s, 0.72 * s * k) + rrect(W / 2 - 0.30 * s, -0.11 * CAP, W / 2 + 0.30 * s, CAP + 0.11 * CAP, 0.30 * s); }
+function buildEuro(s) { const k = contrastK(s), th = 0.66 * s * k, W = 470, top = CAPOV, y1 = 0.42 * CAP, y2 = 0.58 * CAP;
+  return ringOpen(W, -7, top, capWall(s), capTop(s), s) + rrect(-40, y1 - th / 2, 0.62 * W, y1 + th / 2, 0.30 * th) + rrect(-40, y2 - th / 2, 0.62 * W, y2 + th / 2, 0.30 * th); }
+function buildSterling(s) {
+  const k = contrastK(s), th = 0.72 * s * k, W = 420, xs = 0.34 * W, R = 0.22 * CAP;
+  const E = ell(xs + R, CAP - R, R, R - th / 2);
+  const a = E(0), b = E(90), c = E(180);
+  return strokePath([{ p: a.p, t: a.ccw }, { p: b.p, t: b.ccw }, { p: c.p, t: c.ccw },
+    { p: [xs, 0.30 * CAP], t: TVd, h0: 0.40 }, { p: [0.10 * W, th / 2 + 10], t: nrm([-0.9, -1]), h0: 0.30, h1: 0.40 }, { p: [W, th / 2], t: THr, h1: 0.40 }], lawW(s, th, 0.06))
+    + rrect(0.06 * W, 0.44 * CAP - th / 2, 0.66 * W, 0.44 * CAP + th / 2, 0.30 * th);
+}
+// the wave: two bends of one radius, wide enough for the stroke at Black to turn inside them
+function buildTilde(s) { const k = contrastK(s), th = 0.66 * s * k, W = 440, y = 0.53 * 521, h = 0.16 * 521;
+  return strokePath([{ p: [0, y - 0.55 * h], t: nrm([1, 0.75]), h0: 0.42 }, { p: [0.29 * W, y + h], t: THr, h0: 0.42, h1: 0.42 }, { p: [0.71 * W, y - h], t: THr, h0: 0.42, h1: 0.42 }, { p: [W, y + 0.55 * h], t: nrm([1, 0.75]), h1: 0.42 }], lawW(0.86 * s, th, 0.08)); }
+function buildDegree(s) { const D = 0.30 * CAP, k = contrastK(s), th = 0.56 * s * k; return circleRing(D / 2, CAP - D / 2, D / 2, 0.60 * s, th); }
+function buildGuillemetLeft(s) { const k = contrastK(s), th = 0.66 * s * k, one = chevron(190, 0.5 * 521, 0.26 * 521, th, s, 'left'); return one + shiftPath(one, 200, 0); }
+function buildGuillemetRight(s) { return flipPath(buildGuillemetLeft(s), 390, null); }
+
+// ── accents: the marks, placed on a base ──
+// A mark is drawn at x = 0 with its bottom at y = 0 and placed by placeMark: centred on the
+// base's ink (on the stem for i and j) and lifted above it by the i's own dot gap.
+const MARK_GAP = 66;
+function markAcute(s) { const k = contrastK(s), w = 0.78 * s; return bar([-0.05 * s, 0], [0.62 * s + 20, 0.72 * (0.30 * 521)], w, 0.42 * w); }
+function markGrave(s) { return flipPath(markAcute(s), 0, null); }
+function markCircumflex(s) { const k = contrastK(s), th = 0.62 * s * k, r = CAPR(s), hw = 0.26 * 521, h = 0.30 * 521 * 0.72;
+  const eL = line([-hw, 0], nrm([hw, h])), eR = line([0, h], nrm([hw, -h])), iL = offL(eL, -th), iR = offL(eR, -th), base = hline(0);
+  return poly([[-hw, 0], X(iL, base), X(iL, iR), X(iR, base), [hw, 0], [0, h]], [0.30 * th, 0.30 * th, r.j, 0.30 * th, 0.30 * th, r.j]); }
+function markCaron(s) { return flipPath(markCircumflex(s), null, 0.30 * 521 * 0.72); }
+function markDot(s) { const r = 0.53 * s; return contour([{ p: [-r, r], t: TV }, { p: [0, 2 * r], t: THr }, { p: [r, r], t: TVd }, { p: [0, 0], t: THl }]); }
+function markDieresis(s) { const r = 0.50 * s, g = r + 0.22 * s; return shiftPath(markDot(s), -g, 0) + shiftPath(markDot(s), g, 0); }
+function markTilde(s) { const k = contrastK(s), th = 0.60 * s * k, W = 0.52 * 521, h = 0.07 * 521;
+  return strokePath([{ p: [-W / 2, 0 + h * 0.2], t: nrm([1, 1.2]), h0: 0.40 }, { p: [-0.20 * W, 2 * h + h * 0.2], t: THr, h0: 0.36, h1: 0.36 }, { p: [0.20 * W, 0 + h * 0.2], t: THr, h0: 0.36, h1: 0.36 }, { p: [W / 2, 2 * h + h * 0.2], t: nrm([1, 1.2]), h1: 0.40 }], lawW(0.86 * s, th, 0.08)); }
+// a small true ring: outer circle and inner circle, the wall carrying the contrast
+function circleRing(cx, cy, R, wall, th) {
+  const ring = (r, rx, ry) => contour([{ p: [cx - rx, cy], t: TV }, { p: [cx, cy + ry], t: THr }, { p: [cx + rx, cy], t: TVd }, { p: [cx, cy - ry], t: THl }]);
+  return ring(R, R, R) + ring(0, R - wall, R - th);
+}
+function markRing(s) { const D = 0.36 * 521, k = contrastK(s), th = 0.56 * s * k; return circleRing(0, D / 2, D / 2, 0.60 * s, th); }
+function markMacron(s) { const k = contrastK(s), th = 0.60 * s * k, W = 0.50 * 521; return rrect(-W / 2, 0, W / 2, th, 0.30 * th); }
+function markCedilla(s) { const k = contrastK(s), th = 0.62 * s * k, R = 0.13 * 521;
+  return strokePath([{ p: [0, 8], t: TVd, h0: 0.30 }, { p: [R * 0.9, -R], t: TVd, h0: 0.40, h1: 0.40 }, { p: [0, -2 * R], t: THl, h1: 0.40 }, { p: [-R * 0.8, -1.6 * R], t: TV, h1: 0.40 }], lawW(0.8 * s, th, 0.10)); }
+const MARKS = { acute: markAcute, grave: markGrave, circumflex: markCircumflex, caron: markCaron, dot: markDot, dieresis: markDieresis, tilde: markTilde, ring: markRing, macron: markMacron, cedilla: markCedilla };
+// the base glyph's outline as it is now (edits included), dot dropped for i and j
+function baseFor(ch, s) {
+  const d = outline(ch, s); if (!d) return null;
+  if (ch === 'i' || ch === 'j') { const subs = parsePath(d); return serializePath([subs[0]]); }
+  return d;
+}
+function compose(base, mark, opts = {}) {
+  return s => {
+    const d = baseFor(base, s); if (!d) return null;
+    const b = bbox(d), caps = /[A-Z]/.test(base);
+    let cx = (b.xmin + b.xmax) / 2;
+    if (base === 'i' || base === 'j') cx = base === 'i' ? s / 2 : 96 + s / 2;
+    if (opts.cx) cx = opts.cx(s, b);
+    let m = MARKS[mark](s);
+    if (mark === 'tilde' || mark === 'cedilla') m = polishPath('mark:' + mark, m, () => MARKS[mark](106));
+    if (mark === 'cedilla') return d + shiftPath(m, cx + (opts.dx || 0), 0);
+    const y = (caps ? CAP : 521) + MARK_GAP * (caps ? 0.55 : 1) + (opts.dy || 0);
+    return d + shiftPath(m, cx + (opts.dx || 0), y);
+  };
+}
+function buildFi(s) { const f = glyph('f', s); return outline('f', s) + shiftPath(baseFor('i', s), f.w - 0.1 * s, 0) + shiftPath(markDot(s), f.w - 0.1 * s + s / 2, 521 + MARK_GAP); }
+function buildFl(s) { const f = glyph('f', s); return outline('f', s) + shiftPath(outline('l', s), f.w - 0.1 * s, 0); }
+
+// ── the table: builder, advance width, spacing class, production name, what it is ──
+// nz: contours overlap and the glyph fills by winding; stroke: drawn as a centreline and
+// polished into cubics (see polished()).
+const EXT = {
+  A: [buildCapA, 520, 'oo', 'A', 'two diagonals meeting at a flat apex, and a bar'],
+  C: [buildCapC, 470, 'ro', 'C', 'the ring opened on the right, cut on the family angle'],
+  D: [buildCapD, 480, 'fr', 'D', 'a stem and one big bowl'],
+  E: [buildCapE, 410, 'ff', 'E', 'a stem and three bars'],
+  F: [buildCapF, 400, 'ff', 'F', 'a stem and two bars'],
+  G: [buildCapG, 500, 'rf', 'G', 'the open ring with a bar into it'],
+  H: [buildCapH, 480, 'ff', 'H', 'two stems and a bar'],
+  I: [buildCapI, 127, 'ff', 'I', 'one stem'],
+  J: [buildCapJ, 320, 'of', 'J', 'a stem that turns into a tail'],
+  K: [buildCapK, 470, 'fo', 'K', 'a stem, an arm up and a leg down'],
+  L: [buildCapL, 400, 'ff', 'L', 'a stem and a bar'],
+  M: [buildCapM, 590, 'ff', 'M', 'two stems and a V between them'],
+  N: [buildCapN, 490, 'ff', 'N', 'two stems and a diagonal'],
+  O: [buildCapO, 500, 'rr', 'O', 'the ring at capital height'],
+  P: [buildCapP, 440, 'fr', 'P', 'a stem and a bowl at the top'],
+  Q: [buildCapQ, 500, 'rr', 'Q', 'the ring with a tail', true],
+  R: [buildCapR, 510, 'fo', 'R', 'a stem, a bowl at the top and a leg'],
+  S: [buildCapS, 430, 'rr', 'S', 'the s at capital height', false, true],
+  T: [buildCapT, 440, 'oo', 'T', 'a bar and a stem'],
+  U: [buildCapU, 470, 'ff', 'U', 'two stems joined by a round bottom'],
+  V: [buildCapV, 500, 'oo', 'V', 'two diagonals meeting at the bottom'],
+  W: [buildCapW, 720, 'oo', 'W', 'four diagonals'],
+  X: [buildCapX, 470, 'oo', 'X', 'two diagonals that cross'],
+  Y: [buildCapY, 470, 'oo', 'Y', 'two diagonals meeting on a stem'],
+  Z: [buildCapZ, 440, 'ff', 'Z', 'a bar, a diagonal and a bar'],
+  '?': [buildQuestion, 'ink', 'ro', 'question', 'a hook over a short stem, and the drop', false, true],
+  '¿': [buildQuestionDown, 'ink', 'or', 'questiondown', 'the question mark turned over', false, true],
+  '¡': [buildExclamDown, 112, 'ff', 'exclamdown', 'the exclamation mark turned over'],
+  ':': [buildColon, 1.12 * 106, 'oo', 'colon', 'two drops'],
+  ';': [buildSemicolon, 1.12 * 106, 'oo', 'semicolon', 'a drop over a comma'],
+  '…': [buildEllipsis, 3 * 1.12 * 106 + 2 * 0.8 * 106, 'oo', 'ellipsis', 'three drops'],
+  '·': [buildMiddot, 1.12 * 106, 'oo', 'periodcentered', 'a drop at the middle'],
+  '•': [buildBullet, 0.42 * 521 + 0.4 * 106, 'rr', 'bullet', 'a full round'],
+  "'": [buildQuoteSingle, 0.92 * 106, 'ff', 'quotesingle', 'a short stem at the top'],
+  '"': [buildQuoteDbl, 2 * 0.92 * 106 + 0.72 * 106, 'ff', 'quotedbl', 'two short stems at the top'],
+  '’': [buildQuoteRight, 1.12 * 106, 'oo', 'quoteright', 'the comma, raised'],
+  '‘': [buildQuoteLeft, 1.12 * 106, 'oo', 'quoteleft', 'the comma, raised and turned'],
+  '”': [buildQuoteDblRight, 2 * 1.12 * 106 + 0.6 * 106, 'oo', 'quotedblright', 'two raised commas'],
+  '“': [buildQuoteDblLeft, 2 * 1.12 * 106 + 0.6 * 106, 'oo', 'quotedblleft', 'two raised commas, turned'],
+  '-': [buildHyphen, 210, 'ff', 'hyphen', 'a short bar'],
+  '–': [buildEndash, 480, 'ff', 'endash', 'a bar'],
+  '—': [buildEmdash, 920, 'ff', 'emdash', 'a long bar'],
+  '−': [buildMinus, 360, 'ff', 'minus', 'a bar'],
+  '_': [buildUnderscore, 460, 'ff', 'underscore', 'a bar under the line'],
+  '(': [buildParenLeft, 'ink', 'or', 'parenleft', 'one curve, open to the right', false, true],
+  ')': [buildParenRight, 'ink', 'ro', 'parenright', 'one curve, open to the left', false, true],
+  '[': [buildBracketLeft, 220, 'ff', 'bracketleft', 'a stem with two short bars'],
+  ']': [buildBracketRight, 220, 'ff', 'bracketright', 'a stem with two short bars'],
+  '{': [buildBraceLeft, 'ink', 'or', 'braceleft', 'a stem that pinches in the middle', false, true],
+  '}': [buildBraceRight, 'ink', 'ro', 'braceright', 'a stem that pinches in the middle', false, true],
+  '/': [buildSlash, 360, 'oo', 'slash', 'one diagonal'],
+  '\\': [buildBackslash, 360, 'oo', 'backslash', 'one diagonal'],
+  '|': [buildBarV, 0.9 * 106, 'ff', 'bar', 'one tall stem'],
+  '<': [buildLess, 360, 'of', 'less', 'two bars meeting on the left'],
+  '>': [buildGreater, 360, 'fo', 'greater', 'two bars meeting on the right'],
+  '^': [rotateChevronUp, 300, 'oo', 'asciicircum', 'two bars meeting at the top'],
+  '+': [buildPlus, 360, 'ff', 'plus', 'a bar and a stem crossing'],
+  '=': [buildEqual, 360, 'ff', 'equal', 'two bars'],
+  '×': [buildMultiply, 330, 'oo', 'multiply', 'two bars crossing', true],
+  '÷': [buildDivide, 360, 'ff', 'divide', 'a bar between two drops'],
+  '#': [buildNumberSign, 470, 'ff', 'numbersign', 'two bars and two slanted stems', true],
+  '*': [buildAsterisk, 330, 'oo', 'asterisk', 'three bars through one point', true],
+  '%': [buildPercent, 560, 'ro', 'percent', 'two small rings and a diagonal'],
+  '&': [buildAmpersand, 'ink', 'ro', 'ampersand', 'a loop over a loop, and the arm out to the right', true, true],
+  '@': [buildAt, 'ink', 'rr', 'at', 'the a inside a big open curve', false, true],
+  '$': [buildDollar, 400, 'rr', 'dollar', 'the S with a stem through it', true, true],
+  '€': [buildEuro, 'ink', 'ro', 'Euro', 'the open ring with two bars', true],
+  '£': [buildSterling, 'ink', 'ro', 'sterling', 'a hooked stem, a foot and a bar', true, true],
+  '~': [buildTilde, 'ink', 'oo', 'asciitilde', 'one wave', false, true],
+  '°': [buildDegree, 0.30 * CAP, 'rr', 'degree', 'a small ring at the top'],
+  '«': [buildGuillemetLeft, 390, 'oo', 'guillemotleft', 'two small chevrons'],
+  '»': [buildGuillemetRight, 390, 'oo', 'guillemotright', 'two small chevrons'],
+  '´': [s => shiftPath(markAcute(s), 0.3 * s, 521 + MARK_GAP), 'ink', 'oo', 'acute', 'the acute accent alone'],
+  '`': [s => shiftPath(markGrave(s), 0.6 * s, 521 + MARK_GAP), 'ink', 'oo', 'grave', 'the grave accent alone'],
+  'ˆ': [s => shiftPath(markCircumflex(s), 0.26 * 521, 521 + MARK_GAP), 0.52 * 521, 'oo', 'circumflex', 'the circumflex alone'],
+  '¨': [s => shiftPath(markDieresis(s), 0.5 * 106 + 0.22 * 106, 521 + MARK_GAP), 'ink', 'oo', 'dieresis', 'the dieresis alone'],
+  '˜': [s => shiftPath(markTilde(s), 0.26 * 521, 521 + MARK_GAP), 0.52 * 521, 'oo', 'tilde', 'the tilde alone', false, true],
+  '˚': [s => shiftPath(markRing(s), 0.18 * 521, 521 + MARK_GAP), 0.36 * 521, 'oo', 'ring', 'the ring alone'],
+  '¸': [s => shiftPath(markCedilla(s), 0.13 * 521, 0), 'ink', 'oo', 'cedilla', 'the cedilla alone', false, true],
+  '¯': [s => shiftPath(markMacron(s), 0.25 * 521, 521 + MARK_GAP), 0.50 * 521, 'oo', 'macron', 'the macron alone'],
+  'ˇ': [s => shiftPath(markCaron(s), 0.26 * 521, 521 + MARK_GAP), 0.52 * 521, 'oo', 'caron', 'the caron alone'],
+  'ﬁ': [buildFi, 158 + 106 + 106 - 0.1 * 106 + 0, 'ff', 'fi', 'the f and the i, joined', true],
+  'ﬂ': [buildFl, 158 + 106 + 106 - 0.1 * 106, 'ff', 'fl', 'the f and the l, joined', true]
+};
+// the composed letters: base + mark, named the standard way
+const COMPOSED = {
+  à: ['a', 'grave', 'agrave'], á: ['a', 'acute', 'aacute'], â: ['a', 'circumflex', 'acircumflex'], ä: ['a', 'dieresis', 'adieresis'], ã: ['a', 'tilde', 'atilde'], å: ['a', 'ring', 'aring'],
+  ç: ['c', 'cedilla', 'ccedilla'],
+  è: ['e', 'grave', 'egrave'], é: ['e', 'acute', 'eacute'], ê: ['e', 'circumflex', 'ecircumflex'], ë: ['e', 'dieresis', 'edieresis'],
+  ì: ['i', 'grave', 'igrave'], í: ['i', 'acute', 'iacute'], î: ['i', 'circumflex', 'icircumflex'], ï: ['i', 'dieresis', 'idieresis'],
+  ñ: ['n', 'tilde', 'ntilde'],
+  ò: ['o', 'grave', 'ograve'], ó: ['o', 'acute', 'oacute'], ô: ['o', 'circumflex', 'ocircumflex'], ö: ['o', 'dieresis', 'odieresis'], õ: ['o', 'tilde', 'otilde'],
+  ù: ['u', 'grave', 'ugrave'], ú: ['u', 'acute', 'uacute'], û: ['u', 'circumflex', 'ucircumflex'], ü: ['u', 'dieresis', 'udieresis'],
+  ý: ['y', 'acute', 'yacute'], ÿ: ['y', 'dieresis', 'ydieresis'],
+  À: ['A', 'grave', 'Agrave'], Á: ['A', 'acute', 'Aacute'], Â: ['A', 'circumflex', 'Acircumflex'], Ä: ['A', 'dieresis', 'Adieresis'], Ã: ['A', 'tilde', 'Atilde'], Å: ['A', 'ring', 'Aring'],
+  Ç: ['C', 'cedilla', 'Ccedilla'],
+  È: ['E', 'grave', 'Egrave'], É: ['E', 'acute', 'Eacute'], Ê: ['E', 'circumflex', 'Ecircumflex'], Ë: ['E', 'dieresis', 'Edieresis'],
+  Ì: ['I', 'grave', 'Igrave'], Í: ['I', 'acute', 'Iacute'], Î: ['I', 'circumflex', 'Icircumflex'], Ï: ['I', 'dieresis', 'Idieresis'],
+  Ñ: ['N', 'tilde', 'Ntilde'],
+  Ò: ['O', 'grave', 'Ograve'], Ó: ['O', 'acute', 'Oacute'], Ô: ['O', 'circumflex', 'Ocircumflex'], Ö: ['O', 'dieresis', 'Odieresis'], Õ: ['O', 'tilde', 'Otilde'],
+  Ù: ['U', 'grave', 'Ugrave'], Ú: ['U', 'acute', 'Uacute'], Û: ['U', 'circumflex', 'Ucircumflex'], Ü: ['U', 'dieresis', 'Udieresis'],
+  Ý: ['Y', 'acute', 'Yacute']
+};
+const MARK_WORDS = { grave: 'a grave accent', acute: 'an acute accent', circumflex: 'a circumflex', dieresis: 'a dieresis', tilde: 'a tilde', ring: 'a ring', cedilla: 'a cedilla', caron: 'a caron', macron: 'a macron', dot: 'a dot' };
+for (const ch in COMPOSED) { const [base, mark, name] = COMPOSED[ch]; EXT[ch] = [compose(base, mark), null, null, name, `the ${base} with ${MARK_WORDS[mark]}`, false, false, base]; }
+const EXT_W = {}, EXT_SHAPE = {}, EXT_NAME = {}, EXT_DESC = {}, NONZERO = new Set(), POLISH = new Set(['s', '2', '3', '5']), EXT_BASE = {};
+for (const ch in EXT) {
+  const [fn, w, shape, name, desc, nz, stroke, base] = EXT[ch];
+  BUILD[ch] = nz ? (f => x => windNonzero(f(x)))(fn) : fn; EXT_W[ch] = w; EXT_SHAPE[ch] = shape; EXT_NAME[ch] = name; EXT_DESC[ch] = desc; GNAME[ch] = name;
+  if (nz) NONZERO.add(ch); if (stroke) POLISH.add(ch); if (base) EXT_BASE[ch] = base;
+}
+// A glyph that fills by winding must run every hole the other way round from the contour
+// that holds it: even depth one way, odd depth the other.
+function windNonzero(d) {
+  const subs = parsePath(d); if (subs.length < 2) return d;
+  const flat = subs.map(sub => sub.flatMap(sg => sg[4] === 'L' ? [sg[0]] : [0, 0.25, 0.5, 0.75].map(t => bezAt([sg[0], sg[1], sg[2], sg[3]], t))));
+  const area = P => { let a = 0; for (let i = 0; i < P.length; i++) { const p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+  const inside = (pt, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+  const out = subs.map((sub, i) => {
+    let depth = 0; for (let j = 0; j < subs.length; j++) if (j !== i && inside(flat[i][0], flat[j])) depth++;
+    const ccw = area(flat[i]) > 0, want = depth % 2 === 0;
+    if (ccw === want) return sub;
+    return sub.slice().reverse().map(sg => [sg[3], sg[2], sg[1], sg[0], sg[4]]);
+  });
+  return serializePath(out);
+}
+function describeGlyph(ch) { return EXT_DESC[ch] || null; }
+// Every centreline stroke (the s, the 2 3 5, the ?, the &, ...) comes out of strokePath as
+// a polyline of hundreds of pieces. It is polished into cubics with a point at every corner
+// and extreme, with the splits found once at Black and replayed at every other weight, so
+// the outline is a drawing and still blends. See simplifyPath.
+const POLISH_OPTS = { tol: 1.2, corner: 60, span: 6, K: 8, onlyLines: true }, PLAN = {};
+function polishPath(key, d, at106) {
+  if (!d) return d;
+  if (!PLAN[key]) PLAN[key] = simplifyPath(at106(), POLISH_OPTS).plan;
+  return simplifyPath(d, POLISH_OPTS, PLAN[key]).d;
+}
 // ── Drawn masters ────────────────────────────────────────────────────────────
 // Outlines that came back redrawn from Illustrator. These glyphs stop being parametric:
 // the axis interpolates them point-for-point between the two drawn weights, the way the
@@ -1297,7 +1899,7 @@ function masterPair(ch) {
   const m = DOC.masters[ch] || BAKED.masters[ch];
   if (m) return { black: m.black, regular: m.regular, source: m.source || 'imported' };
   for (const n in MASTERS) if (MASTERS[n].ch === ch) return { black: MASTERS[n].black, regular: MASTERS[n].regular, source: 'drawn' };
-  const at = s => ch === 'g' ? offsetPath(REF22, Math.max(0, (107.4 - s) / 2.09), true) : RULES[ch] ? RULES[ch](s) : null;
+  const at = s => ch === 'g' ? offsetPath(REF22, Math.max(0, (107.4 - s) / 2.09), true) : RULES[ch] ? (POLISH.has(ch) ? polishPath(ch, RULES[ch](s), () => RULES[ch](106)) : RULES[ch](s)) : null;
   const b = at(106), r = at(53);
   return b && r ? { black: serializePath(parsePath(b)), regular: serializePath(parsePath(r)), source: ch === 'g' ? 'offset' : 'rules' } : null;
 }
@@ -1311,7 +1913,9 @@ function basePath(ch, s) {
     return masterFns[key](s);
   }
   if (ch === 'g') return offsetPath(REF22, Math.max(0, (107.4 - s) / 2.09), true);
-  return BUILD[ch] ? BUILD[ch](s) : null;
+  if (!BUILD[ch]) return null;
+  const d = BUILD[ch](s);
+  return POLISH.has(ch) ? polishPath(ch, d, () => BUILD[ch](106)) : d;
 }
 function nodeEdits(ch, variant) {
   const g = DOC.glyphs[ch] || BAKED.glyphs[ch];
@@ -1323,8 +1927,14 @@ function nodeEdits(ch, variant) {
 // Structural edits shared by both weights: insert a point on a segment (the curve keeps its
 // shape — de Casteljau split) or remove a point (its two segments become one). Applied
 // before the nudges, identically at every weight, so the point counts stay matched.
-function applyOps(subs, ops) {
+function applyOps(subs, ops, t) {
   for (const op of ops || []) {
+    if (op.op === 'addsub') {
+      // a contour pasted in, given at both weights; here it is blended to this one
+      const L = parsePath(op.light), B = parsePath(op.black), tt = t == null ? 1 : t;
+      L.forEach((sub, si) => { const bsub = B[si] || sub; subs.push(sub.map((sg, j) => { const bg = bsub[j] || sg; return [0, 1, 2, 3].map(k => [sg[k][0] + (bg[k][0] - sg[k][0]) * tt, sg[k][1] + (bg[k][1] - sg[k][1]) * tt]).concat([sg[4]]); })); });
+      continue;
+    }
     if (op.op === 'insert') {
       const sub = subs[op.sub]; if (!sub || !sub[op.seg]) continue;
       const [p0, c1, c2, p3, k] = sub[op.seg], t = Math.max(0.05, Math.min(0.95, op.t)), u = 1 - t;
@@ -1344,7 +1954,7 @@ function applyOps(subs, ops) {
   return subs;
 }
 function applyEdits(d, light, black, t, ops) {
-  const subs = applyOps(parsePath(d), ops);
+  const subs = applyOps(parsePath(d), ops, t);
   const L = light || {}, B = black || {};
   let i = 0;
   for (const sub of subs) {
@@ -1609,23 +2219,32 @@ function junctions(g) {
   return out;
 }
 function webs(g, s) {
-  const w = s * (g.thick || 1), th = 0.72 * w * contrastK(s), f = v => Math.round(v * 10) / 10;
-  const half = u => (th + (w - th) * Math.abs(u[1])) / 2;
+  const f = v => Math.round(v * 10) / 10;
+  const halfAt = st => { const w = st * (g.thick || 1), th = 0.72 * w * contrastK(st); return u => (th + (w - th) * Math.abs(u[1])) / 2; };
+  const half = halfAt(s), halfRef = halfAt(106);
+  // the corner where the edge of P facing Q meets the edge of Q facing P
+  const cornerOf = (J, P, Q, hP, hQ) => {
+    const nP = [-P.d[1], P.d[0]], nQ = [Q.d[1], -Q.d[0]];
+    const rx = nQ[0] * hQ - nP[0] * hP, ry = nQ[1] * hQ - nP[1] * hP;
+    const den = P.d[0] * (-Q.d[1]) - P.d[1] * (-Q.d[0]); if (Math.abs(den) < 1e-9) return null;
+    const t1 = (rx * (-Q.d[1]) - ry * (-Q.d[0])) / den;
+    return [J[0] + P.d[0] * t1 + nP[0] * hP, J[1] + P.d[1] * t1 + nP[1] * hP];
+  };
   const out = [];
   for (const jn of junctions(g)) {
-    const arms = jn.arms.map(a => ({ ...a, ang: Math.atan2(a.d[1], a.d[0]), h: half(a.d) })).sort((a, b) => a.ang - b.ang);
+    const arms = jn.arms.map(a => ({ ...a, ang: Math.atan2(a.d[1], a.d[0]) })).sort((a, b) => a.ang - b.ang);
     for (let i = 0; i < arms.length; i++) {
       const P = arms[i], Q = arms[(i + 1) % arms.length];
       let phi = Q.ang - P.ang; if (phi <= 0) phi += 2 * Math.PI;
       // no notch when the arms run straight through or nearly along each other (a tangential
       // join is already smooth), and none on the outside of a corner
       if (arms.length < 2 || phi > Math.PI - 0.35 || phi < 0.35) continue;
-      // the edge of P facing Q, the edge of Q facing P, and the corner where they meet
-      const nP = [-P.d[1], P.d[0]], nQ = [Q.d[1], -Q.d[0]];
-      const rx = nQ[0] * Q.h - nP[0] * P.h, ry = nQ[1] * Q.h - nP[1] * P.h;
-      const den = P.d[0] * (-Q.d[1]) - P.d[1] * (-Q.d[0]); if (Math.abs(den) < 1e-9) continue;
-      const t1 = (rx * (-Q.d[1]) - ry * (-Q.d[0])) / den;
-      const C = [jn.J[0] + P.d[0] * t1 + nP[0] * P.h, jn.J[1] + P.d[1] * t1 + nP[1] * P.h];
+      // whether the notch is worth a web is judged at Black, so every weight agrees: the
+      // corner must sit within three stroke widths of the junction
+      const Cref = cornerOf(jn.J, P, Q, halfRef(P.d), halfRef(Q.d)); if (!Cref) continue;
+      if (Math.hypot(Cref[0] - jn.J[0], Cref[1] - jn.J[1]) > 3 * Math.max(halfRef(P.d), halfRef(Q.d))) continue;
+      P.h = half(P.d); Q.h = half(Q.d);
+      const C = cornerOf(jn.J, P, Q, P.h, Q.h); if (!C) continue;
       const r = 0.9 * Math.min(P.h, Q.h), theta = Math.PI - phi, hh = (4 / 3) * Math.tan(theta / 4) * r;
       const Pa = [C[0] + P.d[0] * r, C[1] + P.d[1] * r], Pb = [C[0] + Q.d[0] * r, C[1] + Q.d[1] * r];
       const c1 = [Pb[0] - Q.d[0] * hh, Pb[1] - Q.d[1] * hh], c2 = [Pa[0] - P.d[0] * hh, Pa[1] - P.d[1] * hh];
@@ -1679,6 +2298,7 @@ function fitOne(pts, u, t1, t2) {
   const det = c11 * c22 - c12 * c12, dist = Math.hypot(p3[0] - p0[0], p3[1] - p0[1]) / 3;
   let al1 = det ? (x1 * c22 - x2 * c12) / det : 0, al2 = det ? (c11 * x2 - c12 * x1) / det : 0;
   if (!(al1 > 1e-6) || !(al2 > 1e-6) || al1 > 4 * dist * 3 || al2 > 4 * dist * 3) { al1 = al2 = dist; }
+  al1 = Math.max(al1, 0.45 * dist); al2 = Math.max(al2, 0.45 * dist);
   return [p0, [p0[0] + t1[0] * al1, p0[1] + t1[1] * al1], [p3[0] + t2[0] * al2, p3[1] + t2[1] * al2], p3];
 }
 const bezAt = (b, t) => { const s = 1 - t; return [s*s*s*b[0][0] + 3*s*s*t*b[1][0] + 3*s*t*t*b[2][0] + t*t*t*b[3][0], s*s*s*b[0][1] + 3*s*s*t*b[1][1] + 3*s*t*t*b[2][1] + t*t*t*b[3][1]]; };
@@ -1729,16 +2349,16 @@ function dirAt(pts, i, span, side) {
   if (side > 0) { const b = pts[walk(1)]; return unitV([b[0] - pts[i][0], b[1] - pts[i][1]]); }
   const a = pts[walk(-1)], b = pts[walk(1)]; return unitV([b[0] - a[0], b[1] - a[1]]);
 }
-function isCorner(pts, i, cornerDeg) {
-  const din = dirAt(pts, i, 12, -1), dout = dirAt(pts, i, 12, 1);
+function isCorner(pts, i, cornerDeg, span = 12) {
+  const din = dirAt(pts, i, span, -1), dout = dirAt(pts, i, span, 1);
   return din[0] * dout[0] + din[1] * dout[1] < Math.cos(cornerDeg * Math.PI / 180);
 }
-function splitsOf(pts, cornerDeg) {
+function splitsOf(pts, cornerDeg, span) {
   // indices of corners and extremes on a closed polyline: a corner turns sharply within a
   // few units either side; an extreme is where the direction's x or y changes sign
   const n = pts.length, out = new Set();
   for (let i = 0; i < n; i++) {
-    if (isCorner(pts, i, cornerDeg)) { out.add(i); continue; }
+    if (isCorner(pts, i, cornerDeg, span)) { out.add(i); continue; }
     const e0 = dirAt(pts, i, 6, -1), e1 = dirAt(pts, i, 6, 1);
     if (Math.sign(e0[0]) !== Math.sign(e1[0]) && Math.abs(e0[0]) > 0.03 && Math.abs(e1[0]) > 0.03) out.add(i);   // leftmost / rightmost
     if (Math.sign(e0[1]) !== Math.sign(e1[1]) && Math.abs(e0[1]) > 0.03 && Math.abs(e1[1]) > 0.03) out.add(i);   // top / bottom
@@ -1747,24 +2367,24 @@ function splitsOf(pts, cornerDeg) {
   const list = [...out].sort((a, b) => a - b), groups = [];
   for (const i of list) { const g = groups[groups.length - 1]; if (g && i - g[g.length - 1] <= 3) g.push(i); else groups.push([i]); }
   if (groups.length > 1 && groups[0][0] + n - groups[groups.length - 1].slice(-1)[0] <= 3) { groups[0] = [...groups.pop(), ...groups[0]]; }
-  const turn = i => { const a = dirAt(pts, i, 12, -1), b = dirAt(pts, i, 12, 1); return -(a[0] * b[0] + a[1] * b[1]); };
+  const turn = i => { const a = dirAt(pts, i, span || 12, -1), b = dirAt(pts, i, span || 12, 1); return -(a[0] * b[0] + a[1] * b[1]); };
   const keep = groups.map(g => g.reduce((best, i) => turn(i) > turn(best) ? i : best, g[0])).sort((a, b) => a - b);
   return keep.length ? keep : [0];
 }
 // Simplify one outline (a path string). opts: { tol, corner, K }. Returns { d, plan } where
 // plan records every cubic's sample range so the same plan can be replayed on another weight.
 function simplifyPath(d, opts = {}, plan) {
-  const tol = opts.tol || 1.5, corner = opts.corner || 50, K = opts.K || 8;
+  const tol = opts.tol || 1.5, corner = opts.corner || 50, K = opts.K || 8, span = opts.span || 12;
   const subs = parsePath(d), outSubs = [], outPlan = [];
   subs.forEach((sub, si) => {
     const pts = flattenSub(sub, K), n = pts.length;
-    if (n < 3) { outSubs.push(sub); outPlan.push(null); return; }
+    if (n < 3 || (opts.onlyLines && !sub.some(sg => sg[4] === 'L'))) { outSubs.push(sub); outPlan.push(null); return; }
     // the tangent of a run's end: one-sided at a corner, through the point elsewhere
-    const tanAt = (i, side) => isCorner(pts, i, corner) ? dirAt(pts, i, 8, side) : dirAt(pts, i, 8, 0);
+    const tanAt = (i, side) => isCorner(pts, i, corner, span) ? dirAt(pts, i, 8, side) : dirAt(pts, i, 8, 0);
     let runs;
     if (plan && plan[si]) runs = plan[si];
     else {
-      const sp = splitsOf(pts, corner); runs = [];
+      const sp = splitsOf(pts, corner, span); runs = [];
       for (let k = 0; k < sp.length; k++) {
         const a = sp[k], b = sp[(k + 1) % sp.length], len = ((b - a) + n) % n || n;
         const run = []; for (let i = 0; i <= len; i++) run.push(pts[(a + i) % n]);
@@ -1801,7 +2421,7 @@ function allChars() {
   for (const k in newGlyphs()) { const g = newGlyphs()[k]; if (g.use !== false && g.ch && !out.includes(g.ch)) out.push(g.ch); }
   return out;
 }
-function fillRule(ch) { return newGlyphFor(ch) ? 'nonzero' : 'evenodd'; }
+function fillRule(ch) { return newGlyphFor(ch) || NONZERO.has(ch) ? 'nonzero' : 'evenodd'; }
 
 // ── Studio-facing helpers ─────────────────────────────────────────────────────
 // One entry point per question the Studio asks, so the g / exclam special cases in
@@ -1842,18 +2462,20 @@ function glyph(ch, s) {
   } else if (ch === 'g') {
     const off = Math.max(0, (107.4 - s) / 2.09), c = neckComp(off);
     minX = 42.5 + off * c; w = 427.5 - off - off * c;
+  } else if (EXT_W[ch] === 'ink') {
+    const b = bbox(d); minX = b.xmin; w = b.xmax - b.xmin;
   } else {
     minX = ch === '!' ? 4 - 0.03 * s : 0;
     w = ch === '!' ? 1.06 * s : glyphWidth(ch, s);
   }
   const sb = bearing(s), cl = ng ? (ng.shape || 'rr') : shapeOf(ch), lsb = sb * SBK[cl[0]], rsb = sb * SBK[cl[1]];
-  return { ch, name: ng ? (ng.name || ch) : (GNAME[ch] || ch), kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s, fill: ng ? 'nonzero' : 'evenodd' };
+  return { ch, name: ng ? (ng.name || ch) : (GNAME[ch] || ch), kind: kindOf(ch), d, minX, w, lsb, rsb, adv: lsb + w + rsb, stem: s, fill: ng || NONZERO.has(ch) ? 'nonzero' : 'evenodd' };
 }
 // ── Spacing, with the document's say ──────────────────────────────────────────
 // doc.spacing = { fromInk: bool, shape: { [ch]: 'rf' }, kern: { [pair]: units at Black } }.
 // A kern override of 0 removes a pair; a pair not in the override table keeps KERN's value.
 function spacing() { return DOC.spacing || BAKED.spacing || {}; }
-function shapeOf(ch) { const sp = spacing(); return (sp.shape && sp.shape[ch]) || (BAKED.spacing && BAKED.spacing.shape && BAKED.spacing.shape[ch]) || SHAPE[ch] || 'ff'; }
+function shapeOf(ch) { const sp = spacing(); return (sp.shape && sp.shape[ch]) || (BAKED.spacing && BAKED.spacing.shape && BAKED.spacing.shape[ch]) || SHAPE[ch] || EXT_SHAPE[ch] || (EXT_BASE[ch] ? shapeOf(EXT_BASE[ch]) : 'ff'); }
 function kernOf(pair) {
   const sp = spacing();
   if (sp.kern && pair in sp.kern) return sp.kern[pair];
@@ -1907,7 +2529,7 @@ function nodes(d) {
 
 return {
   METRICS, WEIGHTS, weightName, bearing, kindOf, glyph, parsePath, bbox, nodes, spacing, shapeOf, kernOf, kernPairs,
-  TILE, strokeDrops, dropsOutline, spinePath, junctions, webs, simplifyPath, simplifyPair, newGlyphs, newGlyphFor, allChars, fillRule, spareChars, extraChars,
+  TILE, strokeDrops, dropsOutline, spinePath, junctions, webs, simplifyPath, simplifyPair, polishPath, POLISH, NONZERO, EXT_DESC, describeGlyph, CAP, newGlyphs, newGlyphFor, allChars, fillRule, spareChars, extraChars,
   BAKED, setDoc, getDoc, serializePath, masterPair, basePath, applyEdits, applyOps, outline, nearestOnPath,
   normalizeSVGPath, toFontUnits, translatePath, sameSkeleton, RULES,
   SRC, REF22, REF28, thinRatio, contrastK, CONTRAST, SLANT, SL,

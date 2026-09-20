@@ -8,10 +8,11 @@ const E = window.AquaEngine, D = window.AquaDoc, H = window.AquaHealth;
 const A = () => window.AquaStudio;
 const T = E.TILE;
 const HEIGHTS = { small: ['Small letters', 521], caps: ['Capitals', 715], tall: ['Tall letters', 751] };
-const ng = { key: null, tool: 'add', sel: null, active: null, zoom: 1, pan: [0, 0], view: null, connectFrom: null, hover: null, image: null };
+const ng = { key: null, tool: 'blob', sel: null, active: null, zoom: 1, pan: [0, 0], view: null, connectFrom: null, hover: null, image: null };
 const r1 = v => Math.round(v * 10) / 10, r0 = v => Math.round(v);
 const snap = v => Math.round(v / T) * T;
 const ICON = {
+  blob: '<svg viewBox="0 0 20 20"><path d="M10 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-3 2-5 5-9z"/></svg>',
   select: '<svg viewBox="0 0 20 20"><path d="M4 3l12 7-5 1-3 5z"/></svg>',
   add: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6"/></svg>',
   connect: '<svg viewBox="0 0 20 20"><circle cx="5" cy="14" r="2.5"/><circle cx="15" cy="6" r="2.5"/><path d="M7 12l6-4"/></svg>',
@@ -51,9 +52,9 @@ function room(root) {
       <div class="crumb"><b>New glyph · ${esc(g.name)}</b> &nbsp;·&nbsp; ${E.weightName(s)} &nbsp;·&nbsp; ${nDrops} drops${g.use === false ? ' · draft' : ' · in Aqua'}</div>
       <div class="pill" data-y="${HEIGHTS[g.height][1]}">${HEIGHTS[g.height][0]}</div>
       <div class="pill" data-y="0">Baseline</div>
-      <div class="hint" id="hint">${ng.tool === 'add' ? (ng.active != null ? 'tap to continue the stroke · Esc to start a new one' : 'tap a tile to start a stroke') : ng.tool === 'connect' ? (ng.connectFrom ? 'now tap the drop to join it to' : 'tap a drop, then another') : ng.tool === 'erase' ? 'tap a drop to remove it' : ''}</div>
+      <div class="hint" id="hint">${ng.tool === 'blob' ? 'tap a tile: a blob · tap next to a stroke and it joins it, like water' : ng.tool === 'add' ? (ng.active != null ? 'tap to continue the stroke · Esc to start a new one' : 'tap a tile to start a stroke') : ng.tool === 'connect' ? (ng.connectFrom ? 'now tap the drop to join it to' : 'tap a drop, then another') : ng.tool === 'erase' ? 'tap a drop to remove it' : ''}</div>
       <div class="tools" id="tools">
-        ${tool('select', 'Select', 'Drag a drop')}${tool('add', 'Add drop', 'Tap tiles to place drops')}${tool('connect', 'Connect', 'Join two drops into one stroke')}${tool('move', 'Move', 'Drag to move the whole letter')}${tool('erase', 'Erase', 'Tap a drop to remove it')}${tool('nudge', 'Nudge', 'Arrow keys move the selected drop one tile')}
+        ${tool('blob', 'Blob', 'Tap a tile to drop a blob; blobs that touch merge like water')}${tool('add', 'Stroke', 'Tap tiles one after another to draw a stroke')}${tool('select', 'Select', 'Drag a drop')}${tool('connect', 'Connect', 'Join two drops into one stroke')}${tool('move', 'Move', 'Drag to move the whole letter')}${tool('erase', 'Erase', 'Tap a drop to remove it')}${tool('nudge', 'Nudge', 'Arrow keys move the selected drop one tile')}
       </div>
       <div class="preview">
         <div class="pv"><div class="box">${d ? glyphSVG(g.ch, s, { box: 'metrics', d, fill: 'nonzero' }) : ''}</div>Final</div>
@@ -95,7 +96,7 @@ function startNew(o) {
   const init = { ch, name: key, height: o.height || HEIGHT_FOR(ch), category: o.cat || D.categoryOf(ch), use: false };
   if (o.from === 'suggest' && window.AquaSkeletons) { const sk = window.AquaSkeletons.strokes(ch, init.height); if (sk) { init.strokes = sk.strokes; if (sk.ends) init.ends = sk.ends; } }
   D.addNewGlyph(key, init);
-  ng.key = key; A().S.newKey = key; ng.sel = null; ng.tool = 'add'; ng.zoom = 1; ng.pan = [0, 0]; ng.image = null;
+  ng.key = key; A().S.newKey = key; ng.sel = null; ng.tool = 'blob'; ng.zoom = 1; ng.pan = [0, 0]; ng.image = null;
   A().renderRoom();
   if (o.from === 'trace') setTimeout(() => { const f = document.getElementById('imgfile'); if (f) f.click(); }, 50);
 }
@@ -110,8 +111,8 @@ function openDialog() {
     <div class="nl-row">
       <label>Typed as</label>
       <div><input class="num-in ch" id="nl-ch" maxlength="8" placeholder="6" autocomplete="off"> <span class="small sub">one character, or a code like U+2764</span>
-        <div class="nl-keys" id="nl-keys">${freeKeys().map(c => `<b data-k="${esc(c)}" title="free">${esc(c)}</b>`).join('')}</div>
-        <p class="small sub" style="margin:4px 0 0">Keys Aqua does not use yet. A picto can sit on any of them: that key is what shows it when you type. Letters already in Aqua can get a second drawing from drops; it stays a draft until you add it.</p></div>
+        <div class="nl-keys" id="nl-keys">${freeKeys().map(c => `<b data-k="${esc(c)}" class="${E.describeGlyph(c) ? 'can' : ''}" title="${E.describeGlyph(c) ? 'Aqua can build this one' : 'free'}">${esc(c)}</b>`).join('')}</div>
+        <p class="small sub" style="margin:4px 0 0">Keys not in the set yet; the underlined ones Aqua can build itself (so can every accented letter and most signs: type the character). A picto can sit on any key: that key is what shows it when you type.</p></div>
       <label>Name</label><input class="num-in" id="nl-name" placeholder="six, anchor, ampersand…" autocomplete="off">
       <label>Category</label><select class="sel" id="nl-cat">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select>
       <label>Height</label><span class="seg s" id="nl-height">${Object.keys(HEIGHTS).map(k => `<b data-h="${k}">${HEIGHTS[k][0]}</b>`).join('')}</span>
@@ -125,14 +126,16 @@ function openDialog() {
     const ch = st.ch, inSet = ch && E.allChars().includes(ch), rules = ch && E.spareChars().includes(ch), sk = ch && SK ? SK.describe(ch) : null;
     if (!st.heightTouched && ch) { st.height = HEIGHT_FOR(ch); $('#nl-height').querySelectorAll('b').forEach(b => b.classList.toggle('on', b.dataset.h === st.height)); }
     if (!st.catTouched && ch) { st.cat = D.categoryOf(ch); $('#nl-cat').value = st.cat; }
+    const built = ch && E.describeGlyph(ch);
     const opts = [
-      ['blank', 'An empty grid', 'Tap tiles to place drops; strokes that follow each other join.', true],
-      ['suggest', 'A suggested structure', sk ? `${sk} — drops you can move, from the Studio's library of skeletons. It knows the usual shape of a character, not other fonts.` : ch ? 'No structure in the library for this character yet.' : 'Type the key to see if the library has one.', !!sk],
-      ['trace', 'Trace an image', 'Pick a picture; the Studio thins it to a skeleton and turns that into a first pass of drops.', true],
-      ['rules', 'Aqua\'s rules', rules ? `Aqua already knows how to draw ${shown(ch)}. Bring it in as it is, then edit its points like any other letter.` : 'Only for the characters the rules already draw (the digits).', !!rules]];
+      ['rules', 'Aqua\'s construction', rules ? `Aqua builds ${shown(ch)} from the family's own parts: ${built || 'the rules for this character'}. It comes in drawn at every weight, ready to edit point by point.` : ch ? (inSet ? `${shown(ch)} is already in the set.` : 'Aqua has no construction for this character; start from drops below.') : 'Type the key to see if Aqua can build it.', !!rules],
+      ['blank', 'An empty grid', 'Tap tiles to drop blobs; blobs that touch merge like water.', true],
+      ['suggest', 'A rough structure from drops', sk ? `${sk} — drops you can move, from the Studio's library. It knows the usual shape of a character, not other fonts.` : ch ? 'No structure in the library for this character yet.' : 'Type the key to see if the library has one.', !!sk],
+      ['trace', 'Trace an image', 'Pick a picture; the Studio thins it to a skeleton and turns that into a first pass of drops.', true]];
+    if (!st.fromTouched) st.from = rules ? 'rules' : 'blank';
     if (!opts.find(o => o[0] === st.from)[3]) st.from = 'blank';
     $('#nl-from').innerHTML = opts.map(([k, t, d, on]) => `<label class="${on ? '' : 'off'} ${st.from === k ? 'on' : ''}"><input type="radio" name="nl-from" value="${k}" ${st.from === k ? 'checked' : ''} ${on ? '' : 'disabled'}><span><b>${t}</b>${k === 'rules' && rules ? `<span class="nl-preview" style="margin-top:4px"><span class="g">${glyphSVG(ch, 106, { box: 'metrics', pad: 4 })}</span><span class="g">${glyphSVG(ch, 53, { box: 'metrics', pad: 4 })}</span></span>` : ''}<small>${esc(d)}</small></span></label>`).join('');
-    $('#nl-from').querySelectorAll('input').forEach(r => r.onchange = () => { st.from = r.value; sync(); });
+    $('#nl-from').querySelectorAll('input').forEach(r => r.onchange = () => { st.from = r.value; st.fromTouched = true; sync(); });
     const go = $('#nl-go'), msg = $('#nl-msg');
     const key = (st.name || ch).trim();
     let why = '';
@@ -208,6 +211,10 @@ function bindCanvas() {
     if (e.button !== 0) return;
     const g = glyphOf(), p = toUnits(e), node = e.target.closest('.node'), t = [snap(p[0]), snap(p[1])];
     const hit = node ? { si: +node.dataset.si, i: +node.dataset.i } : null;
+    if (ng.tool === 'blob') {
+      if (hit) { ng.sel = hit; ng.active = hit.si; drag = { kind: 'drop', hit, start: p, base: g.strokes[hit.si][hit.i].slice(), moved: false }; redraw(); renderInspector(); svg.setPointerCapture(e.pointerId); return; }
+      addBlob(t); return;
+    }
     if (ng.tool === 'add') {
       if (hit) { ng.sel = hit; ng.active = hit.si; redraw(); renderInspector(); return; }
       if (findDrop(t)) return;
@@ -261,6 +268,30 @@ function addDrop(t) {
   if (!placed) { g.strokes.push([t]); placed = { si: g.strokes.length - 1, i: 0 }; }
   ng.sel = placed; ng.active = placed.si;
   D.setStrokes(ng.key, g.strokes, true, 'Add a drop');
+}
+// Blob: a drop that finds its own stroke, the way water does. It joins the end of any stroke
+// it touches; touching two ends it bridges them into one stroke; touching the middle of a
+// stroke it starts a branch there (the liquid joins web it); on its own it is a round blob.
+function addBlob(t) {
+  const g = glyphOf(); if (findDrop(t)) return;
+  const ends = [], mids = [];
+  g.strokes.forEach((st, si) => st.forEach((q, i) => { if (!adjacent(q, t)) return; (i === 0 || i === st.length - 1 ? ends : mids).push({ si, i }); }));
+  let placed = null;
+  const two = ends.find(e => e.si !== ends[0].si);
+  if (ends.length && two) {
+    const a = ends[0], b = two, A_ = g.strokes[a.si], B_ = g.strokes[b.si];
+    const first = a.i === 0 && A_.length > 1 ? A_.slice().reverse() : A_.slice();
+    const second = b.i === 0 || B_.length === 1 ? B_.slice() : B_.slice().reverse();
+    g.strokes.splice(Math.max(a.si, b.si), 1); g.strokes.splice(Math.min(a.si, b.si), 1);
+    g.strokes.push(first.concat([t], second)); placed = { si: g.strokes.length - 1, i: first.length };
+  } else if (ends.length) {
+    const a = ends[0], st = g.strokes[a.si];
+    if (a.i === 0 && st.length > 1) { st.unshift(t); placed = { si: a.si, i: 0 }; } else { st.push(t); placed = { si: a.si, i: st.length - 1 }; }
+  } else if (mids.length) {
+    const m = mids[0]; g.strokes.push([g.strokes[m.si][m.i], t]); placed = { si: g.strokes.length - 1, i: 1 };
+  } else { g.strokes.push([t]); placed = { si: g.strokes.length - 1, i: 0 }; }
+  ng.sel = placed; ng.active = placed.si;
+  D.setStrokes(ng.key, g.strokes, true, 'Add a blob');
 }
 function eraseDrop(hit) {
   const g = glyphOf(), st = g.strokes[hit.si];
@@ -463,6 +494,10 @@ function keydown(e) {
   if (arrows[e.key] && ng.sel) { nudgeSel(...arrows[e.key]); return true; }
   if ((e.key === 'Backspace' || e.key === 'Delete') && ng.sel) { eraseDrop(ng.sel); return true; }
   if (e.key === 'Escape') { ng.sel = null; ng.active = null; ng.connectFrom = null; redraw(); renderInspector(); const h = document.getElementById('hint'); if (h && ng.tool === 'add') h.textContent = 'tap a tile to start a stroke'; return true; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') { const g = glyphOf(); const strokes = ng.sel && g.strokes[ng.sel.si] ? [g.strokes[ng.sel.si]] : g.strokes; D.clip({ kind: 'strokes', strokes, from: g.name }); const h = document.getElementById('hint'); if (h) h.textContent = `copied ${strokes.length} stroke${strokes.length > 1 ? 's' : ''} \u00b7 Cmd/Ctrl+V pastes into another letter`; return true; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') { const c = D.clip(); if (!c) return true; if (c.kind !== 'strokes') { alert('The clipboard holds outline contours, which go into an outline letter.'); return true; } const g = glyphOf(); D.setStrokes(ng.key, g.strokes.concat(c.strokes.map(st => st.map(q => q.slice()))), true, `Paste ${c.strokes.length} stroke${c.strokes.length > 1 ? 's' : ''}`); return true; }
+  const tools = { b: 'blob', s: 'add', v: 'select', c: 'connect', m: 'move', e: 'erase', n: 'nudge' };
+  if (!(e.metaKey || e.ctrlKey) && tools[e.key.toLowerCase()]) { ng.tool = tools[e.key.toLowerCase()]; ng.connectFrom = null; A().renderRoom(); return true; }
   return false;
 }
 window.AquaNew = { room, startNew, keydown, traceImage, state: ng, open: key => { ng.key = key; ng.sel = null; } };
