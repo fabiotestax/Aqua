@@ -238,6 +238,15 @@ const traced = await p.evaluate(async () => {
   return { n: strokes.length, drops: strokes.reduce((k, s) => k + s.length, 0), first: strokes[0] };
 });
 ok(traced.n >= 1 && traced.drops >= 6, `tracing an image of the a gives ${traced.n} stroke(s), ${traced.drops} drops`);
+// a suggested structure from the library: an ampersand, then the button in the room
+await p.keyboard.press('Control+n'); await p.waitForSelector('#newletter');
+await p.locator('#nl-ch').fill('&'); await p.locator('#nl-name').fill('ampersand'); await p.waitForTimeout(50);
+ok(await p.evaluate(() => !document.querySelector('input[value="suggest"]').disabled && document.querySelector('#nl-from').textContent.includes('loop')), 'the dialog describes the library\'s ampersand');
+await p.click('input[value="suggest"]'); await p.click('#nl-go'); await p.waitForTimeout(250);
+const amp = await p.evaluate(() => window.AquaDoc.newGlyphs().ampersand);
+ok(amp && amp.strokes.length === 2 && amp.strokes[0].length >= 6 && amp.category === 'Punctuation' && await p.evaluate(() => !!document.querySelector('#skin')), `the ampersand starts from the suggested structure (${amp && amp.strokes[0].length} drops) and draws`);
+ok(await p.evaluate(() => [...document.querySelectorAll('[data-act="suggest"]')].length === 1), 'the room offers to replace it with the suggestion again');
+await p.screenshot({ path: 'studio/shots/newglyph-suggest-light.png' });
 await p.evaluate(() => { window.AquaDoc.clearAll(); localStorage.clear(); });
 console.log(`console errors: ${errors.length}`); errors.forEach(e => console.log('  ' + e));
 await b.close();

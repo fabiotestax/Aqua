@@ -317,6 +317,7 @@ function renderInspector() {
     ${ng.sel && g.strokes[ng.sel.si] ? `<div class="card sel" style="margin-top:0"><h6>Selected drop</h6><div class="kv"><span>At</span><span>x ${g.strokes[ng.sel.si][ng.sel.i][0]} · y ${g.strokes[ng.sel.si][ng.sel.i][1]}</span></div><div class="kv"><span>Stroke</span><span>${ng.sel.si + 1} of ${g.strokes.length} · drop ${ng.sel.i + 1} of ${g.strokes[ng.sel.si].length}</span></div>
       ${ng.tool === 'nudge' ? `<div class="pad" id="pad"><b data-n="0,1">↑</b><b data-n="-1,0">←</b><b data-n="0,-1">↓</b><b data-n="1,0">→</b><small>one tile</small></div>` : '<p class="small sub" style="margin:6px 0 0">Arrow keys move it one tile. Erase removes it.</p>'}</div>`
     : `<p class="small sub" style="margin:0">${g.strokes.length ? `${g.strokes.length} stroke${g.strokes.length > 1 ? 's' : ''}, ${g.strokes.reduce((n, st) => n + st.length, 0)} drops.` : 'No drops yet. Pick Add drop and tap the tiles.'}</p>`}
+    ${window.AquaSkeletons && window.AquaSkeletons.has(g.ch) ? `<div class="btn" data-act="suggest" title="${esc(window.AquaSkeletons.describe(g.ch))}">${g.strokes.length ? 'Replace with a suggested structure' : 'Suggest a structure'}</div>` : ''}
     ${g.use === false ? `<div class="btn pri ${g.strokes.length ? '' : 'off'}" data-act="use">Add to Aqua</div>` : `<div class="btn" data-act="draft">Keep as a draft (out of the text)</div>`}
     <div class="btn" data-act="clear" title="Remove every drop">Start over</div>
     <div class="btn" data-act="delete">Delete this letter</div>
@@ -333,6 +334,7 @@ function renderInspector() {
   insp.querySelectorAll('[data-act]').forEach(el => el.onclick = () => {
     const act = el.dataset.act; if (el.classList.contains('off')) return;
     if (act === 'trace') traceNow();
+    else if (act === 'suggest') { const sk = window.AquaSkeletons.strokes(g.ch, g.height); if (sk && (!g.strokes.length || confirm(`Replace the drops of ${g.name} with the suggested structure (${window.AquaSkeletons.describe(g.ch).toLowerCase()})?`))) { ng.sel = null; D.setStrokes(ng.key, sk.strokes, true, `Suggest a structure for ${g.name}`); } }
     else if (act === 'dropimage') { ng.image = null; A().renderRoom(); }
     else if (act === 'addimage') document.getElementById('imgfile').click();
     else if (act === 'use') upd({ use: true }, `Add ${g.name} to Aqua`);
